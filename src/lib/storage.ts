@@ -1,12 +1,11 @@
 import {
-  getStorage,
   ref,
   uploadBytesResumable,
   getDownloadURL,
   deleteObject,
 } from "firebase/storage";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
-import { db } from "./firebase";
+import { doc, updateDoc } from "firebase/firestore";
+import { db, storage } from "./firebase";
 
 export async function uploadAvatar(
   uid: string,
@@ -20,7 +19,6 @@ export async function uploadAvatar(
     throw new Error("Dosya boyutu 2MB'dan büyük olamaz");
   }
 
-  const storage = getStorage();
   const storageRef = ref(storage, `avatars/${uid}/profile.jpg`);
   const uploadTask = uploadBytesResumable(storageRef, file);
 
@@ -46,7 +44,6 @@ export async function uploadAvatar(
 }
 
 export async function deleteAvatar(uid: string): Promise<void> {
-  const storage = getStorage();
   const storageRef = ref(storage, `avatars/${uid}/profile.jpg`);
   try {
     await deleteObject(storageRef);
