@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
@@ -300,8 +301,9 @@ export default function LeaderboardPage() {
       )}
 
       {/* Modal */}
-      {modalEntry && !isAnonymous && (
-        <ProfileModal entry={modalEntry} onClose={closeModal} />
+      {modalEntry && !isAnonymous && createPortal(
+        <ProfileModal entry={modalEntry} onClose={closeModal} />,
+        document.body
       )}
     </div>
   );
@@ -406,7 +408,7 @@ function ProfileModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
