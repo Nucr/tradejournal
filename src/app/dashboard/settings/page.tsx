@@ -16,7 +16,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { UserProfile } from "@/lib/types";
+import type { UserProfile, LeaderboardPeriod } from "@/lib/types";
 import { cleanupOldDeletedTrades } from "@/lib/trades";
 import { uploadAvatar, deleteAvatar } from "@/lib/storage";
 import Avatar from "@/components/Avatar";
@@ -75,6 +75,17 @@ export default function SettingsPage() {
     setSaving(false);
   }
 
+  async function updateLeaderboardAvatar(uid: string, avatarUrl: string) {
+    const periods: LeaderboardPeriod[] = ["weekly", "monthly", "alltime"];
+    for (const p of periods) {
+      try {
+        await updateDoc(doc(db, "leaderboard", p, "entries", uid), { avatarUrl });
+      } catch {
+        // doc may not exist yet, ignore
+      }
+    }
+  }
+
   async function handleAvatarUpload(file: File) {
     if (!user) return;
     setAvatarUploading(true);
@@ -83,6 +94,7 @@ export default function SettingsPage() {
     try {
       const url = await uploadAvatar(user.uid, file, setAvatarProgress);
       setProfile((prev) => (prev ? { ...prev, avatarUrl: url } : prev));
+      await updateLeaderboardAvatar(user.uid, url);
       setAvatarToast("Avatar güncellendi");
       setAvatarPreview(null);
     } catch (err) {
@@ -97,6 +109,7 @@ export default function SettingsPage() {
     if (!user) return;
     await deleteAvatar(user.uid);
     setProfile((prev) => (prev ? { ...prev, avatarUrl: "" } : prev));
+    await updateLeaderboardAvatar(user.uid, "");
     setAvatarToast("Avatar kaldırıldı");
   }
 
@@ -111,6 +124,7 @@ export default function SettingsPage() {
     }
     await updateDoc(doc(db, "users", user.uid), { avatarUrl: trimmed });
     setProfile((prev) => (prev ? { ...prev, avatarUrl: trimmed } : prev));
+    await updateLeaderboardAvatar(user.uid, trimmed);
     setAvatarUrlInput("");
     setAvatarToast("URL kaydedildi");
   }
