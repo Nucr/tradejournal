@@ -3,15 +3,14 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Users doc — yalnızca sahibi yazabilir; isPublic ise herkes okuyabilir
-    // resource == null olduğunda (döküman yok) sadece sahibi okuyabilir
     match /users/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || (resource != null && resource.data.isPublic == true));
       allow write: if request.auth != null && request.auth.uid == uid;
     }
 
-    // Trades (users/{uid}/trades) — sadece sahibi
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Trades subcollection — sadece sahibi
+    match /users/{uid}/trades/{tradeId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
     // Strategies — giriş yapmış herkes okuyabilir; yalnızca oluşturan yazabilir
