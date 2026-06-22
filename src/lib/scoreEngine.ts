@@ -7,16 +7,10 @@ import {
   setDoc,
   serverTimestamp,
   orderBy,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import type { Trade, UserStats, LeaderboardPeriod } from "./types";
-import { checkAndAwardAchievements } from "./achievement-store";
-
-// Score formülü (0–100):
-// Karlılık    %30 → netResult normalize (max +100% = 30 puan, negatif = 0)
-// Kazanma     %25 → winRate * 0.25
-// R:R Oranı   %25 → avgRR normalize (max 3.0 = 25 puan, üstü cap)
-// İstikrar    %20 → son 30 günde trade sayısı (10+ = 20 puan, orantılı)
+import type { Trade, UserStats } from "./types";
 
 export function calculateStats(trades: Trade[]): UserStats {
   const totalTrades = trades.length;
@@ -40,8 +34,9 @@ export function calculateStats(trades: Trade[]): UserStats {
 
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const recentTrades = trades.filter((t) => new Date(t.entryDate) >= thirtyDaysAgo).length;
-  const consistency = Math.min(recentTrades / 10, 1);
+  const consistency = trades.filter(
+    (t) => new Date(t.entryDate) >= thirtyDaysAgo
+  ).length;
 
   return { totalTrades, winRate, avgRR, netResult, consistency };
 }
@@ -50,60 +45,112 @@ export function calculateScore(trades: Trade[]): number {
   const stats = calculateStats(trades);
   if (stats.totalTrades === 0) return 0;
 
-  const profitabilityScore = Math.max(0, Math.min(stats.netResult / 50, 1)) * 30;
-  const winRateScore = stats.winRate * 0.25;
-  const rrScore = Math.min(stats.avgRR / 3, 1) * 25;
-  const consistencyScore = stats.consistency * 20;
+  const profitability = Math.max(
+    0,
+    Math.min(stats.netResult / 100, 1)
+  ) * 30;
 
-  const raw = profitabilityScore + winRateScore + rrScore + consistencyScore;
+  const winRateScore = (stats.winRate / 100) * 25;
+
+  const rrScore = Math.max(
+    0,
+    Math.min(stats.avgRR / 3, 1)
+  ) * 25;
+
+  const consistencyScore = Math.min(stats.consistency / 10, 1) * 20;
+
+  const raw = profitability + winRateScore + rrScore + consistencyScore;
   return Math.round(raw * 100) / 100;
 }
 
+const RANKS = [
+  { min: 0, level: 1, rank: "Çaylak" },
+  { min: 10, level: 2, rank: "Acemi" },
+  { min: 20, level: 3, rank: "Gelişen" },
+  { min: 30, level: 4, rank: "Deneyimli" },
+  { min: 40, level: 5, rank: "Uzman" },
+  { min: 50, level: 6, rank: "İleri" },
+  { min: 60, level: 7, rank: "Usta" },
+  { min: 70, level: 8, rank: "Elit" },
+  { min: 80, level: 9, rank: "Efsane" },
+  { min: 90, level: 10, rank: "Efsanevi" },
+] as const;
+
 export function getLevel(score: number): number {
   const clamped = Math.max(0, Math.min(100, Math.round(score)));
-  return Math.min(Math.floor(clamped / 10) + 1, 10);
+  let result = 1;
+  for (const r of RANKS) {
+    if (clamped >= r.min) result = r.level;
+  }
+  return result;
 }
-
-const RANK_TABLE: [number, number, string][] = [
-  [0, 9, "Çaylak"],
-  [10, 19, "Acemi"],
-  [20, 29, "Gelişen"],
-  [30, 39, "Deneyimli"],
-  [40, 49, "Uzman"],
-  [50, 59, "İleri"],
-  [60, 69, "Usta"],
-  [70, 79, "Elit"],
-  [80, 89, "Efsane"],
-  [90, 100, "Efsanevi"],
-];
 
 export function getRank(score: number): string {
   const clamped = Math.max(0, Math.min(100, Math.round(score)));
-  for (const [lo, hi, rank] of RANK_TABLE) {
-    if (clamped >= lo && clamped <= hi) return rank;
+  let result = "Çaylak";
+  for (const r of RANKS) {
+    if (clamped >= r.min) result = r.rank;
   }
-  return "Çaylak";
-}
-
-function computeTopStrategy(trades: Trade[]): string {
-  if (trades.length === 0) return "";
-  const freq = new Map<string, number>();
-  for (const t of trades) {
-    freq.set(t.strategy, (freq.get(t.strategy) ?? 0) + 1);
-  }
-  let best = "";
-  let bestCount = 0;
-  for (const [name, count] of freq) {
-    if (count > bestCount) {
-      best = name;
-      bestCount = count;
-    }
-  }
-  return best;
+  return result;
 }
 
 export async function syncUserScore(uid: string): Promise<void> {
   try {
+    const tradesSnap = await getDocs(
+      query(
+        collection(db, "users", uid, "trades"),
+        orderBy("entryDate", "desc")
+      )
+    );
+
+    const trades: Trade[] = tradesSnap.docs
+      .filter((d) => {
+        const data = d.data();
+        return data.deletedAt == null;
+      })
+      .map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          pair: data.pair as string,
+          direction: data.direction as Trade["direction"],
+          entryDate: data.entryDate as string,
+          exitDate: data.exitDate as string,
+          rr: (data.rr as number) ?? 0,
+          result: (data.result as number) ?? 0,
+          netPnl: (data.netPnl as number) ?? 0,
+          strategy: (data.strategy as string) ?? "",
+          note: (data.note as string) ?? "",
+          screenshotUrl: (data.screenshotUrl as string) ?? "",
+          createdAt:
+            (data.createdAt as Timestamp)?.toDate?.().toISOString?.() ??
+            new Date().toISOString(),
+          deletedAt:
+            data.deletedAt == null
+              ? null
+              : (
+                  data.deletedAt as Timestamp
+                )?.toDate?.().toISOString?.() ?? null,
+        };
+      });
+
+    const stats = calculateStats(trades);
+    const score = calculateScore(trades);
+    const level = getLevel(score);
+    const rank = getRank(score);
+
+    await setDoc(
+      doc(db, "users", uid),
+      {
+        stats,
+        score,
+        level,
+        rank,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
     const userSnap = await getDoc(doc(db, "users", uid));
     if (!userSnap.exists()) return;
 
@@ -111,105 +158,60 @@ export async function syncUserScore(uid: string): Promise<void> {
     const displayName = (userData.displayName as string) ?? "";
     if (!displayName) return;
 
-    const tradesSnap = await getDocs(
-      query(collection(db, "users", uid, "trades"), orderBy("entryDate", "desc"))
-    );
-    const rawTrades = tradesSnap.docs.filter((d) => {
-      const deletedAt = d.data().deletedAt;
-      return deletedAt == null;
-    });
-    const trades: Trade[] = rawTrades.map((d) => {
-      const data = d.data();
-      return {
-        id: d.id,
-        pair: data.pair,
-        direction: data.direction,
-        entryDate: data.entryDate,
-        exitDate: data.exitDate,
-        rr: data.rr,
-        result: data.result,
-        netPnl: data.netPnl ?? 0,
-        strategy: data.strategy,
-        note: data.note,
-        screenshotUrl: data.screenshotUrl,
-        createdAt: data.createdAt?.toDate?.().toISOString?.() ?? new Date().toISOString(),
-      };
-    });
-
-    const stats = calculateStats(trades);
-    const score = calculateScore(trades);
-    const level = getLevel(score);
-    const rank = getRank(score);
-
-    const isPublic = userData.isPublic === true;
-    const showStrategy = userData.showStrategy !== false;
     const avatarUrl = typeof userData.avatarUrl === "string" ? userData.avatarUrl : "";
     const avatarColor = typeof userData.avatarColor === "string" ? userData.avatarColor : "#2ED9A4";
-    const topStrategy = showStrategy ? computeTopStrategy(trades) : "";
 
-    await setDoc(
-      doc(db, "users", uid),
-      {
-        displayName,
-        avatarUrl,
-        avatarColor,
-        level,
-        rank,
-        score,
-        isPublic,
-        showStrategy,
-        stats,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
+    const now = new Date();
 
-    await checkAndAwardAchievements(uid, stats, level, trades);
+    const alltimeEntry = {
+      displayName,
+      avatarUrl,
+      avatarColor,
+      score,
+      level,
+      rank,
+      winRate: stats.winRate,
+      avgRR: stats.avgRR,
+      netResult: stats.netResult,
+      totalTrades: stats.totalTrades,
+      updatedAt: serverTimestamp(),
+    };
 
-    const periods: LeaderboardPeriod[] = ["weekly", "monthly", "alltime"];
-    const leaderboardPromises = periods.map((period) => {
-      let periodStats: UserStats;
-      if (period === "alltime") {
-        periodStats = stats;
-      } else {
-        const cut = new Date();
-        cut.setDate(cut.getDate() - (period === "weekly" ? 7 : 30));
-        const filtered = trades.filter((t) => new Date(t.entryDate) >= cut);
-        periodStats = calculateStats(filtered);
-      }
-      const periodScore = calculateScoreFromStats(periodStats);
+    await setDoc(doc(db, "leaderboard", "alltime", "entries", uid), alltimeEntry);
+
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const weeklyCut = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const monthlyTrades = trades.filter((t) => new Date(t.entryDate) >= thirtyDaysAgo);
+    const weeklyTrades = trades.filter((t) => new Date(t.entryDate) >= weeklyCut);
+
+    for (const [periodKey, periodTrades] of [
+      ["monthly", monthlyTrades] as const,
+      ["weekly", weeklyTrades] as const,
+    ]) {
+      const periodStats = calculateStats(periodTrades as Trade[]);
+      const periodScore = calculateScore(periodTrades as Trade[]);
       const periodLevel = getLevel(periodScore);
       const periodRank = getRank(periodScore);
 
-      return setDoc(doc(db, "leaderboard", period, "entries", uid), {
-        displayName,
-        avatarUrl,
-        score: periodScore,
-        level: periodLevel,
-        rank: periodRank,
-        winRate: periodStats.winRate,
-        avgRR: periodStats.avgRR,
-        netResult: periodStats.netResult,
-        totalTrades: periodStats.totalTrades,
-        topStrategy,
-        period,
-        isPublic,
-        showStrategy,
-        updatedAt: serverTimestamp(),
-      });
-    });
-
-    await Promise.all(leaderboardPromises);
+      await setDoc(
+        doc(db, "leaderboard", periodKey, "entries", uid),
+        {
+          displayName,
+          avatarUrl,
+          avatarColor,
+          score: periodScore,
+          level: periodLevel,
+          rank: periodRank,
+          winRate: periodStats.winRate,
+          avgRR: periodStats.avgRR,
+          netResult: periodStats.netResult,
+          totalTrades: periodStats.totalTrades,
+          updatedAt: serverTimestamp(),
+        }
+      );
+    }
   } catch (err) {
     console.error("syncUserScore error:", err);
   }
-}
-
-function calculateScoreFromStats(stats: UserStats): number {
-  if (stats.totalTrades === 0) return 0;
-  const profitabilityScore = Math.max(0, Math.min(stats.netResult / 50, 1)) * 30;
-  const winRateScore = stats.winRate * 0.25;
-  const rrScore = Math.min(stats.avgRR / 3, 1) * 25;
-  const consistencyScore = stats.consistency * 20;
-  return Math.round((profitabilityScore + winRateScore + rrScore + consistencyScore) * 100) / 100;
 }
