@@ -166,17 +166,19 @@ export default function SettingsPage() {
             />
           )}
 
-          {avatarUploading && (
-            <div className="w-full max-w-xs">
-              <div className="h-1.5 rounded-full bg-ink-700 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-mint-500 transition-all"
-                  style={{ width: `${avatarProgress}%` }}
-                />
-              </div>
-              <p className="text-xs text-paper-500 mt-1 font-mono">%{avatarProgress}</p>
-            </div>
-          )}
+              <p className="text-xs text-paper-500">Maksimum 200KB, JPEG/PNG/WebP</p>
+
+              {avatarUploading && (
+                <div className="w-full max-w-xs">
+                  <div className="h-1.5 rounded-full bg-ink-700 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-mint-500 transition-all"
+                      style={{ width: `${avatarProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-paper-500 mt-1 font-mono">%{avatarProgress}</p>
+                </div>
+              )}
 
           <div className="flex gap-3">
             <label className="rounded-lg bg-mint-500 text-ink-950 font-semibold px-4 py-2 text-sm hover:bg-mint-400 transition cursor-pointer">

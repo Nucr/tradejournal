@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-
 interface AvatarProps {
   avatarUrl?: string;
   avatarColor?: string;
@@ -9,7 +7,6 @@ interface AvatarProps {
   size?: "sm" | "md" | "lg";
 }
 
-const SIZE_MAP = { sm: 32, md: 40, lg: 80 };
 const CLASS_MAP = {
   sm: "w-8 h-8 text-xs",
   md: "w-10 h-10 text-sm",
@@ -22,17 +19,14 @@ export default function Avatar({
   displayName,
   size = "md",
 }: AvatarProps) {
-  const px = SIZE_MAP[size];
   const letter = displayName.trim()[0]?.toUpperCase() ?? "?";
 
   if (avatarUrl) {
     return (
       <div className={`${CLASS_MAP[size]} rounded-full overflow-hidden shrink-0`}>
-        <Image
+        <img
           src={avatarUrl}
           alt={displayName}
-          width={px}
-          height={px}
           className="w-full h-full object-cover"
         />
       </div>
