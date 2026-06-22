@@ -172,6 +172,44 @@ a:focus-visible {
 .stagger-4 { animation-delay: 0.20s; }
 .stagger-5 { animation-delay: 0.25s; }
 
+/* ===== RANK BADGE ANIMATIONS ===== */
+@keyframes rankGlow {
+  0%, 100% { box-shadow: 0 0 8px currentColor, 0 0 16px currentColor; }
+  50% { box-shadow: 0 0 16px currentColor, 0 0 32px currentColor; }
+}
+
+@keyframes rankShimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes rankFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1px); }
+}
+
+@keyframes rankSparkle {
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+.animate-rank-glow {
+  animation: rankGlow 2s ease-in-out infinite;
+}
+
+.animate-rank-shimmer {
+  background-size: 200% auto;
+  animation: rankShimmer 3s linear infinite;
+}
+
+.animate-rank-float {
+  animation: rankFloat 3s ease-in-out infinite;
+}
+
+.animate-rank-sparkle {
+  animation: rankSparkle 1.5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;

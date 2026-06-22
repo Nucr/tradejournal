@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { subscribeToTrades } from "@/lib/trades";
 import { getProfile } from "@/lib/profile";
 import { Trade, RangeKey, UserProfile } from "@/lib/types";
+import RankBadge from "@/components/RankBadge";
 import { filterTradesByRange, computeStats } from "@/lib/date-utils";
 import DateRangeTabs from "@/components/DateRangeTabs";
 import StatCard from "@/components/StatCard";
@@ -54,7 +55,9 @@ export default function DashboardPage() {
           </div>
           <div>
             <p className="text-xs font-mono uppercase tracking-wide text-paper-500">Rütbe</p>
-            <p className="font-mono text-lg font-semibold mt-0.5">{profile.rank}</p>
+            <div className="mt-1">
+              <RankBadge rank={profile.rank} size="md" />
+            </div>
           </div>
           <div>
             <p className="text-xs font-mono uppercase tracking-wide text-paper-500">Puan</p>

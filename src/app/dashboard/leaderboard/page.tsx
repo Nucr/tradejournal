@@ -18,6 +18,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import AchievementsGrid from "@/components/AchievementsGrid";
+import RankBadge from "@/components/RankBadge";
 
 type PeriodTab = {
   key: LeaderboardPeriod;
@@ -47,22 +48,6 @@ function scoreHexColor(score: number): string {
   if (score >= 70) return "#2ED9A4";
   if (score >= 40) return "#F2B84B";
   return "#FF5D5D";
-}
-
-function rankBadgeColor(rank: string): string {
-  const map: Record<string, string> = {
-    "Çaylak": "text-paper-400",
-    "Acemi": "text-paper-300",
-    "Gelişen": "text-mint-300",
-    "Deneyimli": "text-mint-400",
-    "Uzman": "text-mint-400",
-    "İleri": "text-amber-400",
-    "Usta": "text-amber-400",
-    "Elit": "text-amber-300",
-    "Efsane": "text-coral-300",
-    "Efsanevi": "text-coral-200",
-  };
-  return map[rank] ?? "text-paper-400";
 }
 
 function ScoreHexagon({ score, size = 120 }: { score: number; size?: number }) {
@@ -264,8 +249,8 @@ export default function LeaderboardPage() {
                           )}
                         </div>
                       </td>
-                      <td className={`px-4 py-3 hidden sm:table-cell font-mono text-xs ${rankBadgeColor(entry.rank)}`}>
-                        {entry.rank}
+                      <td className="px-4 py-3 hidden sm:table-cell">
+                        <RankBadge rank={entry.rank} />
                       </td>
                       <td className="px-4 py-3 text-right font-mono font-semibold">
                         <span style={{ color: scoreHexColor(entry.score) }}>
@@ -354,9 +339,9 @@ function PodiumCard({
           </span>
         )}
       </p>
-      <p className={`text-xs font-mono mt-1 ${rankBadgeColor(entry.rank)}`}>
-        {entry.rank}
-      </p>
+      <div className="mt-1 flex justify-center">
+        <RankBadge rank={entry.rank} size="sm" />
+      </div>
       <p className="text-2xl font-bold font-mono mt-2" style={{ color: scoreHexColor(entry.score) }}>
         {Math.round(entry.score)}
       </p>
@@ -427,9 +412,7 @@ function ProfileModal({
                 <span className="rounded-full bg-mint-500/10 text-mint-400 px-2 py-0.5 text-xs font-semibold font-mono">
                   Seviye {entry.level}
                 </span>
-                <span className={`text-xs font-mono ${rankBadgeColor(entry.rank)}`}>
-                  {entry.rank}
-                </span>
+                <RankBadge rank={entry.rank} />
               </div>
             </div>
           </div>

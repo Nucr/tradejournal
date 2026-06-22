@@ -7,6 +7,7 @@ import { subscribeToTrades } from "@/lib/trades";
 import { computeStats } from "@/lib/date-utils";
 import { Trade, UserProfile } from "@/lib/types";
 import AchievementsGrid from "@/components/AchievementsGrid";
+import RankBadge from "@/components/RankBadge";
 
 const DEFAULT_AVATAR_COLOR = "#2ED9A4";
 
@@ -151,9 +152,7 @@ export default function ProfilePage() {
                   <span className="rounded-full bg-mint-500/10 text-mint-400 px-2.5 py-0.5 text-xs font-semibold font-mono">
                     Seviye {profile?.level ?? 1}
                   </span>
-                  <span className="text-paper-400 font-mono text-xs">
-                    {profile?.rank ?? "Çaylak"}
-                  </span>
+                  <RankBadge rank={profile?.rank ?? "Çaylak"} />
                   <span className="text-paper-400 font-mono text-xs">
                     {profile?.score ?? 0} Puan
                   </span>
