@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 interface AvatarProps {
   avatarUrl?: string;
   avatarColor?: string;
@@ -19,15 +21,18 @@ export default function Avatar({
   displayName,
   size = "md",
 }: AvatarProps) {
+  const [imgError, setImgError] = useState(false);
   const letter = displayName.trim()[0]?.toUpperCase() ?? "?";
 
-  if (avatarUrl) {
+  if (avatarUrl && !imgError) {
     return (
       <div className={`${CLASS_MAP[size]} rounded-full overflow-hidden shrink-0`}>
         <img
           src={avatarUrl}
+          key={avatarUrl}
           alt={displayName}
           className="w-full h-full object-cover"
+          onError={() => setImgError(true)}
         />
       </div>
     );

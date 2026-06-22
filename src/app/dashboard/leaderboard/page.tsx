@@ -86,10 +86,12 @@ function AvatarLetter({
   avatarColor?: string;
   className?: string;
 }) {
-  if (avatarUrl) {
+  const [imgError, setImgError] = useState(false);
+
+  if (avatarUrl && !imgError) {
     return (
       <div className={`rounded-full overflow-hidden shrink-0 ${className}`}>
-        <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+        <img src={avatarUrl} key={avatarUrl} alt={name} className="w-full h-full object-cover" onError={() => setImgError(true)} />
       </div>
     );
   }
