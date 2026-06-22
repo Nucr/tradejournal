@@ -9,6 +9,7 @@ import {
   getDocs,
   writeBatch,
   doc,
+  updateDoc,
   deleteDoc,
   query,
   where,
@@ -39,6 +40,7 @@ export default function SettingsPage() {
   const [avatarProgress, setAvatarProgress] = useState(0);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarToast, setAvatarToast] = useState<string | null>(null);
+  const [avatarUrlInput, setAvatarUrlInput] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -96,6 +98,21 @@ export default function SettingsPage() {
     await deleteAvatar(user.uid);
     setProfile((prev) => (prev ? { ...prev, avatarUrl: "" } : prev));
     setAvatarToast("Avatar kaldırıldı");
+  }
+
+  async function handleAvatarUrlSave() {
+    if (!user || !avatarUrlInput.trim()) return;
+    const trimmed = avatarUrlInput.trim();
+    try {
+      new URL(trimmed);
+    } catch {
+      setAvatarToast("Geçerli bir URL girin");
+      return;
+    }
+    await updateDoc(doc(db, "users", user.uid), { avatarUrl: trimmed });
+    setProfile((prev) => (prev ? { ...prev, avatarUrl: trimmed } : prev));
+    setAvatarUrlInput("");
+    setAvatarToast("URL kaydedildi");
   }
 
   async function handleDeleteAccount() {
@@ -207,6 +224,22 @@ export default function SettingsPage() {
                 Fotoğrafı Kaldır
               </button>
             )}
+          </div>
+
+          <div className="w-full max-w-xs flex gap-2">
+            <input
+              value={avatarUrlInput}
+              onChange={(e) => setAvatarUrlInput(e.target.value)}
+              placeholder="https://example.com/avatar.jpg"
+              className="flex-1 rounded-lg border border-ink-700 bg-ink-950 px-3 py-2 text-sm focus:border-mint-500"
+            />
+            <button
+              onClick={handleAvatarUrlSave}
+              disabled={!avatarUrlInput.trim()}
+              className="rounded-lg bg-ink-700 text-paper-100 font-medium px-3 py-2 text-sm hover:bg-ink-600 transition disabled:opacity-40"
+            >
+              URL Kaydet
+            </button>
           </div>
         </div>
       </section>
