@@ -14,14 +14,16 @@ type ColKey = keyof Pick<TradeInput, "pair" | "direction" | "entryDate" | "exitD
 const ALL_FIELDS: { key: ColKey; label: string; required: boolean }[] = [
   { key: "pair", label: "Sembol", required: true },
   { key: "direction", label: "Yön", required: true },
-  { key: "entryDate", label: "Giriş Tarihi", required: true },
+  { key: "entryDate", label: "Tarih", required: true },
   { key: "exitDate", label: "Çıkış Tarihi", required: false },
-  { key: "rr", label: "R/R", required: true },
-  { key: "result", label: "Sonuç", required: true },
+  { key: "rr", label: "RR", required: true },
+  { key: "result", label: "Sonuç (%)", required: true },
   { key: "strategy", label: "Strateji", required: false },
   { key: "note", label: "Not", required: false },
   { key: "netPnl", label: "Net P/L", required: false },
 ];
+
+const STEP_LABELS = ["Dosya Seç", "Önizleme", "Sütun Eşleştirme", "İçe Aktar"];
 
 const KNOWN_HEADERS: Record<string, ColKey> = {
   date: "entryDate",
@@ -73,15 +75,49 @@ function autoMap(headers: string[]): Map<string, ColKey> {
   return map;
 }
 
+function StepDot({
+  idx,
+  step,
+  label,
+}: {
+  idx: number;
+  step: number;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <div
+        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+          idx === step
+            ? "bg-mint-500 text-ink-950"
+            : idx < step
+              ? "bg-mint-500/20 text-mint-400"
+              : "bg-ink-800 text-paper-500"
+        }`}
+      >
+        {idx < step ? "✓" : idx + 1}
+      </div>
+      <span
+        className={`text-xs hidden sm:inline ${
+          idx === step ? "text-paper-100 font-medium" : "text-paper-500"
+        }`}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
 export default function ImportPage() {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
-  const dropRef = useRef<HTMLDivElement>(null);
 
+  const [step, setStep] = useState(0);
   const [raw, setRaw] = useState<{ headers: string[]; rows: string[][] } | null>(null);
   const [mapping, setMapping] = useState<Map<string, ColKey>>(new Map());
   const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState<{ ok: number; err: number; errors: string[] } | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [result, setResult] = useState<{ ok: number; err: number; errors: { row: number; msg: string }[] } | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
   function handleFile(file: File) {
@@ -95,6 +131,7 @@ export default function ImportPage() {
         setRaw(parsed);
         setMapping(autoMap(parsed.headers));
         setResult(null);
+        setStep(1);
       } catch (err) {
         alert(err instanceof Error ? err.message : "CSV okunamadı");
       }
@@ -111,13 +148,12 @@ export default function ImportPage() {
 
   const previewRows = useMemo(() => {
     if (!raw) return [];
-    return raw.rows.slice(0, 10);
+    return raw.rows.slice(0, 5);
   }, [raw]);
 
   function setColMapping(csvCol: string, field: ColKey) {
     setMapping((prev) => {
       const next = new Map(prev);
-      // remove field from any previous column
       for (const [k, v] of next) {
         if (v === field) next.delete(k);
       }
@@ -145,7 +181,9 @@ export default function ImportPage() {
     if (requiredMissing) { alert("Lütfen tüm zorunlu alanları eşleştirin"); return; }
 
     setImporting(true);
+    setProgress(0);
     setResult(null);
+    setStep(3);
 
     const okRows: TradeInput[] = [];
     const errRows: { row: number; msg: string }[] = [];
@@ -176,7 +214,6 @@ export default function ImportPage() {
           trade[field] = val;
         }
 
-        // Validate
         if (!trade.pair || typeof trade.pair !== "string") throw new ParseError(rowNum, "Sembol gerekli");
         if (!trade.entryDate || typeof trade.entryDate !== "string") throw new ParseError(rowNum, "Tarih gerekli");
 
@@ -195,7 +232,7 @@ export default function ImportPage() {
         trade.direction = dir;
 
         const rr = Number(trade.rr);
-        if (isNaN(rr)) throw new ParseError(rowNum, `Geçersiz RR: ${trade.rr}`);
+        if (isNaN(rr) || rr <= 0) throw new ParseError(rowNum, `Geçersiz RR: ${trade.rr} (pozitif sayı olmalı)`);
         trade.rr = rr;
 
         const resultVal = Number(trade.result);
@@ -212,9 +249,10 @@ export default function ImportPage() {
           msg: e instanceof ParseError ? e.message : "Bilinmeyen hata",
         });
       }
+
+      setProgress(Math.round(((i + 1) / raw.rows.length) * 100));
     }
 
-    // Batch write to Firestore (max 500 per batch)
     const tradesCol = collection(db, "users", user.uid, "trades");
     const batches: typeof okRows[] = [];
     for (let i = 0; i < okRows.length; i += 500) {
@@ -236,11 +274,24 @@ export default function ImportPage() {
     await syncUserScore(user.uid);
 
     setImporting(false);
+    setProgress(100);
     setResult({
       ok: okRows.length,
       err: errRows.length,
-      errors: errRows.slice(0, 20).map((e) => `Satır ${e.row}: ${e.msg}`),
+      errors: errRows,
     });
+  }
+
+  function downloadErrors() {
+    if (!result || result.errors.length === 0) return;
+    const text = result.errors.map((e) => `Satır ${e.row}: ${e.msg}`).join("\n");
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "import-errors.txt";
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   if (!user) return null;
@@ -259,17 +310,29 @@ export default function ImportPage() {
         <h1 className="font-display text-2xl font-semibold">CSV İçe Aktar</h1>
       </div>
       <p className="text-sm text-paper-500 mb-8">
-        Trade'lerini CSV dosyasından toplu olarak içe aktar.
+        Trade&apos;lerini CSV dosyasından toplu olarak içe aktar.
       </p>
 
-      {!raw && (
+      {/* Step indicator */}
+      <div className="flex items-center justify-center gap-4 sm:gap-6 mb-10">
+        {STEP_LABELS.map((label, i) => (
+          <div key={label} className="flex items-center gap-2">
+            <StepDot idx={i} step={step} label={label} />
+            {i < STEP_LABELS.length - 1 && (
+              <div className="h-px w-8 sm:w-12 bg-ink-700 hidden sm:block" />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Step 0 — File picker */}
+      {step === 0 && (
         <div
-          ref={dropRef}
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
           onClick={() => fileRef.current?.click()}
-          className={`rounded-xl border-2 border-dashed p-16 text-center cursor-pointer transition ${
+          className={`rounded-xl border-2 border-dashed p-16 text-center cursor-pointer transition animate-fade-in-up ${
             dragOver ? "border-mint-500 bg-mint-500/5" : "border-ink-700 hover:border-ink-600 bg-ink-900/50"
           }`}
         >
@@ -288,46 +351,18 @@ export default function ImportPage() {
           <p className="text-sm text-paper-300 font-medium">
             CSV dosyasını sürükle bırak veya seç
           </p>
-          <p className="text-xs text-paper-500 mt-1">Maksimum 5MB</p>
+          <p className="text-xs text-paper-500 mt-1">Maksimum 5MB, sadece .csv</p>
         </div>
       )}
 
-      {raw && (
-        <>
-          {/* Column mapping */}
-          <section className="rounded-xl border border-ink-800 bg-ink-900/50 p-5 mb-6">
-            <h2 className="font-display text-base font-semibold mb-3">Sütun Eşleştirme</h2>
-            <div className="space-y-2">
-              {raw.headers.map((col) => (
-                <div key={col} className="flex items-center gap-3">
-                  <span className="text-sm text-paper-300 w-32 shrink-0 font-mono">{col}</span>
-                  <select
-                    value={mapping.get(col) ?? ""}
-                    onChange={(e) => setColMapping(col, e.target.value as ColKey)}
-                    className="flex-1 rounded-lg border border-ink-700 bg-ink-950 px-3 py-2 text-sm text-paper-100 focus:outline-none focus:border-mint-500"
-                  >
-                    <option value="">— Eşleştirme —</option>
-                    {ALL_FIELDS.map((f) => (
-                      <option key={f.key} value={f.key}>
-                        {f.label}{f.required ? " *" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
-            {unmappedFields.length > 0 && (
-              <p className="text-xs text-amber-400 mt-3">
-                Eşleştirilmemiş alanlar: {unmappedFields.map((f) => f.label).join(", ")}
-              </p>
-            )}
-          </section>
-
-          {/* Preview */}
-          <section className="rounded-xl border border-ink-800 bg-ink-900/50 p-5 mb-6 overflow-x-auto">
-            <h2 className="font-display text-base font-semibold mb-3">
-              Önizleme ({raw.rows.length} satır, ilk {Math.min(10, raw.rows.length)} gösteriliyor)
-            </h2>
+      {/* Step 1 — Preview */}
+      {step === 1 && raw && (
+        <div className="animate-fade-in-up space-y-6">
+          <section className="rounded-xl border border-ink-800 bg-ink-900/50 p-5 overflow-x-auto">
+            <h2 className="font-display text-base font-semibold mb-1">Önizleme</h2>
+            <p className="text-xs text-paper-500 mb-3">
+              Toplam {raw.rows.length} satır · İlk 5 satır gösteriliyor
+            </p>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-ink-700">
@@ -350,13 +385,63 @@ export default function ImportPage() {
             </table>
           </section>
 
-          {/* Actions */}
           <div className="flex gap-3">
             <button
-              onClick={() => { setRaw(null); setMapping(new Map()); setResult(null); }}
+              onClick={() => { setStep(0); setRaw(null); setMapping(new Map()); setResult(null); }}
               className="rounded-lg border border-ink-700 text-paper-300 font-medium px-5 py-2.5 text-sm hover:bg-ink-800 transition"
             >
-              İptal
+              Geri
+            </button>
+            <button
+              onClick={() => setStep(2)}
+              className="rounded-lg bg-mint-500 text-ink-950 font-semibold px-6 py-2.5 text-sm hover:bg-mint-400 transition"
+            >
+              Devam Et
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2 — Column mapping */}
+      {step === 2 && raw && (
+        <div className="animate-fade-in-up space-y-6">
+          <section className="rounded-xl border border-ink-800 bg-ink-900/50 p-5">
+            <h2 className="font-display text-base font-semibold mb-3">Sütun Eşleştirme</h2>
+            <p className="text-xs text-paper-500 mb-4">
+              Her alan için hangi CSV sütununun kullanılacağını seç.
+            </p>
+            <div className="space-y-2.5">
+              {raw.headers.map((col) => (
+                <div key={col} className="flex items-center gap-3">
+                  <span className="text-sm text-paper-300 w-32 shrink-0 font-mono truncate">{col}</span>
+                  <select
+                    value={mapping.get(col) ?? ""}
+                    onChange={(e) => setColMapping(col, e.target.value as ColKey)}
+                    className="flex-1 rounded-lg border border-ink-700 bg-ink-950 px-3 py-2 text-sm text-paper-100 focus:outline-none focus:border-mint-500"
+                  >
+                    <option value="">— Eşleştirme —</option>
+                    {ALL_FIELDS.map((f) => (
+                      <option key={f.key} value={f.key}>
+                        {f.label}{f.required ? " *" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+            {unmappedFields.length > 0 && (
+              <p className="text-xs text-amber-400 mt-3">
+                Eşleştirilmemiş alanlar: {unmappedFields.map((f) => f.label).join(", ")}
+              </p>
+            )}
+          </section>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setStep(1)}
+              className="rounded-lg border border-ink-700 text-paper-300 font-medium px-5 py-2.5 text-sm hover:bg-ink-800 transition"
+            >
+              Geri
             </button>
             <button
               onClick={handleImport}
@@ -373,32 +458,64 @@ export default function ImportPage() {
               )}
             </button>
           </div>
+        </div>
+      )}
 
-          {/* Result */}
+      {/* Step 3 — Import progress / result */}
+      {step === 3 && (
+        <div className="animate-fade-in-up space-y-6">
+          {importing && (
+            <section className="rounded-xl border border-ink-800 bg-ink-900/50 p-6">
+              <h2 className="font-display text-base font-semibold mb-4">Aktarılıyor...</h2>
+              <div className="h-2 rounded-full bg-ink-700 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-mint-500 transition-all duration-200"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="text-xs text-paper-500 mt-2 font-mono">%{progress}</p>
+            </section>
+          )}
+
           {result && (
-            <div className={`rounded-xl border p-5 mt-6 ${
+            <section className={`rounded-xl border p-6 ${
               result.err > 0 ? "border-amber-500/20 bg-amber-500/5" : "border-mint-500/20 bg-mint-500/5"
             }`}>
-              <p className="text-sm font-medium text-paper-100">
-                {result.ok} işlem başarıyla aktarıldı
-                {result.err > 0 && `, ${result.err} hatalı satır atlandı`}.
+              <h2 className="font-display text-base font-semibold mb-2">İçe Aktarma Tamamlandı</h2>
+              <p className="text-sm text-paper-100">
+                {result.ok} işlem aktarıldı
+                {result.err > 0 && `, ${result.err} satır hatalıydı ve atlandı`}.
               </p>
+
               {result.errors.length > 0 && (
-                <div className="mt-3 space-y-1">
-                  {result.errors.map((e, i) => (
-                    <p key={i} className="text-xs text-coral-400 font-mono">{e}</p>
-                  ))}
+                <div className="mt-4">
+                  <p className="text-xs text-paper-500 mb-2">Hatalı satırlar ({result.errors.length}):</p>
+                  <div className="max-h-40 overflow-y-auto space-y-1 mb-3">
+                    {result.errors.slice(0, 20).map((e, i) => (
+                      <p key={i} className="text-xs text-coral-400 font-mono">Satır {e.row}: {e.msg}</p>
+                    ))}
+                    {result.errors.length > 20 && (
+                      <p className="text-xs text-paper-500">...ve {result.errors.length - 20} hata daha</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={downloadErrors}
+                    className="text-xs text-mint-400 hover:text-mint-300 transition underline"
+                  >
+                    Hatalı satırları indir
+                  </button>
                 </div>
               )}
+
               <Link
                 href="/dashboard/journal"
                 className="inline-block mt-4 rounded-lg bg-mint-500 text-ink-950 font-semibold px-5 py-2 text-sm hover:bg-mint-400 transition"
               >
                 Trade Defterine Dön
               </Link>
-            </div>
+            </section>
           )}
-        </>
+        </div>
       )}
     </div>
   );
