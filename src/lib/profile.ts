@@ -1,4 +1,5 @@
 import {
+  DocumentSnapshot,
   doc,
   getDoc,
   onSnapshot,
@@ -14,12 +15,12 @@ function userDoc(uid: string) {
   return doc(db, "users", uid);
 }
 
-function mapProfile(doc: { exists: boolean; data: () => Record<string, unknown> }): UserProfile | null {
-  if (!doc.exists) return null;
-  const data = doc.data();
+function mapProfile(snap: DocumentSnapshot): UserProfile | null {
+  if (!snap.exists()) return null;
+  const data = snap.data()!;
   return {
     ...data,
-    updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+    updatedAt: (data.updatedAt as { toDate?: () => Date })?.toDate?.() ?? new Date(),
   } as UserProfile;
 }
 
