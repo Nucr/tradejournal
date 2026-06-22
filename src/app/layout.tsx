@@ -21,9 +21,10 @@ export const metadata: Metadata = {
   title: "Trade Journal",
   description: "İşlem Günlüğü & Analizleri",
   icons: {
-    icon: "/icon-512.svg",
-    apple: "/icon-192.svg",
+    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }, { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }],
+    apple: "/icons/icon-192.png",
   },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -35,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <link rel="apple-touch-icon" href="/icon-192.svg" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <script dangerouslySetInnerHTML={{
           __html: `
             (function() {
