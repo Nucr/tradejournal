@@ -11,6 +11,7 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  setDoc,
   query,
   where,
   orderBy,
@@ -79,9 +80,9 @@ export default function SettingsPage() {
     const periods: LeaderboardPeriod[] = ["weekly", "monthly", "alltime"];
     for (const p of periods) {
       try {
-        await updateDoc(doc(db, "leaderboard", p, "entries", uid), { avatarUrl });
+        await setDoc(doc(db, "leaderboard", p, "entries", uid), { avatarUrl }, { merge: true });
       } catch {
-        // doc may not exist yet, ignore
+        // ignore
       }
     }
   }
