@@ -1,3 +1,5 @@
+// SERVER-ONLY: Bu dosya yalnızca server-side (Next.js API route / Server Component)
+// tarafından import edilmelidir. Client-side bundle'a dahil edilirse build hatası verir.
 import "server-only";
 
 import {
