@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { getProfile, saveProfile } from "@/lib/profile";
-import { uploadAvatar, deleteAvatar } from "@/lib/storage";
 import {
   collection,
   getDocs,
@@ -19,14 +18,10 @@ import { cleanupDeletedTrades } from "@/lib/trades";
 export default function SettingsPage() {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
-
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isPublic, setIsPublic] = useState(true);
   const [showStrategy, setShowStrategy] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [cleaning, setCleaning] = useState(false);
@@ -42,35 +37,6 @@ export default function SettingsPage() {
       }
     });
   }, [user]);
-
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    setUploadError("");
-    setUploading(true);
-    try {
-      const url = await uploadAvatar(user.uid, file);
-      setProfile((prev) => (prev ? { ...prev, avatarUrl: url } : prev));
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Yükleme başarısız");
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  }
-
-  async function handleRemoveAvatar() {
-    if (!user) return;
-    setUploading(true);
-    try {
-      await deleteAvatar(user.uid);
-      setProfile((prev) => (prev ? { ...prev, avatarUrl: "" } : prev));
-    } catch {
-      setUploadError("Avatar silinemedi");
-    } finally {
-      setUploading(false);
-    }
-  }
 
   async function handleSavePrivacy() {
     if (!user) return;
@@ -97,8 +63,6 @@ export default function SettingsPage() {
 
       await deleteDoc(doc(db, "users", user.uid));
 
-      await deleteAvatar(user.uid);
-
       await logout();
       router.replace("/login");
     } catch {
@@ -120,7 +84,6 @@ export default function SettingsPage() {
 
   const avatarLetter = (profile?.displayName || user?.displayName || user?.email || "?")[0].toUpperCase();
   const avatarColor = profile?.avatarColor || "#2ED9A4";
-  const hasAvatar = !!profile?.avatarUrl;
 
   if (!user) return null;
 
@@ -128,63 +91,6 @@ export default function SettingsPage() {
     <div className="max-w-xl">
       <h1 className="font-display text-2xl font-semibold mb-1">Ayarlar</h1>
       <p className="text-sm text-paper-500 mb-8">Profil ve hesap ayarlarını yönet.</p>
-
-      {/* Avatar */}
-      <section className="rounded-xl border border-ink-800 bg-ink-900/50 p-6 mb-6">
-        <h2 className="font-display text-base font-semibold mb-4">Profil Fotoğrafı</h2>
-        <div className="flex items-center gap-6">
-          <div className="relative shrink-0">
-            {hasAvatar ? (
-              <img
-                src={profile!.avatarUrl!}
-                alt="Avatar"
-                className="w-20 h-20 rounded-full object-cover border-2 border-ink-700"
-              />
-            ) : (
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-ink-950 border-2 border-ink-700"
-                style={{ backgroundColor: avatarColor }}
-              >
-                {avatarLetter}
-              </div>
-            )}
-            {uploading && (
-              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
-                <div className="h-6 w-6 rounded-full border-2 border-mint-500 border-t-transparent animate-spin" />
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFile}
-            />
-            <button
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-              className="rounded-lg border border-ink-700 px-4 py-2 text-sm text-paper-300 hover:bg-ink-800 transition disabled:opacity-40"
-            >
-              Fotoğraf Yükle
-            </button>
-            {hasAvatar && (
-              <button
-                onClick={handleRemoveAvatar}
-                disabled={uploading}
-                className="rounded-lg px-4 py-2 text-sm text-coral-400 hover:bg-ink-800 transition disabled:opacity-40 text-left"
-              >
-                Fotoğrafı Kaldır
-              </button>
-            )}
-            {uploadError && (
-              <p className="text-xs text-coral-400">{uploadError}</p>
-            )}
-            <p className="text-xs text-paper-500">Maksimum 2MB, JPEG/PNG/WebP/GIF/AVIF</p>
-          </div>
-        </div>
-      </section>
 
       {/* Privacy */}
       <section className="rounded-xl border border-ink-800 bg-ink-900/50 p-6 mb-6">
