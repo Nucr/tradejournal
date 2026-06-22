@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect, useState } from "react";
-import { getProfile } from "@/lib/profile";
+import { subscribeToProfile } from "@/lib/profile";
 import { UserProfile } from "@/lib/types";
 import ThemeToggle from "./ThemeToggle";
 
@@ -103,7 +103,8 @@ export default function Sidebar() {
 
   useEffect(() => {
     if (!user) return;
-    getProfile(user.uid).then(setProfile);
+    const unsub = subscribeToProfile(user.uid, setProfile);
+    return unsub;
   }, [user]);
 
   async function handleLogout() {

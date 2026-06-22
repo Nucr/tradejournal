@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { getProfile, saveProfile } from "@/lib/profile";
+import { getProfile, saveProfile, subscribeToProfile } from "@/lib/profile";
 import { subscribeToTrades } from "@/lib/trades";
 import { computeStats } from "@/lib/date-utils";
 import { Trade, UserProfile } from "@/lib/types";
@@ -23,7 +23,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    getProfile(user.uid).then((p) => {
+    const unsubProfile = subscribeToProfile(user.uid, (p) => {
       if (p) {
         setProfile(p);
         setDisplayName(p.displayName || user.displayName || "");
@@ -34,8 +34,8 @@ export default function ProfilePage() {
         setDisplayName(user.displayName || "");
       }
     });
-    const unsub = subscribeToTrades(user.uid, setTrades);
-    return unsub;
+    const unsubTrades = subscribeToTrades(user.uid, setTrades);
+    return () => { unsubProfile(); unsubTrades(); };
   }, [user]);
 
   const stats = computeStats(trades);
