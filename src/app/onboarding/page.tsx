@@ -3,42 +3,30 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { setUser } from "@/lib/users";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  query,
+  setDoc,
+  serverTimestamp,
+  where,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Rank } from "@/lib/types";
+import RankBadge from "@/components/RankBadge";
 
 const AVATAR_COLORS = [
   "#2ED9A4",
-  "#F59E0B",
-  "#EF4444",
-  "#3B82F6",
-  "#8B5CF6",
-  "#EC4899",
-  "#14B8A6",
-  "#F97316",
+  "#FF5D5D",
+  "#F2B84B",
+  "#60A5FA",
+  "#A78BFA",
+  "#F472B6",
+  "#34D399",
+  "#FB923C",
 ];
 
-function AvatarCircle({
-  color,
-  selected,
-  onClick,
-}: {
-  color: string;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-10 h-10 rounded-full transition-all border-2 shrink-0 ${
-        selected ? "border-white scale-110" : "border-transparent hover:scale-105"
-      }`}
-      style={{ backgroundColor: color }}
-      aria-label={color}
-    />
-  );
-}
+const NAME_REGEX = /^[a-zA-Z0-9_]+$/;
 
 function StepDot({
   idx,
@@ -84,11 +72,10 @@ export default function OnboardingPage() {
   const [isPublic, setIsPublic] = useState(true);
   const [showStrategy, setShowStrategy] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [animScore, setAnimScore] = useState(0);
-  const animFrame = useRef<number>(undefined);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  async function checkName(val: string): Promise<boolean> {
-    if (val.length < 3) return false;
+  async function checkNameUnique(val: string): Promise<boolean> {
+    if (val.length < 3) return true;
     setNameChecking(true);
     try {
       const q = query(collection(db, "users"), where("displayName", "==", val));
@@ -99,66 +86,86 @@ export default function OnboardingPage() {
     }
   }
 
-  async function handleNameBlur() {
-    const v = displayName.trim();
-    if (!v) { setNameError(""); return; }
-    if (v.length < 3) { setNameError("En az 3 karakter"); return; }
-    const available = await checkName(v);
-    setNameError(available ? "" : "Bu kullanıcı adı alınmış");
+  function validateName(val: string): string {
+    const trimmed = val.trim();
+    if (!trimmed) return "";
+    if (trimmed.length < 3) return "En az 3 karakter";
+    if (trimmed.length > 20) return "En fazla 20 karakter";
+    if (!NAME_REGEX.test(trimmed)) return "Sadece harf, rakam ve alt çizgi";
+    return "";
   }
 
-  function handleStep1Next() {
-    const v = displayName.trim();
-    if (v.length < 3) { setNameError("En az 3 karakter"); return; }
-    checkName(v).then((ok) => {
-      if (ok) { setNameError(""); setStep(1); }
-      else { setNameError("Bu kullanıcı adı alınmış"); }
-    });
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const error = validateName(displayName);
+    if (error) {
+      setNameError(error);
+      return;
+    }
+    if (displayName.trim().length < 3) {
+      setNameError("");
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      const available = await checkNameUnique(displayName.trim());
+      setNameError(available ? "" : "Bu kullanıcı adı alınmış");
+    }, 500);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [displayName]);
+
+  function canAdvanceStep1(): boolean {
+    const trimmed = displayName.trim();
+    if (trimmed.length < 3 || trimmed.length > 20) return false;
+    if (!NAME_REGEX.test(trimmed)) return false;
+    if (nameChecking) return false;
+    if (nameError) return false;
+    return true;
+  }
+
+  async function handleStep1Next() {
+    if (!canAdvanceStep1()) return;
+    const available = await checkNameUnique(displayName.trim());
+    if (!available) {
+      setNameError("Bu kullanıcı adı alınmış");
+      return;
+    }
+    setNameError("");
+    setStep(1);
   }
 
   async function handleSubmit() {
     if (!user || submitting) return;
     setSubmitting(true);
-    await setUser(user.uid, {
-      displayName: displayName.trim(),
-      avatarColor,
-      level: 1,
-      rank: "Çaylak" as Rank,
-      score: 0,
-      isPublic,
-      showStrategy,
-      stats: {
-        totalTrades: 0,
-        winRate: 0,
-        avgRR: 0,
-        netResult: 0,
-        consistency: 0,
-      },
-      updatedAt: new Date(),
-    });
-    await refreshOnboarding();
-    setStep(3);
-    setSubmitting(false);
-  }
-
-  useEffect(() => {
-    if (step !== 3) return;
-    let start: number | null = null;
-    const duration = 1500;
-    function tick(now: number) {
-      if (!start) start = now;
-      const t = Math.min((now - start) / duration, 1);
-      setAnimScore(Math.round(t * 100));
-      if (t < 1) { animFrame.current = requestAnimationFrame(tick); }
+    try {
+      await setDoc(doc(db, "users", user.uid), {
+        displayName: displayName.trim(),
+        avatarColor,
+        isPublic,
+        showStrategy,
+        level: 1,
+        rank: "Çaylak",
+        score: 0,
+        role: "user",
+        stats: {
+          totalTrades: 0,
+          winRate: 0,
+          avgRR: 0,
+          netResult: 0,
+          consistency: 0,
+        },
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      await refreshOnboarding();
+      setStep(2);
+    } catch (err) {
+      console.error("onboarding save error:", err);
+    } finally {
+      setSubmitting(false);
     }
-    animFrame.current = requestAnimationFrame(tick);
-    return () => {
-      if (animFrame.current) cancelAnimationFrame(animFrame.current);
-    };
-  }, [step]);
-
-  const hexPoints = "120,12 228,66 228,174 120,228 12,174 12,66";
-  const fillHeight = (animScore / 100) * 216;
+  }
 
   if (!user) {
     return (
@@ -171,7 +178,7 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-ink-950 flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
-        {step < 3 && (
+        {step < 2 && (
           <div className="flex items-center justify-center gap-4 sm:gap-8 mb-12">
             <StepDot idx={0} step={step} label="Profil" />
             <div className="h-px w-12 sm:w-20 bg-ink-700" />
@@ -195,15 +202,16 @@ export default function OnboardingPage() {
             </label>
             <input
               value={displayName}
-              onChange={(e) => { setDisplayName(e.target.value); setNameError(""); }}
-              onBlur={handleNameBlur}
+              onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Örn: KriptoKral"
+              maxLength={20}
               className={`w-full rounded-lg border px-4 py-3 bg-ink-900 text-paper-100 text-sm focus:outline-none focus:ring-1 transition ${
                 nameError
                   ? "border-coral-500/50 focus:border-coral-500 focus:ring-coral-500/20"
-                  : "border-ink-700 focus:border-mint-500 focus:ring-mint-500/20"
+                  : displayName.trim().length >= 3 && !nameChecking && !nameError
+                    ? "border-mint-500/50 focus:border-mint-500 focus:ring-mint-500/20"
+                    : "border-ink-700 focus:border-mint-500 focus:ring-mint-500/20"
               }`}
-              maxLength={24}
             />
             {nameChecking && (
               <p className="text-xs text-paper-500 mt-1.5">Kontrol ediliyor...</p>
@@ -211,19 +219,36 @@ export default function OnboardingPage() {
             {nameError && !nameChecking && (
               <p className="text-xs text-coral-400 mt-1.5">{nameError}</p>
             )}
+            {!nameError && !nameChecking && displayName.trim().length >= 3 && (
+              <p className="text-xs text-mint-400 mt-1.5">Kullanılabilir ✓</p>
+            )}
 
             <label className="text-sm font-medium text-paper-300 mb-3 mt-6 block">
               Avatar rengi
             </label>
             <div className="flex gap-3 flex-wrap">
               {AVATAR_COLORS.map((c) => (
-                <AvatarCircle key={c} color={c} selected={avatarColor === c} onClick={() => setAvatarColor(c)} />
+                <button
+                  key={c}
+                  onClick={() => setAvatarColor(c)}
+                  className={`w-10 h-10 rounded-full transition-all shrink-0 flex items-center justify-center ${
+                    avatarColor === c ? "ring-2 ring-white scale-110" : "hover:scale-105"
+                  }`}
+                  style={{ backgroundColor: c }}
+                  aria-label={c}
+                >
+                  {avatarColor === c && (
+                    <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
               ))}
             </div>
 
             <button
               onClick={handleStep1Next}
-              disabled={nameChecking || !displayName.trim()}
+              disabled={!canAdvanceStep1()}
               className="mt-8 w-full rounded-lg bg-mint-500 text-ink-950 font-semibold py-3 text-sm hover:bg-mint-400 transition disabled:opacity-40"
             >
               Devam Et
@@ -247,7 +272,7 @@ export default function OnboardingPage() {
                     Profilim herkese açık olsun
                   </p>
                   <p className="text-xs text-paper-500 mt-0.5">
-                    Liderlik tablosunda ve topluluk sayfalarında görünmeni sağlar.
+                    Liderlik tablosunda görünürsün
                   </p>
                 </div>
                 <div
@@ -273,10 +298,10 @@ export default function OnboardingPage() {
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
                   <p className="text-sm font-medium text-paper-100">
-                    Kullandığım stratejileri diğerleri görebilsin
+                    Kullandığım stratejileri göster
                   </p>
                   <p className="text-xs text-paper-500 mt-0.5">
-                    Diğer traderlar profilin üzerinden hangi stratejileri kullandığını görebilir.
+                    Profil sayfanda strateji bilgin paylaşılır
                   </p>
                 </div>
                 <div
@@ -306,60 +331,41 @@ export default function OnboardingPage() {
                 Geri
               </button>
               <button
-                onClick={() => setStep(2)}
-                className="flex-1 rounded-lg bg-mint-500 text-ink-950 font-semibold py-3 text-sm hover:bg-mint-400 transition"
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="flex-1 rounded-lg bg-mint-500 text-ink-950 font-semibold py-3 text-sm hover:bg-mint-400 transition disabled:opacity-40"
               >
-                Devam Et
+                {submitting ? "Kaydediliyor..." : "Kaydet ve Devam Et"}
               </button>
             </div>
           </div>
         )}
 
         {step === 2 && (
-          <div className="animate-fade-in-up">
-            <h1 className="font-display text-2xl font-semibold text-paper-100 mb-1">
-              Hesabın hazırlanıyor
-            </h1>
-            <p className="text-sm text-paper-500 mb-8">
-              Bilgilerin kaydediliyor...
-            </p>
-            <div className="flex justify-center">
-              <div className="h-10 w-10 rounded-full border-2 border-mint-500 border-t-transparent animate-spin" />
-            </div>
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="mt-8 w-full rounded-lg bg-mint-500 text-ink-950 font-semibold py-3 text-sm hover:bg-mint-400 transition disabled:opacity-40"
-            >
-              {submitting ? "Kaydediliyor..." : "Hesabı Oluştur"}
-            </button>
-          </div>
-        )}
-
-        {step === 3 && (
           <div className="animate-fade-in-up text-center">
             <div className="relative w-60 h-60 mx-auto mb-8">
               <svg viewBox="0 0 240 240" className="w-full h-full">
-                <polygon points={hexPoints} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4" />
-                <clipPath id="hexClip">
-                  <rect x="0" y={240 - fillHeight} width="240" height={fillHeight} />
-                </clipPath>
-                <polygon points={hexPoints} fill="#2ED9A4" fillOpacity="0.2" clipPath="url(#hexClip)" />
-                <polygon points={hexPoints} fill="none" stroke="#2ED9A4" strokeWidth="4" clipPath="url(#hexClip)" />
+                <polygon
+                  points="120,12 228,66 228,174 120,228 12,174 12,66"
+                  fill="#FF5D5D"
+                  fillOpacity="0.15"
+                  stroke="#FF5D5D"
+                  strokeWidth="4"
+                />
                 <text
                   x="120" y="130"
                   textAnchor="middle"
-                  fill="#F0F3F8"
+                  fill="#FF5D5D"
                   fontSize="42"
                   fontWeight="bold"
                   fontFamily="var(--font-display)"
                 >
-                  {animScore}
+                  0
                 </text>
                 <text
                   x="120" y="155"
                   textAnchor="middle"
-                  fill="rgba(255,255,255,0.4)"
+                  fill="rgba(255,93,93,0.5)"
                   fontSize="14"
                   fontFamily="var(--font-mono)"
                 >
@@ -369,17 +375,24 @@ export default function OnboardingPage() {
             </div>
 
             <h2 className="font-display text-2xl font-semibold text-paper-100 mb-1">
-              Hesabın hazır!
+              Hesabın hazır, kral! 🎯
             </h2>
-            <p className="text-sm text-paper-500 mb-8">
+            <p className="text-sm text-paper-500 mb-6">
               Artık işlemlerini kaydetmeye ve performansını takip etmeye başlayabilirsin.
             </p>
 
+            <div className="flex justify-center mb-8">
+              <RankBadge rank="Çaylak" size="md" />
+            </div>
+
             <button
               onClick={() => router.replace("/dashboard")}
-              className="w-full rounded-lg bg-mint-500 text-ink-950 font-semibold py-3 text-sm hover:bg-mint-400 transition"
+              className="w-full rounded-lg bg-mint-500 text-ink-950 font-semibold py-3 text-sm hover:bg-mint-400 transition inline-flex items-center justify-center gap-2"
             >
               Hadi Başlayalım
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         )}
