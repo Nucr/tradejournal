@@ -50,6 +50,8 @@ export function subscribeToTrades(
   return onSnapshot(q, (snapshot) => {
     const trades = snapshot.docs.map(mapTrade).filter((t) => !t.deletedAt);
     callback(trades);
+  }, (err) => {
+    console.error("subscribeToTrades error:", err);
   });
 }
 

@@ -103,102 +103,106 @@ function computeTopStrategy(trades: Trade[]): string {
 }
 
 export async function syncUserScore(uid: string): Promise<void> {
-  const userSnap = await getDoc(doc(db, "users", uid));
-  if (!userSnap.exists()) return;
+  try {
+    const userSnap = await getDoc(doc(db, "users", uid));
+    if (!userSnap.exists()) return;
 
-  const userData = userSnap.data();
-  const displayName = (userData.displayName as string) ?? "";
-  if (!displayName) return;
+    const userData = userSnap.data();
+    const displayName = (userData.displayName as string) ?? "";
+    if (!displayName) return;
 
-  const tradesSnap = await getDocs(
-    query(collection(db, "users", uid, "trades"), orderBy("entryDate", "desc"))
-  );
-  const rawTrades = tradesSnap.docs.filter((d) => {
-    const deletedAt = d.data().deletedAt;
-    return deletedAt == null;
-  });
-  const trades: Trade[] = rawTrades.map((d) => {
-    const data = d.data();
-    return {
-      id: d.id,
-      pair: data.pair,
-      direction: data.direction,
-      entryDate: data.entryDate,
-      exitDate: data.exitDate,
-      rr: data.rr,
-      result: data.result,
-      netPnl: data.netPnl ?? 0,
-      strategy: data.strategy,
-      note: data.note,
-      screenshotUrl: data.screenshotUrl,
-      createdAt: data.createdAt?.toDate?.().toISOString?.() ?? new Date().toISOString(),
-    };
-  });
-
-  const stats = calculateStats(trades);
-  const score = calculateScore(trades);
-  const level = getLevel(score);
-  const rank = getRank(score);
-
-  const isPublic = userData.isPublic === true;
-  const showStrategy = userData.showStrategy !== false;
-  const avatarUrl = typeof userData.avatarUrl === "string" ? userData.avatarUrl : "";
-  const avatarColor = typeof userData.avatarColor === "string" ? userData.avatarColor : "#2ED9A4";
-  const topStrategy = showStrategy ? computeTopStrategy(trades) : "";
-
-  await setDoc(
-    doc(db, "users", uid),
-    {
-      displayName,
-      avatarUrl,
-      avatarColor,
-      level,
-      rank,
-      score,
-      isPublic,
-      showStrategy,
-      stats,
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
-
-  await checkAndAwardAchievements(uid, stats, level, trades);
-
-  const periods: LeaderboardPeriod[] = ["weekly", "monthly", "alltime"];
-  const leaderboardPromises = periods.map((period) => {
-    let periodStats: UserStats;
-    if (period === "alltime") {
-      periodStats = stats;
-    } else {
-      const cut = new Date();
-      cut.setDate(cut.getDate() - (period === "weekly" ? 7 : 30));
-      const filtered = trades.filter((t) => new Date(t.entryDate) >= cut);
-      periodStats = calculateStats(filtered);
-    }
-    const periodScore = calculateScoreFromStats(periodStats);
-    const periodLevel = getLevel(periodScore);
-    const periodRank = getRank(periodScore);
-
-    return setDoc(doc(db, "leaderboard", period, "entries", uid), {
-      displayName,
-      avatarUrl,
-      score: periodScore,
-      level: periodLevel,
-      rank: periodRank,
-      winRate: periodStats.winRate,
-      avgRR: periodStats.avgRR,
-      netResult: periodStats.netResult,
-      totalTrades: periodStats.totalTrades,
-      topStrategy,
-      period,
-      isPublic,
-      showStrategy,
-      updatedAt: serverTimestamp(),
+    const tradesSnap = await getDocs(
+      query(collection(db, "users", uid, "trades"), orderBy("entryDate", "desc"))
+    );
+    const rawTrades = tradesSnap.docs.filter((d) => {
+      const deletedAt = d.data().deletedAt;
+      return deletedAt == null;
     });
-  });
+    const trades: Trade[] = rawTrades.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        pair: data.pair,
+        direction: data.direction,
+        entryDate: data.entryDate,
+        exitDate: data.exitDate,
+        rr: data.rr,
+        result: data.result,
+        netPnl: data.netPnl ?? 0,
+        strategy: data.strategy,
+        note: data.note,
+        screenshotUrl: data.screenshotUrl,
+        createdAt: data.createdAt?.toDate?.().toISOString?.() ?? new Date().toISOString(),
+      };
+    });
 
-  await Promise.all(leaderboardPromises);
+    const stats = calculateStats(trades);
+    const score = calculateScore(trades);
+    const level = getLevel(score);
+    const rank = getRank(score);
+
+    const isPublic = userData.isPublic === true;
+    const showStrategy = userData.showStrategy !== false;
+    const avatarUrl = typeof userData.avatarUrl === "string" ? userData.avatarUrl : "";
+    const avatarColor = typeof userData.avatarColor === "string" ? userData.avatarColor : "#2ED9A4";
+    const topStrategy = showStrategy ? computeTopStrategy(trades) : "";
+
+    await setDoc(
+      doc(db, "users", uid),
+      {
+        displayName,
+        avatarUrl,
+        avatarColor,
+        level,
+        rank,
+        score,
+        isPublic,
+        showStrategy,
+        stats,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    await checkAndAwardAchievements(uid, stats, level, trades);
+
+    const periods: LeaderboardPeriod[] = ["weekly", "monthly", "alltime"];
+    const leaderboardPromises = periods.map((period) => {
+      let periodStats: UserStats;
+      if (period === "alltime") {
+        periodStats = stats;
+      } else {
+        const cut = new Date();
+        cut.setDate(cut.getDate() - (period === "weekly" ? 7 : 30));
+        const filtered = trades.filter((t) => new Date(t.entryDate) >= cut);
+        periodStats = calculateStats(filtered);
+      }
+      const periodScore = calculateScoreFromStats(periodStats);
+      const periodLevel = getLevel(periodScore);
+      const periodRank = getRank(periodScore);
+
+      return setDoc(doc(db, "leaderboard", period, "entries", uid), {
+        displayName,
+        avatarUrl,
+        score: periodScore,
+        level: periodLevel,
+        rank: periodRank,
+        winRate: periodStats.winRate,
+        avgRR: periodStats.avgRR,
+        netResult: periodStats.netResult,
+        totalTrades: periodStats.totalTrades,
+        topStrategy,
+        period,
+        isPublic,
+        showStrategy,
+        updatedAt: serverTimestamp(),
+      });
+    });
+
+    await Promise.all(leaderboardPromises);
+  } catch (err) {
+    console.error("syncUserScore error:", err);
+  }
 }
 
 function calculateScoreFromStats(stats: UserStats): number {

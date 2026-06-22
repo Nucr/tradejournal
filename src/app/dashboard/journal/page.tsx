@@ -60,13 +60,17 @@ export default function JournalPage() {
 
   async function handleSubmit(input: TradeInput) {
     if (!user) return;
-    if (editingTrade) {
-      await updateTrade(user.uid, editingTrade.id, input);
-    } else {
-      await addTrade(user.uid, input);
+    try {
+      if (editingTrade) {
+        await updateTrade(user.uid, editingTrade.id, input);
+      } else {
+        await addTrade(user.uid, input);
+      }
+      setShowForm(false);
+      setEditingTrade(null);
+    } catch (err) {
+      console.error("Trade save error:", err);
     }
-    setShowForm(false);
-    setEditingTrade(null);
   }
 
   async function handleDelete(id: string) {

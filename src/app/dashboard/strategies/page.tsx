@@ -96,6 +96,8 @@ export default function StrategiesPage() {
       setNewIsPublic(false);
       setShowModal(false);
       await loadStrategies();
+    } catch (err) {
+      console.error("Strategy create error:", err);
     } finally {
       setSaving(false);
     }
