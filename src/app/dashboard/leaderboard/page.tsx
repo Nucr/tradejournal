@@ -408,11 +408,11 @@ function ProfileModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="rounded-2xl border border-ink-700 bg-ink-900 max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 space-y-6"
+        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-ink-700 bg-ink-900 max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 space-y-6"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
