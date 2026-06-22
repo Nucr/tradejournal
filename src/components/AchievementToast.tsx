@@ -10,7 +10,7 @@ const CONFETTI_COLORS = ["#2ED9A4", "#F59E0B", "#3B82F6", "#EC4899", "#8B5CF6", 
 function Confetti() {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {Array.from({ length: 16 }).map((_, i) => {
+      {Array.from({ length: 20 }).map((_, i) => {
         const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
         const left = Math.random() * 100;
         const delay = Math.random() * 0.3;
@@ -56,7 +56,7 @@ export default function AchievementToast() {
   const def = ACHIEVEMENT_DEFS.find((d) => d.id === achievement.id);
 
   return (
-    <div className="fixed top-4 right-4 z-[100] animate-slide-in-right" key={achievement.id}>
+    <div className="fixed top-4 right-4 z-[100] animate-fade-in-up" key={achievement.id}>
       <div className="relative rounded-xl border border-ink-700 bg-ink-900 px-5 py-4 pr-12 shadow-xl overflow-hidden">
         <Confetti />
         <div className="relative z-10 flex items-center gap-3">
@@ -64,8 +64,9 @@ export default function AchievementToast() {
             {def?.icon ?? "🏆"}
           </div>
           <div>
+            <p className="text-xs text-paper-500">Yeni Rozet!</p>
             <p className="text-sm font-semibold text-paper-100">
-              Rozet Kazanıldı: {achievement.label}
+              {achievement.label}
             </p>
             <p className="text-xs text-paper-500 mt-0.5">{achievement.desc}</p>
           </div>

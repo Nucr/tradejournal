@@ -19,6 +19,7 @@ import type { UserProfile } from "@/lib/types";
 import { cleanupOldDeletedTrades } from "@/lib/trades";
 import { uploadAvatar, deleteAvatar } from "@/lib/storage";
 import Avatar from "@/components/Avatar";
+import AchievementsGrid from "@/components/AchievementsGrid";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -252,6 +253,12 @@ export default function SettingsPage() {
         >
           {saving ? "Kaydediliyor..." : "Kaydet"}
         </button>
+      </section>
+
+      {/* Achievements */}
+      <section className="rounded-xl border border-ink-800 bg-ink-900/50 p-6 mb-6">
+        <h2 className="font-display text-base font-semibold mb-4">Rozetler</h2>
+        <AchievementsGrid earned={profile?.achievements ?? []} />
       </section>
 
       {/* Cleanup deleted trades */}
