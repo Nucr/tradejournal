@@ -1,0 +1,91 @@
+export type TradeDirection = "long" | "short" | "be";
+
+export interface Trade {
+  id: string;
+  pair: string;
+  direction: TradeDirection;
+  entryDate: string;
+  exitDate: string;
+  rr: number;
+  result: number;
+  netPnl: number;
+  strategy: string;
+  note: string;
+  screenshotUrl: string;
+  createdAt: string;
+}
+
+export type TradeInput = Omit<Trade, "id" | "createdAt">;
+
+export type RangeKey = "day" | "week" | "month" | "year" | "custom" | "all";
+
+export type ResultFilter = "all" | "profit" | "loss" | "be";
+
+export type DirectionFilter = "all" | "long" | "short" | "be";
+
+// --- Users / Profile ---
+
+export type Rank =
+  | "Çaylak"
+  | "Acemi"
+  | "Gelişen"
+  | "Deneyimli"
+  | "Uzman"
+  | "İleri"
+  | "Usta"
+  | "Elit"
+  | "Efsane"
+  | "Efsanevi";
+
+export interface UserStats {
+  totalTrades: number;
+  winRate: number;
+  avgRR: number;
+  netResult: number;
+  consistency: number;
+}
+
+export interface UserProfile {
+  displayName: string;
+  avatarUrl?: string;
+  level: number;
+  rank: Rank;
+  score: number;
+  isPublic: boolean;
+  showStrategy: boolean;
+  stats: UserStats;
+  updatedAt: Date;
+}
+
+// --- Strategies ---
+
+export interface Strategy {
+  id: string;
+  name: string;
+  createdBy: string;
+  createdAt: Date;
+  isPublic: boolean;
+}
+
+export type StrategyInput = Omit<Strategy, "id" | "createdAt">;
+
+// --- Leaderboard ---
+
+export type LeaderboardPeriod = "weekly" | "monthly" | "alltime";
+
+export interface LeaderboardEntry {
+  displayName: string;
+  avatarUrl: string;
+  score: number;
+  level: number;
+  rank: string;
+  winRate: number;
+  avgRR: number;
+  netResult: number;
+  totalTrades: number;
+  topStrategy?: string;
+  period: LeaderboardPeriod;
+  isPublic: boolean;
+  showStrategy: boolean;
+  updatedAt: Date;
+}

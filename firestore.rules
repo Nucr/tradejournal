@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users doc — yalnızca sahibi yazabilir; isPublic ise herkes okuyabilir
+    // resource == null olduğunda (döküman yok) sadece sahibi okuyabilir
+    match /users/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || (resource != null && resource.data.isPublic == true));
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Trades (users/{uid}/trades) — sadece sahibi
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Strategies — giriş yapmış herkes okuyabilir; yalnızca oluşturan yazabilir
+    match /strategies/{strategyId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.createdBy;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.createdBy;
+    }
+
+    // Leaderboard — herkes (anonim dahil) okuyabilir; yalnızca sahibi yazabilir
+    match /leaderboard/{period}/entries/{uid} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
