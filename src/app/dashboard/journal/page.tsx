@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { addTrade, deleteTrade, subscribeToTrades, updateTrade, restoreTrade } from "@/lib/trades";
@@ -9,6 +9,8 @@ import { filterTrades } from "@/lib/date-utils";
 import TradeFilters from "@/components/TradeFilters";
 import TradeForm from "@/components/TradeForm";
 import TradeCard from "@/components/TradeCard";
+import UndoToast from "@/components/UndoToast";
+import type { ToastItem } from "@/components/UndoToast";
 
 export default function JournalPage() {
   const { user } = useAuth();
@@ -21,27 +23,23 @@ export default function JournalPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
 
-  // Toast state
-  const [lastDeleted, setLastDeleted] = useState<{ id: string } | null>(null);
-  const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // Stacked undo toasts
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  let toastIdCounter = 0;
 
-  function showToast(id: string) {
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    setLastDeleted({ id });
-    toastTimer.current = setTimeout(() => {
-      setLastDeleted(null);
-      toastTimer.current = undefined;
-    }, 5000);
+  function showDeleteToast(tradeId: string) {
+    const id = `toast-${++toastIdCounter}`;
+    setToasts((prev) => [...prev, { id, tradeId, message: "İşlem silindi" }]);
   }
 
-  async function handleUndo() {
-    if (!user || !lastDeleted) return;
-    await restoreTrade(user.uid, lastDeleted.id);
-    setLastDeleted(null);
-    if (toastTimer.current) {
-      clearTimeout(toastTimer.current);
-      toastTimer.current = undefined;
-    }
+  function handleUndo(tradeId: string) {
+    if (!user) return;
+    restoreTrade(user.uid, tradeId);
+    setToasts((prev) => prev.filter((t) => t.tradeId !== tradeId));
+  }
+
+  function dismissToast(id: string) {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
   }
 
   useEffect(() => {
@@ -49,7 +47,6 @@ export default function JournalPage() {
     const unsub = subscribeToTrades(user.uid, setTrades);
     return () => {
       unsub();
-      if (toastTimer.current) clearTimeout(toastTimer.current);
     };
   }, [user]);
 
@@ -76,7 +73,7 @@ export default function JournalPage() {
   async function handleDelete(id: string) {
     if (!user) return;
     await deleteTrade(user.uid, id);
-    showToast(id);
+    showDeleteToast(id);
   }
 
   return (
@@ -185,19 +182,7 @@ export default function JournalPage() {
       </div>
 
       {/* Toast */}
-      {lastDeleted && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in-up">
-          <div className="flex items-center gap-3 rounded-xl border border-ink-700 bg-ink-900 px-5 py-3 shadow-xl">
-            <span className="text-sm text-paper-100">İşlem silindi</span>
-            <button
-              onClick={handleUndo}
-              className="rounded-lg bg-mint-500/15 px-3 py-1.5 text-sm font-medium text-mint-400 hover:bg-mint-500/25 transition"
-            >
-              Geri Al
-            </button>
-          </div>
-        </div>
-      )}
+      <UndoToast toasts={toasts} onUndo={handleUndo} onDismiss={dismissToast} />
     </div>
   );
 }

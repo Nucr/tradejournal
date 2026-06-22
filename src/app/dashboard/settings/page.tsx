@@ -10,6 +10,9 @@ import {
   writeBatch,
   doc,
   deleteDoc,
+  query,
+  where,
+  orderBy,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { UserProfile } from "@/lib/types";
@@ -26,6 +29,7 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const [cleanCount, setCleanCount] = useState<number | null>(null);
+  const [pendingCleanCount, setPendingCleanCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -36,6 +40,14 @@ export default function SettingsPage() {
         setShowStrategy(p.showStrategy);
       }
     });
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const q = query(
+      collection(db, "users", user.uid, "trades"),
+      where("deletedAt", "<", ninetyDaysAgo),
+      orderBy("deletedAt", "asc")
+    );
+    getDocs(q).then((snap) => setPendingCleanCount(snap.size));
   }, [user]);
 
   async function handleSavePrivacy() {
@@ -148,16 +160,21 @@ export default function SettingsPage() {
         <p className="text-sm text-paper-500 mb-4">
           90 günden eski silinmiş işlemleri kalıcı olarak temizler. Bu işlem geri alınamaz.
         </p>
-        <button
-          onClick={handleCleanup}
-          disabled={cleaning}
-          className="rounded-lg border border-ink-700 px-5 py-2 text-sm text-paper-300 hover:bg-ink-800 transition disabled:opacity-40"
-        >
-          {cleaning ? "Temizleniyor..." : "Eski İşlemleri Temizle"}
-        </button>
-        {cleanCount !== null && (
-          <p className="text-xs text-paper-500 mt-2">{cleanCount} işlem kalıcı olarak silindi.</p>
-        )}
+          <button
+            onClick={handleCleanup}
+            disabled={cleaning || !pendingCleanCount || pendingCleanCount === 0}
+            className="rounded-lg border border-ink-700 px-5 py-2 text-sm text-paper-300 hover:bg-ink-800 transition disabled:opacity-40"
+          >
+            {cleaning ? "Temizleniyor..." : "Silinmiş İşlemleri Temizle"}
+          </button>
+          {pendingCleanCount !== null && pendingCleanCount > 0 && cleanCount === null && (
+            <p className="text-xs text-paper-500 mt-2">
+              90 günden eski {pendingCleanCount} adet silinmiş işlem bulundu.
+            </p>
+          )}
+          {cleanCount !== null && (
+            <p className="text-xs text-paper-500 mt-2">{cleanCount} işlem kalıcı olarak silindi.</p>
+          )}
       </section>
 
       {/* Delete account */}
