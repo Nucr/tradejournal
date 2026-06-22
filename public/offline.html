@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bağlantı Yok — Ledger</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0A0D12;
+      color: #E8EDEE;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .card {
+      background: #11161A;
+      border: 1px solid #20292E;
+      border-radius: 16px;
+      padding: 3rem 2.5rem;
+      max-width: 400px;
+      text-align: center;
+    }
+    .icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: #20292E;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+    }
+    h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+    p { font-size: 0.875rem; color: #88969A; line-height: 1.5; }
+    .retry {
+      display: inline-block;
+      margin-top: 1.5rem;
+      padding: 0.625rem 1.5rem;
+      border-radius: 10px;
+      background: #2ED9A4;
+      color: #0A0D12;
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+    }
+    .retry:hover { background: #26c493; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">
+      <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#88969A" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M4.536 18.364a9 9 0 010-12.728m0 0l2.829 2.829M4.536 5.636L3 4m0 0l1.536 1.636M3 4h3m0 0V1" />
+      </svg>
+    </div>
+    <h1>İnternet bağlantısı yok</h1>
+    <p>Veriler yüklenemedi. Lütfen bağlantını kontrol et ve tekrar dene.</p>
+    <button class="retry" onclick="location.reload()">Tekrar Dene</button>
+  </div>
+</body>
+</html>

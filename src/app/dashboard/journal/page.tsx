@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { addTrade, deleteTrade, subscribeToTrades, updateTrade } from "@/lib/trades";
+import { addTrade, deleteTrade, subscribeToTrades, updateTrade, restoreTrade } from "@/lib/trades";
 import { DirectionFilter, RangeKey, ResultFilter, Trade, TradeInput } from "@/lib/types";
 import { filterTrades } from "@/lib/date-utils";
 import TradeFilters from "@/components/TradeFilters";
@@ -20,10 +21,36 @@ export default function JournalPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
 
+  // Toast state
+  const [lastDeleted, setLastDeleted] = useState<{ id: string } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  function showToast(id: string) {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setLastDeleted({ id });
+    toastTimer.current = setTimeout(() => {
+      setLastDeleted(null);
+      toastTimer.current = undefined;
+    }, 5000);
+  }
+
+  async function handleUndo() {
+    if (!user || !lastDeleted) return;
+    await restoreTrade(user.uid, lastDeleted.id);
+    setLastDeleted(null);
+    if (toastTimer.current) {
+      clearTimeout(toastTimer.current);
+      toastTimer.current = undefined;
+    }
+  }
+
   useEffect(() => {
     if (!user) return;
     const unsub = subscribeToTrades(user.uid, setTrades);
-    return unsub;
+    return () => {
+      unsub();
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
   }, [user]);
 
   const filtered = useMemo(
@@ -44,9 +71,8 @@ export default function JournalPage() {
 
   async function handleDelete(id: string) {
     if (!user) return;
-    if (confirm("Bu işlemi silmek istediğine emin misin?")) {
-      await deleteTrade(user.uid, id);
-    }
+    await deleteTrade(user.uid, id);
+    showToast(id);
   }
 
   return (
@@ -70,6 +96,15 @@ export default function JournalPage() {
           </svg>
           Yeni İşlem
         </button>
+        <Link
+          href="/dashboard/journal/import"
+          className="rounded-lg border border-ink-700 px-4 py-2.5 text-sm font-medium text-paper-300 hover:bg-ink-800 transition flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          CSV İçe Aktar
+        </Link>
       </div>
 
       <div className="animate-fade-in-up stagger-1">
@@ -134,6 +169,7 @@ export default function JournalPage() {
           <TradeCard
             key={trade.id}
             trade={trade}
+            uid={user!.uid}
             index={i}
             onEdit={() => {
               setEditingTrade(trade);
@@ -143,6 +179,21 @@ export default function JournalPage() {
           />
         ))}
       </div>
+
+      {/* Toast */}
+      {lastDeleted && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in-up">
+          <div className="flex items-center gap-3 rounded-xl border border-ink-700 bg-ink-900 px-5 py-3 shadow-xl">
+            <span className="text-sm text-paper-100">İşlem silindi</span>
+            <button
+              onClick={handleUndo}
+              className="rounded-lg bg-mint-500/15 px-3 py-1.5 text-sm font-medium text-mint-400 hover:bg-mint-500/25 transition"
+            >
+              Geri Al
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -13,6 +13,7 @@ export interface Trade {
   note: string;
   screenshotUrl: string;
   createdAt: string;
+  deletedAt?: string | null;
 }
 
 export type TradeInput = Omit<Trade, "id" | "createdAt">;
@@ -48,12 +49,14 @@ export interface UserStats {
 export interface UserProfile {
   displayName: string;
   avatarUrl?: string;
+  avatarColor: string;
   level: number;
   rank: Rank;
   score: number;
   isPublic: boolean;
   showStrategy: boolean;
   stats: UserStats;
+  achievements?: string[];
   updatedAt: Date;
 }
 

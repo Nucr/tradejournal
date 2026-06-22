@@ -2,6 +2,7 @@
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
+import AchievementToast from "@/components/AchievementToast";
 
 export default function DashboardLayout({
   children,
@@ -16,6 +17,7 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+      <AchievementToast />
     </ProtectedRoute>
   );
 }

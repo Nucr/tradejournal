@@ -1,19 +1,45 @@
 import {
   collection,
   addDoc,
-  deleteDoc,
   doc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   updateDoc,
+  writeBatch,
+  where,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { Trade, TradeInput } from "./types";
+import { syncUserScore } from "./scoreEngine";
 
 function tradesCollection(uid: string) {
   return collection(db, "users", uid, "trades");
+}
+
+function tradeDoc(uid: string, id: string) {
+  return doc(db, "users", uid, "trades", id);
+}
+
+function mapTrade(d: { id: string; data: () => Record<string, unknown> }): Trade {
+  const data = d.data();
+  return {
+    id: d.id,
+    pair: data.pair as string,
+    direction: data.direction as Trade["direction"],
+    entryDate: data.entryDate as string,
+    exitDate: data.exitDate as string,
+    rr: (data.rr as number) ?? 0,
+    result: (data.result as number) ?? 0,
+    netPnl: (data.netPnl as number) ?? 0,
+    strategy: (data.strategy as string) ?? "",
+    note: (data.note as string) ?? "",
+    screenshotUrl: (data.screenshotUrl as string) ?? "",
+    createdAt: (data.createdAt as { toDate?: () => Date })?.toDate?.().toISOString?.() ?? new Date().toISOString(),
+    deletedAt: data.deletedAt == null ? null : (data.deletedAt as { toDate?: () => Date })?.toDate?.().toISOString?.() ?? null,
+  };
 }
 
 export function subscribeToTrades(
@@ -22,23 +48,7 @@ export function subscribeToTrades(
 ) {
   const q = query(tradesCollection(uid), orderBy("entryDate", "desc"));
   return onSnapshot(q, (snapshot) => {
-    const trades: Trade[] = snapshot.docs.map((d) => {
-      const data = d.data();
-      return {
-        id: d.id,
-        pair: data.pair,
-        direction: data.direction,
-        entryDate: data.entryDate,
-        exitDate: data.exitDate,
-        rr: data.rr,
-        result: data.result,
-        netPnl: data.netPnl ?? 0,
-        strategy: data.strategy,
-        note: data.note,
-        screenshotUrl: data.screenshotUrl,
-        createdAt: data.createdAt?.toDate?.().toISOString?.() ?? new Date().toISOString(),
-      };
-    });
+    const trades = snapshot.docs.map(mapTrade).filter((t) => !t.deletedAt);
     callback(trades);
   });
 }
@@ -48,12 +58,37 @@ export async function addTrade(uid: string, trade: TradeInput) {
     ...trade,
     createdAt: serverTimestamp(),
   });
+  await syncUserScore(uid);
 }
 
 export async function updateTrade(uid: string, id: string, trade: Partial<TradeInput>) {
-  await updateDoc(doc(db, "users", uid, "trades", id), trade);
+  await updateDoc(tradeDoc(uid, id), trade);
+  await syncUserScore(uid);
 }
 
 export async function deleteTrade(uid: string, id: string) {
-  await deleteDoc(doc(db, "users", uid, "trades", id));
+  await updateDoc(tradeDoc(uid, id), { deletedAt: serverTimestamp() });
+  await syncUserScore(uid);
+}
+
+export async function restoreTrade(uid: string, id: string) {
+  await updateDoc(tradeDoc(uid, id), { deletedAt: null });
+  await syncUserScore(uid);
+}
+
+export async function cleanupDeletedTrades(uid: string) {
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+  const q = query(
+    tradesCollection(uid),
+    where("deletedAt", "<", ninetyDaysAgo)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return 0;
+
+  const batch = writeBatch(db);
+  snap.docs.forEach((d) => batch.delete(d.ref));
+  await batch.commit();
+  return snap.size;
 }

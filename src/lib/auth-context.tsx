@@ -7,6 +7,7 @@ import {
   useState,
   ReactNode,
 } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   User,
   onAuthStateChanged,
@@ -16,8 +17,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { auth } from "./firebase";
-import { saveProfile } from "./profile";
-import type { Rank } from "./types";
+import { getProfile } from "./profile";
 
 interface AuthContextValue {
   user: User | null;
@@ -25,21 +25,56 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  needsOnboarding: boolean | null;
+  refreshOnboarding: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+const SKIP_ROUTES = ["/login", "/register", "/onboarding"];
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
+  const pathname = usePathname();
+  const router = useRouter();
+
+  async function checkOnboarding(uid: string) {
+    const profile = await getProfile(uid);
+    if (!profile || !profile.displayName) {
+      setNeedsOnboarding(true);
+    } else {
+      setNeedsOnboarding(false);
+    }
+  }
+
+  async function refreshOnboarding() {
+    if (user) {
+      await checkOnboarding(user.uid);
+    }
+  }
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       setLoading(false);
+      if (u) {
+        await checkOnboarding(u.uid);
+      } else {
+        setNeedsOnboarding(null);
+      }
     });
     return unsub;
   }, []);
+
+  useEffect(() => {
+    if (loading || !user || needsOnboarding === null) return;
+    if (SKIP_ROUTES.includes(pathname)) return;
+    if (needsOnboarding) {
+      router.replace("/onboarding");
+    }
+  }, [needsOnboarding, loading, user, pathname, router]);
 
   async function login(email: string, password: string) {
     await signInWithEmailAndPassword(auth, email, password);
@@ -50,21 +85,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (name) {
       await updateProfile(cred.user, { displayName: name });
     }
-    await saveProfile(cred.user.uid, {
-      displayName: name,
-      level: 1,
-      rank: "Çaylak" as Rank,
-      score: 0,
-      isPublic: false,
-      showStrategy: true,
-      stats: {
-        totalTrades: 0,
-        winRate: 0,
-        avgRR: 0,
-        netResult: 0,
-        consistency: 0,
-      },
-    });
   }
 
   async function logout() {
@@ -72,7 +92,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, register, logout, needsOnboarding, refreshOnboarding }}
+    >
       {children}
     </AuthContext.Provider>
   );

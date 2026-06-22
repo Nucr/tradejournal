@@ -1,10 +1,12 @@
 "use client";
 
+import { useState, useRef } from "react";
 import { Trade } from "@/lib/types";
 import { format, parseISO } from "date-fns";
 
 interface Props {
   trade: Trade;
+  uid: string;
   onEdit: () => void;
   onDelete: () => void;
   index?: number;
@@ -16,7 +18,24 @@ const DIRECTION_LABEL: Record<Trade["direction"], string> = {
   be: "BE",
 };
 
-export default function TradeCard({ trade, onEdit, onDelete, index = 0 }: Props) {
+export default function TradeCard({ trade, uid, onEdit, onDelete, index = 0 }: Props) {
+  const [copied, setCopied] = useState(false);
+  const copyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  async function handleShare() {
+    const url = `${window.location.origin}/share/${trade.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+      copyTimer.current = setTimeout(() => {
+        setCopied(false);
+        copyTimer.current = undefined;
+      }, 2000);
+    } catch {
+      // clipboard unavailable
+    }
+  }
   const toneClass =
     trade.direction === "long"
       ? "border-mint-500/40 text-mint-400 bg-mint-500/10"
@@ -105,7 +124,7 @@ export default function TradeCard({ trade, onEdit, onDelete, index = 0 }: Props)
           </p>
         )}
 
-        <div className="flex gap-3 mt-auto pt-1">
+        <div className="flex items-center gap-3 mt-auto pt-1">
           <button
             onClick={onEdit}
             className="text-xs font-mono text-paper-300 hover:text-mint-400 transition flex items-center gap-1"
@@ -123,6 +142,21 @@ export default function TradeCard({ trade, onEdit, onDelete, index = 0 }: Props)
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
             sil
+          </button>
+          <button
+            onClick={handleShare}
+            className="text-xs font-mono text-paper-300 hover:text-sky-400 transition flex items-center gap-1 ml-auto"
+          >
+            {copied ? (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+            )}
+            {copied ? "kopyalandı" : "paylaş"}
           </button>
         </div>
       </div>

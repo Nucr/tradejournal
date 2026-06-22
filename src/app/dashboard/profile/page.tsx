@@ -6,6 +6,7 @@ import { getProfile, saveProfile } from "@/lib/profile";
 import { subscribeToTrades } from "@/lib/trades";
 import { computeStats } from "@/lib/date-utils";
 import { Trade, UserProfile } from "@/lib/types";
+import AchievementsGrid from "@/components/AchievementsGrid";
 
 const DEFAULT_AVATAR_COLOR = "#2ED9A4";
 
@@ -45,6 +46,7 @@ export default function ProfilePage() {
     const newProfile: UserProfile = {
       displayName,
       ...(avatarUrl ? { avatarUrl } : {}),
+      avatarColor: profile?.avatarColor ?? "#2ED9A4",
       level: profile?.level ?? 1,
       rank: profile?.rank ?? "Çaylak",
       score: profile?.score ?? 0,
@@ -226,6 +228,12 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Achievements */}
+      <div className="animate-fade-in-up stagger-5">
+        <h2 className="font-display text-lg font-semibold mb-3">Rozetler</h2>
+        <AchievementsGrid earned={profile?.achievements ?? []} />
+      </div>
     </div>
   );
 }

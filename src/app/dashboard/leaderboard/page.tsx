@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { subscribeToLeaderboard } from "@/lib/leaderboard";
 import {
@@ -14,6 +16,7 @@ import {
   Radar,
   ResponsiveContainer,
 } from "recharts";
+import AchievementsGrid from "@/components/AchievementsGrid";
 
 type PeriodTab = {
   key: LeaderboardPeriod;
@@ -371,6 +374,15 @@ function ProfileModal({
   onClose: () => void;
 }) {
   const displayName = entry.isPublic ? entry.displayName : "Anonim Trader";
+  const [achievements, setAchievements] = useState<string[]>([]);
+
+  useEffect(() => {
+    getDoc(doc(db, "users", entry.uid)).then((snap) => {
+      if (snap.exists()) {
+        setAchievements((snap.data().achievements as string[]) ?? []);
+      }
+    });
+  }, [entry.uid]);
 
   const radarData = useMemo(() => {
     const consistencyPct = Math.round(entry.totalTrades > 0 ? Math.min(1, 1) * 100 : 0);
@@ -481,6 +493,14 @@ function ProfileModal({
             tone={entry.netResult >= 0 ? "mint" : "coral"}
           />
         </div>
+
+        {/* Achievements */}
+        {achievements.length > 0 && (
+          <div>
+            <p className="text-xs font-mono uppercase tracking-wide text-paper-500 mb-2">Rozetler</p>
+            <AchievementsGrid earned={achievements} />
+          </div>
+        )}
       </div>
     </div>
   );
