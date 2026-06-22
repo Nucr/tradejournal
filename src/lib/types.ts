@@ -81,6 +81,7 @@ export type LeaderboardPeriod = "weekly" | "monthly" | "alltime";
 export interface LeaderboardEntry {
   displayName: string;
   avatarUrl: string;
+  avatarColor: string;
   score: number;
   level: number;
   rank: string;

@@ -8,6 +8,7 @@ import { computeStats } from "@/lib/date-utils";
 import { Trade, UserProfile } from "@/lib/types";
 import AchievementsGrid from "@/components/AchievementsGrid";
 import RankBadge from "@/components/RankBadge";
+import Avatar from "@/components/Avatar";
 
 const DEFAULT_AVATAR_COLOR = "#2ED9A4";
 
@@ -79,12 +80,12 @@ export default function ProfilePage() {
       <div className="rounded-xl border border-ink-800 bg-ink-900 p-6 animate-fade-in-up stagger-1">
         <div className="flex items-start gap-5 flex-wrap">
           {/* Avatar */}
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-ink-950 shrink-0"
-            style={{ backgroundColor: DEFAULT_AVATAR_COLOR }}
-          >
-            {(displayName || user?.email || "?")[0].toUpperCase()}
-          </div>
+          <Avatar
+            avatarUrl={avatarUrl}
+            avatarColor={profile?.avatarColor ?? DEFAULT_AVATAR_COLOR}
+            displayName={displayName || user?.email || "Trader"}
+            size="lg"
+          />
 
           <div className="flex-1 min-w-0">
             {editing ? (
@@ -97,15 +98,7 @@ export default function ProfilePage() {
                     className="rounded-lg border border-ink-700 bg-ink-950 px-3 py-2 text-sm w-full max-w-xs focus:border-mint-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-mono uppercase tracking-wide text-paper-500 mb-1">Avatar URL</label>
-                  <input
-                    value={avatarUrl}
-                    onChange={(e) => setAvatarUrl(e.target.value)}
-                    placeholder="https://example.com/avatar.png"
-                    className="rounded-lg border border-ink-700 bg-ink-950 px-3 py-2 text-sm w-full max-w-xs focus:border-mint-500"
-                  />
-                </div>
+                <p className="text-xs text-paper-500">Profil fotoğrafını Ayarlar sayfasından değiştirebilirsin.</p>
                 <div className="flex items-center gap-6 flex-wrap">
                   <label className="flex items-center gap-2 text-sm text-paper-300">
                     <input

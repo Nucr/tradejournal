@@ -77,18 +77,27 @@ function ScoreHexagon({ score, size = 120 }: { score: number; size?: number }) {
 
 function AvatarLetter({
   name,
-  uid,
+  avatarUrl,
+  avatarColor,
   className = "w-10 h-10 text-sm",
 }: {
   name: string;
-  uid: string;
+  avatarUrl?: string;
+  avatarColor?: string;
   className?: string;
 }) {
+  if (avatarUrl) {
+    return (
+      <div className={`rounded-full overflow-hidden shrink-0 ${className}`}>
+        <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+      </div>
+    );
+  }
   const letter = name ? name[0].toUpperCase() : "?";
   return (
     <div
       className={`rounded-full flex items-center justify-center font-bold text-ink-950 shrink-0 ${className}`}
-      style={{ backgroundColor: hashColor(uid) }}
+      style={{ backgroundColor: avatarColor ?? hashColor(name) }}
     >
       {letter}
     </div>
@@ -237,7 +246,8 @@ export default function LeaderboardPage() {
                         <div className="flex items-center gap-3">
                           <AvatarLetter
                             name={entry.isPublic ? entry.displayName : "A"}
-                            uid={entry.uid}
+                            avatarUrl={entry.avatarUrl}
+                            avatarColor={entry.avatarColor}
                           />
                           <span className="font-medium text-paper-100 truncate max-w-[140px]">
                             {entry.isPublic ? entry.displayName : "Anonim Trader"}
@@ -327,7 +337,8 @@ function PodiumCard({
       <div className="flex justify-center mb-3">
         <AvatarLetter
           name={entry.isPublic ? entry.displayName : "A"}
-          uid={entry.uid}
+          avatarUrl={entry.avatarUrl}
+          avatarColor={entry.avatarColor}
           className="w-14 h-14 text-lg"
         />
       </div>
@@ -403,7 +414,7 @@ function ProfileModal({
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <AvatarLetter name={displayName} uid={entry.uid} className="w-14 h-14 text-lg" />
+            <AvatarLetter name={displayName} avatarUrl={entry.avatarUrl} avatarColor={entry.avatarColor} className="w-14 h-14 text-lg" />
             <div>
               <h2 className="font-display text-xl font-semibold text-paper-100">
                 {displayName}
