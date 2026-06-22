@@ -9,25 +9,15 @@ import {
   doc,
   updateDoc,
   deleteDoc,
-  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useAuth } from "@/lib/auth-context";
-import { isAdmin } from "@/lib/admin";
+import AdminRoute from "@/components/AdminRoute";
 import type { Strategy } from "@/lib/types";
 
 export default function AdminStrategiesPage() {
-  const { user } = useAuth();
-  const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [strategies, setStrategies] = useState<Strategy[]>([]);
 
   useEffect(() => {
-    if (!user) return;
-    isAdmin(user.uid).then(setAuthorized);
-  }, [user]);
-
-  useEffect(() => {
-    if (!authorized) return;
     const q = query(collection(db, "strategies"), orderBy("createdAt", "desc"));
     getDocs(q).then((snap) => {
       const list = snap.docs.map((d) => ({
@@ -37,7 +27,7 @@ export default function AdminStrategiesPage() {
       })) as Strategy[];
       setStrategies(list);
     });
-  }, [authorized]);
+  }, []);
 
   async function toggleVisibility(id: string, current: boolean) {
     await updateDoc(doc(db, "strategies", id), { isPublic: !current });
@@ -49,20 +39,8 @@ export default function AdminStrategiesPage() {
     setStrategies((prev) => prev.filter((s) => s.id !== id));
   }
 
-  if (authorized === null) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="h-8 w-8 rounded-full border-2 border-mint-500 border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
-  if (!authorized) {
-    return <p className="text-center text-coral-400 py-20">Yetkisiz erişim.</p>;
-  }
-
   return (
-    <div>
+    <AdminRoute>
       <h1 className="font-display text-2xl font-semibold mb-1">Stratejiler</h1>
       <p className="text-sm text-paper-500 mb-6">Tüm stratejileri yönet.</p>
 
@@ -108,6 +86,6 @@ export default function AdminStrategiesPage() {
           </tbody>
         </table>
       </div>
-    </div>
+    </AdminRoute>
   );
 }

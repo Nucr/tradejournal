@@ -10,25 +10,16 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useAuth } from "@/lib/auth-context";
-import { isAdmin } from "@/lib/admin";
+import AdminRoute from "@/components/AdminRoute";
 import type { LeaderboardPeriod, LeaderboardEntry } from "@/lib/types";
 
 const PERIODS: LeaderboardPeriod[] = ["weekly", "monthly", "alltime"];
 
 export default function AdminLeaderboardPage() {
-  const { user } = useAuth();
-  const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [period, setPeriod] = useState<LeaderboardPeriod>("alltime");
   const [entries, setEntries] = useState<(LeaderboardEntry & { uid: string })[]>([]);
 
   useEffect(() => {
-    if (!user) return;
-    isAdmin(user.uid).then(setAuthorized);
-  }, [user]);
-
-  useEffect(() => {
-    if (!authorized) return;
     const q = query(collection(db, "leaderboard", period, "entries"), orderBy("score", "desc"));
     getDocs(q).then((snap) => {
       const list = snap.docs.map((d) => ({
@@ -38,27 +29,15 @@ export default function AdminLeaderboardPage() {
       })) as (LeaderboardEntry & { uid: string })[];
       setEntries(list);
     });
-  }, [authorized, period]);
+  }, [period]);
 
   async function handleRemove(uid: string) {
     await deleteDoc(doc(db, "leaderboard", period, "entries", uid));
     setEntries((prev) => prev.filter((e) => e.uid !== uid));
   }
 
-  if (authorized === null) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="h-8 w-8 rounded-full border-2 border-mint-500 border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
-  if (!authorized) {
-    return <p className="text-center text-coral-400 py-20">Yetkisiz erişim.</p>;
-  }
-
   return (
-    <div>
+    <AdminRoute>
       <h1 className="font-display text-2xl font-semibold mb-1">Liderlik Tablosu</h1>
       <p className="text-sm text-paper-500 mb-6">Liderlik tablosu girişlerini yönet.</p>
 
@@ -111,6 +90,6 @@ export default function AdminLeaderboardPage() {
           </tbody>
         </table>
       </div>
-    </div>
+    </AdminRoute>
   );
 }

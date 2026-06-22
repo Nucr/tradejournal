@@ -9,21 +9,16 @@ import {
   limit,
   doc,
   updateDoc,
-  deleteDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useAuth } from "@/lib/auth-context";
-import { isAdmin } from "@/lib/admin";
+import AdminRoute from "@/components/AdminRoute";
 import type { Trade } from "@/lib/types";
 
 export default function AdminTradesPage() {
-  const { user } = useAuth();
-  const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [trades, setTrades] = useState<(Trade & { userId: string })[]>([]);
 
   const fetchTrades = useCallback(async () => {
-    if (!authorized) return;
     const q = query(collectionGroup(db, "trades"), orderBy("entryDate", "desc"), limit(100));
     const snap = await getDocs(q);
     const list = snap.docs.map((d) => {
@@ -48,16 +43,9 @@ export default function AdminTradesPage() {
       } as Trade & { userId: string };
     });
     setTrades(list);
-  }, [authorized]);
+  }, []);
 
-  useEffect(() => {
-    if (!user) return;
-    isAdmin(user.uid).then(setAuthorized);
-  }, [user]);
-
-  useEffect(() => {
-    fetchTrades();
-  }, [fetchTrades]);
+  useEffect(() => { fetchTrades(); }, [fetchTrades]);
 
   async function handleDelete(userId: string, tradeId: string) {
     await updateDoc(doc(db, "users", userId, "trades", tradeId), {
@@ -66,20 +54,8 @@ export default function AdminTradesPage() {
     fetchTrades();
   }
 
-  if (authorized === null) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="h-8 w-8 rounded-full border-2 border-mint-500 border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
-  if (!authorized) {
-    return <p className="text-center text-coral-400 py-20">Yetkisiz erişim.</p>;
-  }
-
   return (
-    <div>
+    <AdminRoute>
       <h1 className="font-display text-2xl font-semibold mb-1">Tüm İşlemler</h1>
       <p className="text-sm text-paper-500 mb-6">Son 100 işlem (tüm kullanıcılar).</p>
 
@@ -128,6 +104,6 @@ export default function AdminTradesPage() {
           </tbody>
         </table>
       </div>
-    </div>
+    </AdminRoute>
   );
 }

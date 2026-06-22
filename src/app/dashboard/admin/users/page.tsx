@@ -3,28 +3,19 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useAuth } from "@/lib/auth-context";
-import { isAdmin } from "@/lib/admin";
+import AdminRoute from "@/components/AdminRoute";
 import type { UserProfile } from "@/lib/types";
 
 export default function AdminUsersPage() {
-  const { user } = useAuth();
-  const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [users, setUsers] = useState<(UserProfile & { uid: string })[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    if (!user) return;
-    isAdmin(user.uid).then(setAuthorized);
-  }, [user]);
-
-  useEffect(() => {
-    if (!authorized) return;
     getDocs(collection(db, "users")).then((snap) => {
       const list = snap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserProfile & { uid: string }));
       setUsers(list);
     });
-  }, [authorized]);
+  }, []);
 
   async function toggleAdmin(uid: string, current: string | undefined) {
     const role = current === "admin" ? "user" : "admin";
@@ -32,24 +23,12 @@ export default function AdminUsersPage() {
     setUsers((prev) => prev.map((u) => (u.uid === uid ? { ...u, role } : u)));
   }
 
-  if (authorized === null) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="h-8 w-8 rounded-full border-2 border-mint-500 border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
-  if (!authorized) {
-    return <p className="text-center text-coral-400 py-20">Yetkisiz erişim.</p>;
-  }
-
   const filtered = users.filter((u) =>
     u.displayName?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div>
+    <AdminRoute>
       <h1 className="font-display text-2xl font-semibold mb-1">Kullanıcılar</h1>
       <p className="text-sm text-paper-500 mb-6">Sistemdeki tüm kullanıcıları görüntüle ve yönet.</p>
 
@@ -65,7 +44,7 @@ export default function AdminUsersPage() {
           <thead>
             <tr className="bg-ink-900 text-paper-500 text-left">
               <th className="px-4 py-3 font-medium">İsim</th>
-              <th className="px-4 py-3 font-medium">Email</th>
+              <th className="px-4 py-3 font-medium">UID</th>
               <th className="px-4 py-3 font-medium">Seviye</th>
               <th className="px-4 py-3 font-medium">Rütbe</th>
               <th className="px-4 py-3 font-medium">Rol</th>
@@ -76,7 +55,7 @@ export default function AdminUsersPage() {
             {filtered.map((u) => (
               <tr key={u.uid} className="hover:bg-ink-900/50">
                 <td className="px-4 py-3 text-paper-100">{u.displayName}</td>
-                <td className="px-4 py-3 text-paper-500 font-mono text-xs">{u.uid}</td>
+                <td className="px-4 py-3 text-paper-500 font-mono text-xs">{u.uid.slice(0, 12)}…</td>
                 <td className="px-4 py-3 font-mono text-xs text-paper-300">{u.level ?? "—"}</td>
                 <td className="px-4 py-3 text-paper-300">{u.rank ?? "—"}</td>
                 <td className="px-4 py-3">
@@ -99,6 +78,6 @@ export default function AdminUsersPage() {
           </tbody>
         </table>
       </div>
-    </div>
+    </AdminRoute>
   );
 }
