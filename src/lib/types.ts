@@ -57,6 +57,7 @@ export interface UserProfile {
   showStrategy: boolean;
   stats: UserStats;
   achievements?: string[];
+  role?: "user" | "admin";
   updatedAt: Date;
 }
 
