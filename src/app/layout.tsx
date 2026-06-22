@@ -20,6 +20,10 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Trade Journal",
   description: "İşlem Günlüğü & Analizleri",
+  icons: {
+    icon: "/icon-512.svg",
+    apple: "/icon-192.svg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#2ED9A4" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="apple-touch-icon" href="/icon-192.svg" />
         <script dangerouslySetInnerHTML={{

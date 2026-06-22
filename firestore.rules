@@ -2,10 +2,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users doc — yalnızca sahibi yazabilir; isPublic ise herkes okuyabilir
+    // Users doc — giriş yapmış herkes okuyabilir; yalnızca sahibi yazabilir
     match /users/{uid} {
-      allow read: if request.auth != null && (request.auth.uid == uid || (resource != null && resource.data.isPublic == true));
+      allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Username uniqueness check (onboarding) — authenticated users can list
+    match /users {
+      allow list: if request.auth != null;
     }
 
     // Trades subcollection — sadece sahibi
