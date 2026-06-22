@@ -25,7 +25,7 @@ export async function checkAndAwardAchievements(
 ): Promise<Achievement[]> {
   const earned = checkEarned(
     ACHIEVEMENT_DEFS,
-    { totalTrades: stats.totalTrades, winRate: stats.winRate, avgRR: stats.avgRR, consistency: stats.consistency * 100, level },
+    { totalTrades: stats.totalTrades, winRate: stats.winRate, avgRR: stats.avgRR, consistency: stats.consistency, level },
     trades
   );
 
@@ -50,6 +50,7 @@ export async function checkAndAwardAchievements(
       id,
       label: def?.label ?? id,
       desc: def?.desc ?? "",
+      icon: def?.icon ?? "🏆",
       earnedAt: new Date().toISOString(),
     };
   });

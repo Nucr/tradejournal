@@ -11,6 +11,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { Trade, UserStats } from "./types";
+import { checkAndAwardAchievements } from "./achievement-store";
 
 export function calculateStats(trades: Trade[]): UserStats {
   const totalTrades = trades.length;
@@ -211,6 +212,8 @@ export async function syncUserScore(uid: string): Promise<void> {
         }
       );
     }
+
+    await checkAndAwardAchievements(uid, stats, level, trades);
   } catch (err) {
     console.error("syncUserScore error:", err);
   }

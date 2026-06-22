@@ -13,7 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { UserProfile } from "@/lib/types";
-import { cleanupDeletedTrades } from "@/lib/trades";
+import { cleanupOldDeletedTrades } from "@/lib/trades";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -75,7 +75,7 @@ export default function SettingsPage() {
     setCleaning(true);
     setCleanCount(null);
     try {
-      const count = await cleanupDeletedTrades(user.uid);
+      const count = await cleanupOldDeletedTrades(user.uid);
       setCleanCount(count);
     } finally {
       setCleaning(false);

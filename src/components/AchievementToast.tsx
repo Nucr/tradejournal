@@ -61,15 +61,7 @@ export default function AchievementToast() {
         <Confetti />
         <div className="relative z-10 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-400/15 flex items-center justify-center text-lg shrink-0">
-            {def?.id === "first_trade" && "🎯"}
-            {def?.id === "ten_trades" && "🔥"}
-            {def?.id === "fifty_trades" && "💎"}
-            {def?.id === "win_streak_5" && "⚡"}
-            {def?.id === "rr_master" && "📐"}
-            {def?.id === "win_rate_60" && "🎯"}
-            {def?.id === "consistent" && "🔄"}
-            {def?.id === "level_5" && "⭐"}
-            {def?.id === "level_10" && "👑"}
+            {def?.icon ?? "🏆"}
           </div>
           <div>
             <p className="text-sm font-semibold text-paper-100">

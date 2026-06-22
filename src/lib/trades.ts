@@ -46,9 +46,13 @@ export function subscribeToTrades(
   uid: string,
   callback: (trades: Trade[]) => void
 ) {
-  const q = query(tradesCollection(uid), orderBy("entryDate", "desc"));
+  const q = query(
+    tradesCollection(uid),
+    where("deletedAt", "==", null),
+    orderBy("entryDate", "desc")
+  );
   return onSnapshot(q, (snapshot) => {
-    const trades = snapshot.docs.map(mapTrade).filter((t) => !t.deletedAt);
+    const trades = snapshot.docs.map(mapTrade);
     callback(trades);
   }, (err) => {
     console.error("subscribeToTrades error:", err);
@@ -78,7 +82,7 @@ export async function restoreTrade(uid: string, id: string) {
   await syncUserScore(uid);
 }
 
-export async function cleanupDeletedTrades(uid: string) {
+export async function cleanupOldDeletedTrades(uid: string) {
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
