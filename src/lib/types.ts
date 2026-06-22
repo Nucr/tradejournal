@@ -14,6 +14,7 @@ export interface Trade {
   screenshotUrl: string;
   createdAt: string;
   deletedAt?: string | null;
+  isShared?: boolean;
 }
 
 export type TradeInput = Omit<Trade, "id" | "createdAt">;

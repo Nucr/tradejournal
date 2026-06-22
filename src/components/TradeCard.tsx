@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Trade } from "@/lib/types";
+import { shareTrade } from "@/lib/trades";
 import { format, parseISO } from "date-fns";
 
 interface Props {
@@ -23,8 +24,9 @@ export default function TradeCard({ trade, uid, onEdit, onDelete, index = 0 }: P
   const copyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   async function handleShare() {
-    const url = `${window.location.origin}/share/${trade.id}`;
     try {
+      await shareTrade(uid, trade.id);
+      const url = `${window.location.origin}/share/${trade.id}`;
       await navigator.clipboard.writeText(url);
       setCopied(true);
       if (copyTimer.current) clearTimeout(copyTimer.current);
@@ -156,7 +158,7 @@ export default function TradeCard({ trade, uid, onEdit, onDelete, index = 0 }: P
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
               </svg>
             )}
-            {copied ? "kopyalandı" : "paylaş"}
+            {copied ? "Link kopyalandı!" : "paylaş"}
           </button>
         </div>
       </div>
