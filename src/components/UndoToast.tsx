@@ -72,7 +72,7 @@ function ToastItem({
       <span className="text-sm text-paper-100 flex-1">{toast.message}</span>
       {toast.tradeId && (
         <button
-          onClick={() => onUndo(toast.tradeId)}
+          onClick={() => onUndo(toast.tradeId!)}
           className="rounded-lg bg-mint-500/15 px-3 py-1.5 text-sm font-medium text-mint-400 hover:bg-mint-500/25 transition shrink-0"
         >
           Geri Al
