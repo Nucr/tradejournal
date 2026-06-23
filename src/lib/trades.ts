@@ -54,7 +54,13 @@ export function subscribeToTrades(
   return onSnapshot(q, (snapshot) => {
     console.log("subscribeToTrades: snapshot received", snapshot.docs.length, "docs");
     const ids = snapshot.docs.map(d => d.id);
-    const allTrades = snapshot.docs.map(mapTrade);
+    let allTrades: Trade[] = [];
+    try {
+      allTrades = snapshot.docs.map(mapTrade);
+    } catch (mapErr) {
+      console.error("subscribeToTrades: mapTrade error", mapErr);
+      return;
+    }
     const deletedIds = allTrades.filter(t => t.deletedAt != null).map(t => t.id);
     const trades = allTrades.filter((t) => t.deletedAt == null);
     console.log("subscribeToTrades: doc IDs", ids, "deleted IDs", deletedIds, "after filter", trades.length);
@@ -66,15 +72,25 @@ export function subscribeToTrades(
 
 export async function addTrade(uid: string, trade: TradeInput) {
   console.log("addTrade called", { uid, trade });
+  let docRefId: string | null = null;
   try {
     const docRef = await addDoc(tradesCollection(uid), {
       ...trade,
       createdAt: serverTimestamp(),
     });
+    docRefId = docRef.id;
     console.log("addDoc succeeded", docRef.id);
   } catch (err) {
     console.error("addDoc failed:", err);
     throw err;
+  }
+  // Verify the doc is readable
+  try {
+    const verifySnap = await getDocs(tradesCollection(uid));
+    const verifyIds = verifySnap.docs.map(d => d.id);
+    console.log("addTrade: verify getDocs count", verifySnap.docs.length, "ids", verifyIds, "newDocIncluded?", verifyIds.includes(docRefId));
+  } catch (err) {
+    console.error("addTrade: verify getDocs failed", err);
   }
   syncUserScore(uid).catch((err) => console.error("syncUserScore error:", err));
 }
