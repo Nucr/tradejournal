@@ -1,20 +1,7 @@
 [
   {
-    "origin": [
-      "https://tradejournal-pink.vercel.app",
-      "http://localhost:3000"
-    ],
-    "method": [
-      "GET",
-      "PUT",
-      "POST",
-      "DELETE",
-      "HEAD"
-    ],
-    "responseHeader": [
-      "Content-Type",
-      "x-goog-*"
-    ],
+    "origin": ["*"],
+    "method": ["*"],
     "maxAgeSeconds": 3600
   }
 ]

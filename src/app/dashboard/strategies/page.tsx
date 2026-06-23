@@ -118,7 +118,7 @@ export default function StrategiesPage() {
       if (newImageFiles.length > 0) {
         const urls: string[] = [];
         for (const file of newImageFiles) {
-          const url = await uploadStrategyImage(user.uid, id, file);
+          const url = await uploadStrategyImage(file);
           urls.push(url);
         }
         await setStrategyImages(id, urls);
@@ -182,7 +182,7 @@ export default function StrategiesPage() {
     const file = e.target.files[0];
     setUploading(true);
     try {
-      const url = await uploadStrategyImage(user.uid, detailStrategy.id, file);
+      const url = await uploadStrategyImage(file);
       const updated = [...detailImages, url];
       await updateStrategy(detailStrategy.id, user.uid, { images: updated });
       setDetailImages(updated);
@@ -200,7 +200,7 @@ export default function StrategiesPage() {
     if (!user || !detailStrategy) return;
     if (!confirm("Bu görseli silmek istediğine emin misin?")) return;
     try {
-      await deleteStrategyImage(imageUrl);
+      await deleteStrategyImage();
       const updated = detailImages.filter((u) => u !== imageUrl);
       await updateStrategy(detailStrategy.id, user.uid, { images: updated });
       setDetailImages(updated);
