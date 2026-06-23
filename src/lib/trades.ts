@@ -53,9 +53,11 @@ export function subscribeToTrades(
   console.log("subscribeToTrades: starting listener for", uid);
   return onSnapshot(q, (snapshot) => {
     console.log("subscribeToTrades: snapshot received", snapshot.docs.length, "docs");
-    const trades = snapshot.docs
-      .map(mapTrade)
-      .filter((t) => t.deletedAt == null);
+    const ids = snapshot.docs.map(d => d.id);
+    const allTrades = snapshot.docs.map(mapTrade);
+    const deletedIds = allTrades.filter(t => t.deletedAt != null).map(t => t.id);
+    const trades = allTrades.filter((t) => t.deletedAt == null);
+    console.log("subscribeToTrades: doc IDs", ids, "deleted IDs", deletedIds, "after filter", trades.length);
     callback(trades);
   }, (err) => {
     console.error("subscribeToTrades error:", err?.message, err);
