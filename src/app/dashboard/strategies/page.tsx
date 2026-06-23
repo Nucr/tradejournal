@@ -27,6 +27,9 @@ export default function StrategiesPage() {
   const [showModal, setShowModal] = useState(false);
   const [newName, setNewName] = useState("");
   const [newIsPublic, setNewIsPublic] = useState(false);
+  const [newNote, setNewNote] = useState("");
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
+  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [creatorNames, setCreatorNames] = useState<Record<string, string>>({});
   const [detailStrategy, setDetailStrategy] = useState<Strategy | null>(null);
@@ -35,6 +38,7 @@ export default function StrategiesPage() {
   const [uploading, setUploading] = useState(false);
   const [savingDetail, setSavingDetail] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const createFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -96,20 +100,58 @@ export default function StrategiesPage() {
     return result.sort((a, b) => b.totalResult - a.totalResult);
   }, [trades]);
 
+  function resetCreateForm() {
+    setNewName("");
+    setNewIsPublic(false);
+    setNewNote("");
+    setNewImageFiles([]);
+    newImagePreviews.forEach((u) => URL.revokeObjectURL(u));
+    setNewImagePreviews([]);
+    setShowModal(false);
+  }
+
   async function handleCreate() {
     if (!user || !newName.trim()) return;
     setSaving(true);
     try {
-      await addStrategy(newName.trim(), user.uid, newIsPublic);
-      setNewName("");
-      setNewIsPublic(false);
-      setShowModal(false);
+      const id = await addStrategy(newName.trim(), user.uid, newIsPublic);
+      if (newNote.trim()) {
+        await updateStrategy(id, user.uid, { note: newNote.trim() });
+      }
+      if (newImageFiles.length > 0) {
+        const urls: string[] = [];
+        for (const file of newImageFiles) {
+          const url = await uploadStrategyImage(user.uid, id, file);
+          urls.push(url);
+        }
+        await updateStrategy(id, user.uid, { images: urls });
+      }
+      resetCreateForm();
       await loadStrategies();
     } catch (err) {
       console.error("Strategy create error:", err);
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleCreateSelectImage(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!e.target.files?.length) return;
+    const file = e.target.files[0];
+    if (newImageFiles.length >= MAX_IMAGES) {
+      alert(`En fazla ${MAX_IMAGES} görsel yüklenebilir.`);
+      return;
+    }
+    const preview = URL.createObjectURL(file);
+    setNewImageFiles((prev) => [...prev, file]);
+    setNewImagePreviews((prev) => [...prev, preview]);
+    if (createFileInputRef.current) createFileInputRef.current.value = "";
+  }
+
+  function handleCreateRemoveImage(index: number) {
+    URL.revokeObjectURL(newImagePreviews[index]);
+    setNewImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setNewImagePreviews((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleDelete(id: string) {
@@ -207,12 +249,13 @@ export default function StrategiesPage() {
 
       {/* Create modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/70 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/70 px-4 py-8">
           <div
-            className="w-full max-w-md rounded-xl border border-ink-700 bg-ink-900 p-6 space-y-4"
+            className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl border border-ink-700 bg-ink-900 p-6 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="font-display text-lg font-semibold">Yeni Strateji Oluştur</h2>
+
             <div>
               <label className="block text-xs font-mono uppercase tracking-wide text-paper-500 mb-1.5">
                 Strateji Adı
@@ -225,6 +268,7 @@ export default function StrategiesPage() {
                 autoFocus
               />
             </div>
+
             <label className="flex items-center gap-2 text-sm text-paper-300">
               <input
                 type="checkbox"
@@ -234,6 +278,74 @@ export default function StrategiesPage() {
               />
               Herkese açık (toplulukla paylaş)
             </label>
+
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-wide text-paper-500 mb-1.5">
+                Not
+              </label>
+              <textarea
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                rows={3}
+                placeholder="Strateji hakkında notların…"
+                className="w-full rounded-lg border border-ink-700 bg-ink-950 px-3 py-2.5 text-sm placeholder:text-paper-500 focus:border-mint-500 resize-y"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-mono uppercase tracking-wide text-paper-500">
+                  Görseller ({newImageFiles.length}/{MAX_IMAGES})
+                </label>
+                {newImageFiles.length < MAX_IMAGES && (
+                  <div>
+                    <input
+                      ref={createFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleCreateSelectImage}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => createFileInputRef.current?.click()}
+                      className="rounded-lg bg-mint-500 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-mint-400 transition flex items-center gap-1.5"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Görsel Ekle
+                    </button>
+                  </div>
+                )}
+              </div>
+              {newImagePreviews.length > 0 ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {newImagePreviews.map((preview, i) => (
+                    <div key={i} className="relative group aspect-video rounded-lg overflow-hidden border border-ink-700 bg-ink-950">
+                      <img
+                        src={preview}
+                        alt={`Önizleme ${i + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleCreateRemoveImage(i)}
+                        className="absolute top-1 right-1 p-1 rounded bg-ink-950/80 text-coral-400 opacity-0 group-hover:opacity-100 hover:bg-coral-500 hover:text-white transition"
+                        title="Kaldır"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-paper-500">Henüz görsel seçilmedi.</p>
+              )}
+            </div>
+
             <div className="flex gap-3 pt-2">
               <button
                 onClick={handleCreate}
@@ -243,11 +355,7 @@ export default function StrategiesPage() {
                 {saving ? "kaydediliyor…" : "Oluştur"}
               </button>
               <button
-                onClick={() => {
-                  setShowModal(false);
-                  setNewName("");
-                  setNewIsPublic(false);
-                }}
+                onClick={resetCreateForm}
                 className="rounded-lg border border-ink-700 px-4 py-2.5 text-sm font-medium text-paper-300 hover:bg-ink-800 transition"
               >
                 İptal
