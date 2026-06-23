@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 export interface ToastItem {
   id: string;
-  tradeId: string;
+  tradeId?: string;
   message: string;
 }
 
@@ -70,12 +70,14 @@ function ToastItem({
       style={{ animationDelay: `${index * 0.05}s` }}
     >
       <span className="text-sm text-paper-100 flex-1">{toast.message}</span>
-      <button
-        onClick={() => onUndo(toast.tradeId)}
-        className="rounded-lg bg-mint-500/15 px-3 py-1.5 text-sm font-medium text-mint-400 hover:bg-mint-500/25 transition shrink-0"
-      >
-        Geri Al
-      </button>
+      {toast.tradeId && (
+        <button
+          onClick={() => onUndo(toast.tradeId)}
+          className="rounded-lg bg-mint-500/15 px-3 py-1.5 text-sm font-medium text-mint-400 hover:bg-mint-500/25 transition shrink-0"
+        >
+          Geri Al
+        </button>
+      )}
     </div>
   );
 }

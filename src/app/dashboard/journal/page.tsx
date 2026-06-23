@@ -28,13 +28,21 @@ export default function JournalPage() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   let toastIdCounter = 0;
 
+  function showToast(message: string) {
+    const id = `toast-${++toastIdCounter}`;
+    setToasts((prev) => [...prev, { id, tradeId: "", message } as ToastItem]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
+  }
+
   function showDeleteToast(tradeId: string) {
     const id = `toast-${++toastIdCounter}`;
     setToasts((prev) => [...prev, { id, tradeId, message: "İşlem silindi" }]);
   }
 
   function handleUndo(tradeId: string) {
-    if (!user) return;
+    if (!user || !tradeId) return;
     restoreTrade(user.uid, tradeId);
     setToasts((prev) => prev.filter((t) => t.tradeId !== tradeId));
   }
@@ -62,8 +70,10 @@ export default function JournalPage() {
     try {
       if (editingTrade) {
         await updateTrade(user.uid, editingTrade.id, input);
+        showToast("İşlem güncellendi ✓");
       } else {
         await addTrade(user.uid, input);
+        showToast("İşlem eklendi ✓");
       }
       setShowForm(false);
       setEditingTrade(null);
