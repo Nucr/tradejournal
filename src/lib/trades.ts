@@ -48,23 +48,33 @@ export function subscribeToTrades(
 ) {
   const q = query(
     tradesCollection(uid),
-    where("deletedAt", "==", null),
     orderBy("entryDate", "desc")
   );
+  console.log("subscribeToTrades: starting listener for", uid);
   return onSnapshot(q, (snapshot) => {
-    const trades = snapshot.docs.map(mapTrade);
+    console.log("subscribeToTrades: snapshot received", snapshot.docs.length, "docs");
+    const trades = snapshot.docs
+      .map(mapTrade)
+      .filter((t) => t.deletedAt == null);
     callback(trades);
   }, (err) => {
-    console.error("subscribeToTrades error:", err);
+    console.error("subscribeToTrades error:", err?.message, err);
   });
 }
 
 export async function addTrade(uid: string, trade: TradeInput) {
-  await addDoc(tradesCollection(uid), {
-    ...trade,
-    createdAt: serverTimestamp(),
-  });
-  await syncUserScore(uid);
+  console.log("addTrade called", { uid, trade });
+  try {
+    const docRef = await addDoc(tradesCollection(uid), {
+      ...trade,
+      createdAt: serverTimestamp(),
+    });
+    console.log("addDoc succeeded", docRef.id);
+  } catch (err) {
+    console.error("addDoc failed:", err);
+    throw err;
+  }
+  syncUserScore(uid).catch((err) => console.error("syncUserScore error:", err));
 }
 
 export async function updateTrade(uid: string, id: string, trade: Partial<TradeInput>) {

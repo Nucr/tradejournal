@@ -22,6 +22,7 @@ export default function JournalPage() {
   const [customEnd, setCustomEnd] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
+  const [formError, setFormError] = useState("");
 
   // Stacked undo toasts
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -57,6 +58,7 @@ export default function JournalPage() {
 
   async function handleSubmit(input: TradeInput) {
     if (!user) return;
+    setFormError("");
     try {
       if (editingTrade) {
         await updateTrade(user.uid, editingTrade.id, input);
@@ -66,6 +68,8 @@ export default function JournalPage() {
       setShowForm(false);
       setEditingTrade(null);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "İşlem kaydedilemedi";
+      setFormError(msg);
       console.error("Trade save error:", err);
     }
   }
@@ -89,6 +93,7 @@ export default function JournalPage() {
           onClick={() => {
             setEditingTrade(null);
             setShowForm(true);
+            setFormError("");
           }}
           className="rounded-lg bg-mint-500 px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-mint-400 transition flex items-center gap-2"
         >
@@ -134,7 +139,7 @@ export default function JournalPage() {
                 {editingTrade ? "İşlemi Düzenle" : "Yeni İşlem Ekle"}
               </h2>
               <button
-                onClick={() => { setShowForm(false); setEditingTrade(null); }}
+                onClick={() => { setShowForm(false); setEditingTrade(null); setFormError(""); }}
                 className="text-paper-500 hover:text-paper-100 transition p-1 rounded-lg hover:bg-ink-800"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -142,12 +147,18 @@ export default function JournalPage() {
                 </svg>
               </button>
             </div>
+            {formError && (
+              <p className="text-sm text-coral-400 font-mono mb-4 bg-coral-500/10 border border-coral-500/30 rounded-lg px-3 py-2">
+                {formError}
+              </p>
+            )}
             <TradeForm
               initial={editingTrade ?? undefined}
               onSubmit={handleSubmit}
               onCancel={() => {
                 setShowForm(false);
                 setEditingTrade(null);
+                setFormError("");
               }}
             />
           </div>
