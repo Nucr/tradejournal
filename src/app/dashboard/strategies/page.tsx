@@ -126,8 +126,8 @@ export default function StrategiesPage() {
       resetCreateForm();
       await loadStrategies();
     } catch (err) {
-      console.error("Strategy create error:", err);
-      alert("Strateji oluşturulamadı. Lütfen tekrar dene.");
+      const message = err instanceof Error ? err.message : "Bilinmeyen hata";
+      alert("Strateji oluşturulamadı: " + message);
     } finally {
       setSaving(false);
     }
@@ -138,6 +138,11 @@ export default function StrategiesPage() {
     const file = e.target.files[0];
     if (newImageFiles.length >= MAX_IMAGES) {
       alert(`En fazla ${MAX_IMAGES} görsel yüklenebilir.`);
+      return;
+    }
+    if (file.size > 150 * 1024) {
+      alert(`"${file.name}" dosyası çok büyük (${(file.size / 1024).toFixed(0)}KB). Maksimum 150KB.`);
+      if (createFileInputRef.current) createFileInputRef.current.value = "";
       return;
     }
     const preview = URL.createObjectURL(file);
@@ -177,23 +182,35 @@ export default function StrategiesPage() {
     setSavingDetail(false);
   }
 
-  async function handleUploadImage(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!user || !detailStrategy || !e.target.files?.length) return;
+  function handleDetailSelectImage(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!e.target.files?.length) return;
     const file = e.target.files[0];
-    setUploading(true);
-    try {
-      const url = await uploadStrategyImage(file);
-      const updated = [...detailImages, url];
-      await updateStrategy(detailStrategy.id, user.uid, { images: updated });
-      setDetailImages(updated);
-      await loadStrategies();
-    } catch (err) {
-      console.error("Upload error:", err);
-      alert("Görsel yüklenemedi.");
-    } finally {
-      setUploading(false);
+    if (detailImages.length >= MAX_IMAGES) {
+      alert(`En fazla ${MAX_IMAGES} görsel yüklenebilir.`);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
     }
+    if (file.size > 150 * 1024) {
+      alert(`"${file.name}" dosyası çok büyük (${(file.size / 1024).toFixed(0)}KB). Maksimum 150KB.`);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    setUploading(true);
+    uploadStrategyImage(file)
+      .then(async (url) => {
+        const updated = [...detailImages, url];
+        await updateStrategy(detailStrategy!.id, user!.uid, { images: updated });
+        setDetailImages(updated);
+        await loadStrategies();
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Bilinmeyen hata";
+        alert("Görsel yüklenemedi: " + message);
+      })
+      .finally(() => {
+        setUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      });
   }
 
   async function handleDeleteImage(imageUrl: string) {
@@ -527,7 +544,7 @@ export default function StrategiesPage() {
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={handleUploadImage}
+                      onChange={handleDetailSelectImage}
                     />
                     <button
                       onClick={() => fileInputRef.current?.click()}
