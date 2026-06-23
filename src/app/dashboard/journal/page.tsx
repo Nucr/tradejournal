@@ -59,8 +59,14 @@ export default function JournalPage() {
     };
   }, [user]);
 
+  console.log("JournalPage render: trades.length", trades.length, "resultFilter", resultFilter, "directionFilter", directionFilter, "timeFilter", timeFilter);
+
   const filtered = useMemo(
-    () => filterTrades(trades, { result: resultFilter, direction: directionFilter, range: timeFilter, customStart, customEnd }),
+    () => {
+      const result = filterTrades(trades, { result: resultFilter, direction: directionFilter, range: timeFilter, customStart, customEnd });
+      console.log("JournalPage filtered:", result.length);
+      return result;
+    },
     [trades, resultFilter, directionFilter, timeFilter, customStart, customEnd]
   );
 
