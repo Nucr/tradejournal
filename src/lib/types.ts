@@ -70,6 +70,8 @@ export interface Strategy {
   createdBy: string;
   createdAt: Date;
   isPublic: boolean;
+  images: string[];
+  note: string;
 }
 
 export type StrategyInput = Omit<Strategy, "id" | "createdAt">;

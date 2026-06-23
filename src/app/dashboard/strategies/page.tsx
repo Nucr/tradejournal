@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { addStrategy, deleteStrategy, getStrategies } from "@/lib/strategies";
+import { addStrategy, deleteStrategy, getStrategies, updateStrategy } from "@/lib/strategies";
+import { uploadStrategyImage, deleteStrategyImage } from "@/lib/storage";
 import { subscribeToTrades } from "@/lib/trades";
 import { getUser } from "@/lib/users";
 import { Strategy, Trade } from "@/lib/types";
@@ -17,6 +18,8 @@ interface StrategyStats {
   totalResult: number;
 }
 
+const MAX_IMAGES = 5;
+
 export default function StrategiesPage() {
   const { user } = useAuth();
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -26,6 +29,12 @@ export default function StrategiesPage() {
   const [newIsPublic, setNewIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
   const [creatorNames, setCreatorNames] = useState<Record<string, string>>({});
+  const [detailStrategy, setDetailStrategy] = useState<Strategy | null>(null);
+  const [detailNote, setDetailNote] = useState("");
+  const [detailImages, setDetailImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [savingDetail, setSavingDetail] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -114,6 +123,68 @@ export default function StrategiesPage() {
     }
   }
 
+  function openDetail(s: Strategy) {
+    setDetailStrategy(s);
+    setDetailNote(s.note);
+    setDetailImages([...s.images]);
+  }
+
+  function closeDetail() {
+    setDetailStrategy(null);
+    setDetailNote("");
+    setDetailImages([]);
+    setUploading(false);
+    setSavingDetail(false);
+  }
+
+  async function handleUploadImage(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!user || !detailStrategy || !e.target.files?.length) return;
+    const file = e.target.files[0];
+    setUploading(true);
+    try {
+      const url = await uploadStrategyImage(user.uid, detailStrategy.id, file);
+      const updated = [...detailImages, url];
+      await updateStrategy(detailStrategy.id, user.uid, { images: updated });
+      setDetailImages(updated);
+      await loadStrategies();
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("Görsel yüklenemedi.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleDeleteImage(imageUrl: string) {
+    if (!user || !detailStrategy) return;
+    if (!confirm("Bu görseli silmek istediğine emin misin?")) return;
+    try {
+      await deleteStrategyImage(imageUrl);
+      const updated = detailImages.filter((u) => u !== imageUrl);
+      await updateStrategy(detailStrategy.id, user.uid, { images: updated });
+      setDetailImages(updated);
+      await loadStrategies();
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
+  }
+
+  async function handleSaveNote() {
+    if (!user || !detailStrategy) return;
+    setSavingDetail(true);
+    try {
+      await updateStrategy(detailStrategy.id, user.uid, { note: detailNote });
+      await loadStrategies();
+    } catch (err) {
+      console.error("Save note error:", err);
+    } finally {
+      setSavingDetail(false);
+    }
+  }
+
+  const isOwner = (s: Strategy) => s.createdBy === user?.uid;
+
   return (
     <div className="space-y-8 animate-fade-in-up">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -194,9 +265,10 @@ export default function StrategiesPage() {
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {myStrategies.map((s) => (
-              <div
+              <button
                 key={s.id}
-                className="rounded-xl border border-ink-800 bg-ink-900 p-4 hover:border-ink-700 transition group"
+                onClick={() => openDetail(s)}
+                className="w-full text-left rounded-xl border border-ink-800 bg-ink-900 p-4 hover:border-ink-700 transition group"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -209,10 +281,21 @@ export default function StrategiesPage() {
                         </span>
                       )}
                     </div>
+                    {(s.images.length > 0 || s.note) && (
+                      <div className="flex items-center gap-3 mt-2 text-[10px] font-mono text-paper-500">
+                        {s.images.length > 0 && (
+                          <span>{s.images.length}/{MAX_IMAGES} görsel</span>
+                        )}
+                        {s.note && <span>not var</span>}
+                      </div>
+                    )}
                   </div>
                   <button
-                    onClick={() => handleDelete(s.id)}
-                    className="opacity-0 group-hover:opacity-100 transition p-1 rounded text-paper-500 hover:text-coral-400 hover:bg-ink-800"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(s.id);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 transition p-1 rounded text-paper-500 hover:text-coral-400 hover:bg-ink-800 shrink-0"
                     title="Sil"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -220,7 +303,7 @@ export default function StrategiesPage() {
                     </svg>
                   </button>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </section>
@@ -234,15 +317,24 @@ export default function StrategiesPage() {
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {communityStrategies.map((s) => (
-              <div
+              <button
                 key={s.id}
-                className="rounded-xl border border-ink-800 bg-ink-900 p-4"
+                onClick={() => openDetail(s)}
+                className="w-full text-left rounded-xl border border-ink-800 bg-ink-900 p-4 hover:border-ink-700 transition"
               >
                 <p className="font-display font-semibold truncate">{s.name}</p>
                 <p className="text-xs font-mono text-paper-500 mt-1">
                   {creatorNames[s.createdBy] ?? s.createdBy.slice(0, 6)}
                 </p>
-              </div>
+                {(s.images.length > 0 || s.note) && (
+                  <div className="flex items-center gap-3 mt-2 text-[10px] font-mono text-paper-500">
+                    {s.images.length > 0 && (
+                      <span>{s.images.length}/{MAX_IMAGES} görsel</span>
+                    )}
+                    {s.note && <span>not var</span>}
+                  </div>
+                )}
+              </button>
             ))}
           </div>
         </section>
@@ -284,6 +376,137 @@ export default function StrategiesPage() {
           <p className="text-xs text-paper-500 mt-1">
             İşlem ekledikçe strateji analizin burada görünecek.
           </p>
+        </div>
+      )}
+
+      {/* Detail modal */}
+      {detailStrategy && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/70 px-4 py-8"
+          onClick={closeDetail}
+        >
+          <div
+            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-ink-700 bg-ink-900 p-6 space-y-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-display text-xl font-semibold">{detailStrategy.name}</h2>
+                {!isOwner(detailStrategy) && (
+                  <p className="text-xs font-mono text-paper-500 mt-1">
+                    {creatorNames[detailStrategy.createdBy] ?? "Bilinmeyen"}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={closeDetail}
+                className="p-1 rounded text-paper-500 hover:text-paper-200 hover:bg-ink-800 transition"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Images */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-mono uppercase tracking-wide text-paper-500">
+                  Görseller ({detailImages.length}/{MAX_IMAGES})
+                </h3>
+                {isOwner(detailStrategy) && detailImages.length < MAX_IMAGES && (
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleUploadImage}
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="rounded-lg bg-mint-500 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-mint-400 transition disabled:opacity-60 flex items-center gap-1.5"
+                    >
+                      {uploading ? (
+                        "Yükleniyor…"
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Görsel Ekle
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+              {detailImages.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {detailImages.map((url, i) => (
+                    <div key={i} className="relative group aspect-video rounded-lg overflow-hidden border border-ink-700 bg-ink-950">
+                      <img
+                        src={url}
+                        alt={`Görsel ${i + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {isOwner(detailStrategy) && (
+                        <button
+                          onClick={() => handleDeleteImage(url)}
+                          className="absolute top-1 right-1 p-1 rounded bg-ink-950/80 text-coral-400 opacity-0 group-hover:opacity-100 hover:bg-coral-500 hover:text-white transition"
+                          title="Sil"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-ink-700 p-8 text-center">
+                  <p className="text-sm text-paper-500">Henüz görsel eklenmemiş.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Note */}
+            <div>
+              <h3 className="text-sm font-mono uppercase tracking-wide text-paper-500 mb-3">
+                Not
+              </h3>
+              {isOwner(detailStrategy) ? (
+                <div className="space-y-3">
+                  <textarea
+                    value={detailNote}
+                    onChange={(e) => setDetailNote(e.target.value)}
+                    rows={4}
+                    placeholder="Strateji hakkında notların…"
+                    className="w-full rounded-lg border border-ink-700 bg-ink-950 px-3 py-2.5 text-sm placeholder:text-paper-500 focus:border-mint-500 resize-y"
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleSaveNote}
+                      disabled={savingDetail}
+                      className="rounded-lg bg-mint-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-mint-400 transition disabled:opacity-60"
+                    >
+                      {savingDetail ? "Kaydediliyor…" : "Notu Kaydet"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-ink-800 bg-ink-950 p-4">
+                  {detailNote ? (
+                    <p className="text-sm text-paper-200 whitespace-pre-wrap">{detailNote}</p>
+                  ) : (
+                    <p className="text-sm text-paper-500">Not eklenmemiş.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { doc, updateDoc } from "firebase/firestore";
-import { db } from "./firebase";
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
+import { db, storage } from "./firebase";
 
 export async function uploadAvatar(
   uid: string,
@@ -42,4 +43,49 @@ export async function uploadAvatar(
 
 export async function deleteAvatar(uid: string): Promise<void> {
   await updateDoc(doc(db, "users", uid), { avatarUrl: "" });
+}
+
+export async function uploadStrategyImage(
+  uid: string,
+  strategyId: string,
+  file: File,
+  onProgress?: (pct: number) => void
+): Promise<string> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Sadece resim dosyaları kabul edilir");
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error("Dosya boyutu 5MB'dan büyük olamaz");
+  }
+
+  const filename = `${Date.now()}_${file.name}`;
+  const storageRef = ref(storage, `strategies/${uid}/${strategyId}/${filename}`);
+  const uploadTask = uploadBytesResumable(storageRef, file);
+
+  return new Promise((resolve, reject) => {
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        if (onProgress) {
+          onProgress(Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100));
+        }
+      },
+      (error) => {
+        reject(error);
+      },
+      async () => {
+        const url = await getDownloadURL(uploadTask.snapshot.ref);
+        resolve(url);
+      }
+    );
+  });
+}
+
+export async function deleteStrategyImage(imageUrl: string): Promise<void> {
+  try {
+    const storageRef = ref(storage, imageUrl);
+    await deleteObject(storageRef);
+  } catch {
+    // ignore if file already deleted
+  }
 }

@@ -9,6 +9,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
   where,
 } from "firebase/firestore";
 import { db } from "./firebase";
@@ -53,6 +54,8 @@ export async function getStrategies(uid: string): Promise<Strategy[]> {
         createdBy: data.createdBy,
         createdAt: data.createdAt?.toDate?.() ?? new Date(),
         isPublic: data.isPublic,
+        images: data.images ?? [],
+        note: data.note ?? "",
       } as Strategy);
     }
   };
@@ -118,8 +121,27 @@ export async function addStrategy(
     createdBy: uid,
     createdAt: serverTimestamp(),
     isPublic,
+    images: [],
+    note: "",
   });
   return ref.id;
+}
+
+export async function updateStrategy(
+  id: string,
+  uid: string,
+  data: { name?: string; note?: string; images?: string[] }
+): Promise<void> {
+  const snap = await getDoc(strategyDoc(id));
+  if (!snap.exists()) return;
+  if (snap.data().createdBy !== uid) {
+    throw new Error("Bu stratejiyi düzenleme yetkiniz yok.");
+  }
+  const updates: Record<string, unknown> = {};
+  if (data.name !== undefined) updates.name = data.name;
+  if (data.note !== undefined) updates.note = data.note;
+  if (data.images !== undefined) updates.images = data.images;
+  await updateDoc(strategyDoc(id), updates);
 }
 
 export async function deleteStrategy(id: string, uid: string): Promise<void> {
