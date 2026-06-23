@@ -239,10 +239,10 @@ html.light .rounded-xl.border.border-ink-700.bg-ink-900 {
 }
 
 /* TradeCard specific hover */
-html.light .rounded-xl.border.border-ink-800.bg-ink-900.hover\:border-ink-700 {
-  transition: box-shadow 0.15s ease;
+html.light .rounded-xl.border.border-ink-800.bg-ink-900 {
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
 }
-html.light .rounded-xl.border.border-ink-800.bg-ink-900.hover\:border-ink-700:hover {
+html.light .rounded-xl.border.border-ink-800.bg-ink-900:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 
