@@ -61,6 +61,19 @@ export default function JournalPage() {
 
   console.log("JournalPage render: trades.length", trades.length, "resultFilter", resultFilter, "directionFilter", directionFilter, "timeFilter", timeFilter);
 
+  useEffect(() => {
+    if (filtered.length > 0) {
+      setTimeout(() => {
+        const listEl = document.querySelector('[class*="space-y-3"]');
+        console.log("DOM check: listEl", !!listEl, "childCount", listEl?.childElementCount, "innerHTML", listEl?.innerHTML?.slice(0, 200));
+        const tradeEls = document.querySelectorAll('[class*="rounded-xl"]');
+        console.log("DOM check: rounded-xl elements", tradeEls.length);
+        const allDivs = document.querySelectorAll('div');
+        console.log("DOM check: total divs", allDivs.length);
+      }, 500);
+    }
+  }, [filtered]);
+
   const filtered = useMemo(
     () => {
       const result = filterTrades(trades, { result: resultFilter, direction: directionFilter, range: timeFilter, customStart, customEnd });
@@ -101,17 +114,9 @@ export default function JournalPage() {
     const cards = filtered.map((trade, i) => {
       console.log("RENDERING TradeCard", trade.id, trade.pair, trade.result);
       return (
-        <TradeCard
-          key={trade.id}
-          trade={trade}
-          uid={user!.uid}
-          index={i}
-          onEdit={() => {
-            setEditingTrade(trade);
-            setShowForm(true);
-          }}
-          onDelete={() => handleDelete(trade.id)}
-        />
+        <div key={trade.id} className="p-4 border border-coral-500 rounded-lg mb-2">
+          <p className="text-white">{i+1}. {trade.pair} - {trade.result}%</p>
+        </div>
       );
     });
     console.log("AFTER MAP: cards count", cards.length);
