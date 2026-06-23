@@ -140,8 +140,8 @@ export default function StrategiesPage() {
       alert(`En fazla ${MAX_IMAGES} görsel yüklenebilir.`);
       return;
     }
-    if (file.size > 150 * 1024) {
-      alert(`"${file.name}" dosyası çok büyük (${(file.size / 1024).toFixed(0)}KB). Maksimum 150KB.`);
+    if (file.size > 10 * 1024 * 1024) {
+      alert(`"${file.name}" dosyası çok büyük (${(file.size / 1024 / 1024).toFixed(1)}MB). Maksimum 10MB.`);
       if (createFileInputRef.current) createFileInputRef.current.value = "";
       return;
     }
@@ -190,8 +190,8 @@ export default function StrategiesPage() {
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
-    if (file.size > 150 * 1024) {
-      alert(`"${file.name}" dosyası çok büyük (${(file.size / 1024).toFixed(0)}KB). Maksimum 150KB.`);
+    if (file.size > 10 * 1024 * 1024) {
+      alert(`"${file.name}" dosyası çok büyük (${(file.size / 1024 / 1024).toFixed(1)}MB). Maksimum 10MB.`);
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }

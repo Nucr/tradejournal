@@ -51,28 +51,45 @@ export async function uploadStrategyImage(
   if (!file.type.startsWith("image/")) {
     throw new Error("Sadece resim dosyaları kabul edilir");
   }
-  if (file.size > 150 * 1024) {
-    throw new Error("Dosya boyutu 150KB'dan büyük olamaz");
-  }
 
-  const reader = new FileReader();
+  const signRes = await fetch("/api/cloudinary/sign", { method: "POST" });
+  if (!signRes.ok) throw new Error("Cloudinary imza alınamadı");
+  const { signature, timestamp, api_key, cloud_name, folder } = await signRes.json();
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("folder", folder);
+  formData.append("timestamp", String(timestamp));
+  formData.append("api_key", api_key);
+  formData.append("signature", signature);
+
+  const xhr = new XMLHttpRequest();
 
   return new Promise((resolve, reject) => {
-    reader.onprogress = (e) => {
+    xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
         onProgress(Math.round((e.loaded / e.total) * 100));
       }
     };
 
-    reader.onload = () => {
-      resolve(reader.result as string);
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        resolve(data.secure_url);
+      } else {
+        try {
+          const err = JSON.parse(xhr.responseText);
+          reject(new Error(err.error?.message || "Cloudinary yükleme hatası"));
+        } catch {
+          reject(new Error("Cloudinary yükleme hatası"));
+        }
+      }
     };
 
-    reader.onerror = () => {
-      reject(new Error("Dosya okunamadı"));
-    };
+    xhr.onerror = () => reject(new Error("Cloudinary bağlantı hatası"));
 
-    reader.readAsDataURL(file);
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`);
+    xhr.send(formData);
   });
 }
 
