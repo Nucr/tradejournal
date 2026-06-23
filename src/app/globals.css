@@ -219,14 +219,15 @@ a:focus-visible {
 
 /* ===== LIGHT MODE OVERRIDES ===== */
 html.light body {
-  background-color: #f0f2f5;
-  color: #111827;
+  background-color: #f3f4f6;
+  color: #1f2937;
 }
 
 /* Sidebar */
 html.light aside {
   background-color: #ffffff !important;
   border-color: #e5e7eb !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
 }
 
 /* Cards / panels */
@@ -234,17 +235,36 @@ html.light .rounded-xl.border.border-ink-800.bg-ink-900,
 html.light .rounded-xl.border.border-ink-700.bg-ink-900 {
   background-color: #ffffff !important;
   border-color: #e5e7eb !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+}
+
+/* TradeCard specific hover */
+html.light .rounded-xl.border.border-ink-800.bg-ink-900.hover\:border-ink-700 {
+  transition: box-shadow 0.15s ease;
+}
+html.light .rounded-xl.border.border-ink-800.bg-ink-900.hover\:border-ink-700:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 
 /* Nav items */
 html.light .bg-ink-900 {
   background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
 }
 html.light .bg-ink-950 {
   background-color: #f9fafb;
 }
+html.light .bg-ink-850 {
+  background-color: #f3f4f6;
+}
 html.light .bg-ink-800 {
   background-color: #f3f4f6;
+}
+html.light .bg-ink-700 {
+  background-color: #e5e7eb;
+}
+html.light .bg-ink-600 {
+  background-color: #d1d5db;
 }
 html.light .border-ink-800 {
   border-color: #e5e7eb;
@@ -252,29 +272,115 @@ html.light .border-ink-800 {
 html.light .border-ink-700 {
   border-color: #d1d5db;
 }
+html.light .border-ink-600 {
+  border-color: #9ca3af;
+}
 
 /* Text */
-html.light .text-paper-100 { color: #111827; }
-html.light .text-paper-300 { color: #374151; }
+html.light .text-paper-100 { color: #1f2937; }
+html.light .text-paper-200 { color: #374151; }
+html.light .text-paper-300 { color: #4b5563; }
 html.light .text-paper-500 { color: #6b7280; }
 
+/* Buttons */
+html.light button.rounded-lg.bg-mint-500 {
+  box-shadow: 0 1px 2px rgba(46,217,164,0.2);
+}
+
+html.light button.rounded-lg.border.border-ink-700 {
+  border-color: #d1d5db;
+  color: #374151;
+}
+html.light button.rounded-lg.border.border-ink-700:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* Links */
+html.light a.rounded-lg.border.border-ink-700 {
+  border-color: #d1d5db;
+  color: #374151;
+}
+html.light a.rounded-lg.border.border-ink-700:hover {
+  background-color: #f3f4f6;
+}
+
+/* Empty state */
+html.light .border.border-ink-800.bg-ink-900.p-12 {
+  background-color: #ffffff !important;
+  border-color: #e5e7eb !important;
+}
+
 /* Scrollbar */
-html.light ::-webkit-scrollbar-track { background: #f0f2f5; }
+html.light ::-webkit-scrollbar-track { background: #f3f4f6; }
 html.light ::-webkit-scrollbar-thumb { background: #d1d5db; }
 
 /* Inputs */
 html.light input,
 html.light textarea,
 html.light select {
-  color: #111827;
+  color: #1f2937;
+  background-color: #ffffff;
+  border-color: #d1d5db;
 }
 html.light input::placeholder,
 html.light textarea::placeholder {
   color: #9ca3af;
 }
+html.light input:focus,
+html.light textarea:focus {
+  border-color: #2ed9a4;
+  box-shadow: 0 0 0 3px rgba(46,217,164,0.1);
+}
+
+/* Modal overlay in light mode */
+html.light .fixed.inset-0.z-50 {
+  background-color: rgba(0,0,0,0.3) !important;
+}
+html.light .fixed.inset-0.z-50 > div {
+  background-color: #ffffff !important;
+  border-color: #e5e7eb !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+}
+
+/* Strategy dropdown */
+html.light .absolute.z-20.rounded-lg.border.border-ink-700 {
+  background-color: #ffffff;
+  border-color: #e5e7eb;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+html.light .absolute.z-20.rounded-lg.border.border-ink-700 button:hover {
+  background-color: #f3f4f6;
+}
+
+/* Toast */
+html.light .animate-slide-in-right {
+  background-color: #ffffff !important;
+  border-color: #e5e7eb !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
 
 /* Tab bar */
 html.light .rounded-lg.bg-ink-900.border.border-ink-800 {
-  background-color: #f3f4f6;
+  background-color: #ffffff;
   border-color: #e5e7eb;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+/* Filter buttons */
+html.light .rounded-lg.border.border-ink-700.text-paper-300 {
+  border-color: #d1d5db;
+  color: #6b7280;
+}
+html.light .rounded-lg.border.border-ink-700.text-paper-300:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+html.light .rounded-lg.border.border-mint-500 {
+  border-color: #2ed9a4;
+}
+
+/* Sort buttons */
+html.light .text-xs.font-mono.px-2.py-1.rounded {
+  border-color: #d1d5db;
 }
