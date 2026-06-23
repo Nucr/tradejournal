@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { addStrategy, deleteStrategy, getStrategies, updateStrategy } from "@/lib/strategies";
+import { addStrategy, deleteStrategy, getStrategies, setStrategyImages, updateStrategy } from "@/lib/strategies";
 import { uploadStrategyImage, deleteStrategyImage } from "@/lib/storage";
 import { subscribeToTrades } from "@/lib/trades";
 import { getUser } from "@/lib/users";
@@ -114,22 +114,20 @@ export default function StrategiesPage() {
     if (!user || !newName.trim()) return;
     setSaving(true);
     try {
-      const id = await addStrategy(newName.trim(), user.uid, newIsPublic);
-      if (newNote.trim()) {
-        await updateStrategy(id, user.uid, { note: newNote.trim() });
-      }
+      const id = await addStrategy(newName.trim(), user.uid, newIsPublic, newNote.trim() || undefined);
       if (newImageFiles.length > 0) {
         const urls: string[] = [];
         for (const file of newImageFiles) {
           const url = await uploadStrategyImage(user.uid, id, file);
           urls.push(url);
         }
-        await updateStrategy(id, user.uid, { images: urls });
+        await setStrategyImages(id, urls);
       }
       resetCreateForm();
       await loadStrategies();
     } catch (err) {
       console.error("Strategy create error:", err);
+      alert("Strateji oluşturulamadı. Lütfen tekrar dene.");
     } finally {
       setSaving(false);
     }

@@ -114,7 +114,8 @@ export function subscribeToStrategies(
 export async function addStrategy(
   name: string,
   uid: string,
-  isPublic: boolean
+  isPublic: boolean,
+  note?: string
 ): Promise<string> {
   const ref = await addDoc(strategiesRef(), {
     name,
@@ -122,7 +123,7 @@ export async function addStrategy(
     createdAt: serverTimestamp(),
     isPublic,
     images: [],
-    note: "",
+    note: note ?? "",
   });
   return ref.id;
 }
@@ -142,6 +143,13 @@ export async function updateStrategy(
   if (data.note !== undefined) updates.note = data.note;
   if (data.images !== undefined) updates.images = data.images;
   await updateDoc(strategyDoc(id), updates);
+}
+
+export async function setStrategyImages(
+  id: string,
+  images: string[]
+): Promise<void> {
+  await updateDoc(strategyDoc(id), { images });
 }
 
 export async function deleteStrategy(id: string, uid: string): Promise<void> {
