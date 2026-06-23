@@ -179,7 +179,8 @@ export default function SettingsPage() {
       <p className="text-sm text-paper-500 mb-8">Profil ve hesap ayarlarını yönet.</p>
 
       {/* Avatar */}
-      <section className="rounded-xl border border-ink-800 bg-ink-900/50 p-6 mb-6 text-center">
+      <section className="rounded-xl border border-ink-800 bg-ink-900 p-6 mb-6 text-center relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-mint-500/60 to-mint-500/10" />
         <h2 className="font-display text-base font-semibold mb-4 text-left">Profil Fotoğrafı</h2>
         <div className="flex flex-col items-center gap-4">
           {avatarPreview ? (
@@ -260,7 +261,8 @@ export default function SettingsPage() {
       </section>
 
       {/* Privacy */}
-      <section className="rounded-xl border border-ink-800 bg-ink-900/50 p-6 mb-6">
+      <section className="rounded-xl border border-ink-800 bg-ink-900 p-6 mb-6 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-mint-500/40 to-transparent" />
         <h2 className="font-display text-base font-semibold mb-4">Gizlilik</h2>
         <div className="space-y-4">
           <label className="flex items-center justify-between cursor-pointer">
@@ -306,13 +308,15 @@ export default function SettingsPage() {
       </section>
 
       {/* Achievements */}
-      <section className="rounded-xl border border-ink-800 bg-ink-900/50 p-6 mb-6">
+      <section className="rounded-xl border border-ink-800 bg-ink-900 p-6 mb-6 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-amber-400/60 to-amber-400/10" />
         <h2 className="font-display text-base font-semibold mb-4">Rozetler</h2>
         <AchievementsGrid earned={profile?.achievements ?? []} />
       </section>
 
       {/* Cleanup deleted trades */}
-      <section className="rounded-xl border border-ink-800 bg-ink-900/50 p-6 mb-6">
+      <section className="rounded-xl border border-ink-800 bg-ink-900 p-6 mb-6 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-paper-500/40 to-transparent" />
         <h2 className="font-display text-base font-semibold mb-2">Depolama</h2>
         <p className="text-sm text-paper-500 mb-4">
           90 günden eski silinmiş işlemleri kalıcı olarak temizler. Bu işlem geri alınamaz.
@@ -335,7 +339,8 @@ export default function SettingsPage() {
       </section>
 
       {/* Delete account */}
-      <section className="rounded-xl border border-coral-500/20 bg-coral-500/5 p-6">
+      <section className="rounded-xl border border-coral-500/20 bg-coral-500/5 p-6 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-coral-500/60 to-coral-500/10" />
         <h2 className="font-display text-base font-semibold text-coral-400 mb-2">Hesabı Sil</h2>
         <p className="text-sm text-paper-500 mb-4">
           Tüm trade geçmişin, avatarın, puanın ve profil bilgilerin kalıcı olarak silinir.
