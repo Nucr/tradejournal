@@ -193,19 +193,22 @@ export default function JournalPage() {
             <p className="text-xs text-paper-500 mt-1">Yeni bir işlem ekleyerek başla.</p>
           </div>
         )}
-        {filtered.map((trade, i) => (
-          <TradeCard
-            key={trade.id}
-            trade={trade}
-            uid={user!.uid}
-            index={i}
-            onEdit={() => {
-              setEditingTrade(trade);
-              setShowForm(true);
-            }}
-            onDelete={() => handleDelete(trade.id)}
-          />
-        ))}
+        {filtered.map((trade, i) => {
+          console.log("RENDERING TradeCard", trade.id, trade.pair, trade.result);
+          return (
+            <TradeCard
+              key={trade.id}
+              trade={trade}
+              uid={user!.uid}
+              index={i}
+              onEdit={() => {
+                setEditingTrade(trade);
+                setShowForm(true);
+              }}
+              onDelete={() => handleDelete(trade.id)}
+            />
+          );
+        })}
       </div>
 
       {/* Toast */}
