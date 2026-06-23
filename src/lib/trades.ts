@@ -37,7 +37,7 @@ function mapTrade(d: { id: string; data: () => Record<string, unknown> }): Trade
     strategy: (data.strategy as string) ?? "",
     note: (data.note as string) ?? "",
     screenshotUrl: (data.screenshotUrl as string) ?? "",
-    createdAt: (data.createdAt as { toDate?: () => Date })?.toDate?.().toISOString?.() ?? new Date().toISOString(),
+    createdAt: (data.createdAt as { toDate?: () => Date })?.toDate?.().toISOString?.() ?? (data.entryDate as string) ?? new Date().toISOString(),
     deletedAt: data.deletedAt == null ? null : (data.deletedAt as { toDate?: () => Date })?.toDate?.().toISOString?.() ?? null,
   };
 }

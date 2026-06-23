@@ -23,6 +23,7 @@ export default function JournalPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [formError, setFormError] = useState("");
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
 
   // Stacked undo toasts
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -62,9 +63,14 @@ export default function JournalPage() {
   const filtered = useMemo(
     () => {
       const result = filterTrades(trades, { result: resultFilter, direction: directionFilter, range: timeFilter, customStart, customEnd });
-      return result;
+      return [...result].sort((a, b) => {
+        const aTime = a.createdAt || a.entryDate;
+        const bTime = b.createdAt || b.entryDate;
+        const cmp = aTime.localeCompare(bTime);
+        return sortOrder === "desc" ? -cmp : cmp;
+      });
     },
-    [trades, resultFilter, directionFilter, timeFilter, customStart, customEnd]
+    [trades, resultFilter, directionFilter, timeFilter, customStart, customEnd, sortOrder]
   );
 
   async function handleSubmit(input: TradeInput) {
@@ -192,6 +198,30 @@ export default function JournalPage() {
           </div>
         </div>
       )}
+
+      <div className="flex items-center gap-2 justify-end">
+        <span className="text-xs font-mono text-paper-500">Sıralama:</span>
+        <button
+          onClick={() => setSortOrder("desc")}
+          className={`text-xs font-mono px-2 py-1 rounded transition ${
+            sortOrder === "desc"
+              ? "bg-mint-500/10 text-mint-400 border border-mint-500/30"
+              : "text-paper-400 border border-ink-700 hover:border-ink-600"
+          }`}
+        >
+          En Yeni
+        </button>
+        <button
+          onClick={() => setSortOrder("asc")}
+          className={`text-xs font-mono px-2 py-1 rounded transition ${
+            sortOrder === "asc"
+              ? "bg-mint-500/10 text-mint-400 border border-mint-500/30"
+              : "text-paper-400 border border-ink-700 hover:border-ink-600"
+          }`}
+        >
+          En Eski
+        </button>
+      </div>
 
       <div className="space-y-3">
         {filtered.length === 0 && (
