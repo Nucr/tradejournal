@@ -9,9 +9,8 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
-  BarChart,
-  Bar,
-  Cell,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -213,7 +212,13 @@ export default function AnalyticsPage() {
         ) : (
           <div className="rounded-xl border border-ink-800 bg-ink-900 p-4 h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barData} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
+              <LineChart data={barData} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
+                <defs>
+                  <linearGradient id="barFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#2ED9A4" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#2ED9A4" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid stroke="#1B212B" vertical={false} />
                 <XAxis
                   dataKey="date"
@@ -240,15 +245,16 @@ export default function AnalyticsPage() {
                   }}
                   labelStyle={{ color: "#A8B0BC" }}
                 />
-                <Bar dataKey="value" radius={[3, 3, 0, 0]}>
-                  {barData.map((entry, index) => (
-                    <Cell
-                      key={index}
-                      fill={entry.value >= 0 ? "#2ED9A4" : "#FF5D5D"}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#2ED9A4"
+                  strokeWidth={2}
+                  dot={false}
+                  fill="url(#barFill)"
+                  activeDot={{ r: 4, fill: "#2ED9A4", strokeWidth: 0 }}
+                />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         )}
