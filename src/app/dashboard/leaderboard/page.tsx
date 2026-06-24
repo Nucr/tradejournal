@@ -121,13 +121,22 @@ export default function LeaderboardPage() {
     return unsub;
   }, [period]);
 
+  const [searchQuery, setSearchQuery] = useState("");
+
   const sorted = useMemo(
     () => [...entries].sort((a, b) => b.score - a.score),
     [entries]
   );
 
   const top3 = sorted.slice(0, 3);
-  const rest = sorted.slice(3);
+  const rest = useMemo(
+    () => sorted.slice(3).filter((e) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return e.displayName.toLowerCase().includes(q) || e.rank.toLowerCase().includes(q);
+    }),
+    [sorted, searchQuery]
+  );
 
   const modalEntry = useMemo(
     () => sorted.find((e) => e.uid === modalUid) ?? null,
@@ -149,8 +158,20 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
-      {/* Period toggles */}
-      <div className="flex gap-1 rounded-xl border border-ink-800 bg-ink-900 p-1 w-fit flex-wrap">
+      {/* Search + Period toggles */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="relative w-full sm:w-64">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-paper-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Kullanıcı veya unvan ara…"
+            className="w-full rounded-xl border border-ink-800 bg-ink-900 pl-9 pr-3 py-2 text-sm text-paper-100 placeholder:text-paper-500 focus:outline-none focus:border-mint-500/50 focus:ring-1 focus:ring-mint-500/20 transition"
+          />
+        </div>
+        <div className="flex gap-1 rounded-xl border border-ink-800 bg-ink-900 p-1 w-fit flex-wrap">
         {PERIODS.map((p) => (
           <button
             key={p.key}
@@ -166,6 +187,7 @@ export default function LeaderboardPage() {
             {p.label}
           </button>
         ))}
+      </div>
       </div>
 
       {/* Podium */}
@@ -210,83 +232,61 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Vertical List */}
       {rest.length > 0 && (
-        <div className="rounded-xl border border-ink-800 bg-ink-900 overflow-hidden animate-fade-in-up stagger-2">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-ink-800 text-paper-500 font-mono text-xs uppercase tracking-wide">
-                  <th className="text-left px-4 py-3 w-12">#</th>
-                  <th className="text-left px-4 py-3">Kullanıcı</th>
-                  <th className="text-left px-4 py-3 hidden sm:table-cell">Unvan</th>
-                  <th className="text-right px-4 py-3">Score</th>
-                  <th className="text-right px-4 py-3 hidden md:table-cell">Kazanma %</th>
-                  <th className="text-right px-4 py-3 hidden lg:table-cell">Ort. RR</th>
-                  <th className="text-right px-4 py-3 hidden lg:table-cell">Net %</th>
-                  <th className="text-right px-4 py-3 hidden md:table-cell">İşlem</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rest.map((entry, i) => {
-                  const rowIndex = i + 4;
-                  const isMe = entry.uid === user?.uid;
-                  return (
-                    <tr
-                      key={entry.uid}
-                      onClick={() => {
-                        if (!isAnonymous) setModalUid(entry.uid);
-                      }}
-                      className={`border-b border-ink-800/50 transition ${
-                        isMe
-                          ? "bg-mint-500/10 cursor-pointer"
-                          : "hover:bg-ink-800/50 cursor-pointer"
-                      } ${isAnonymous ? "cursor-default" : ""}`}
-                    >
-                      <td className="px-4 py-3 font-mono text-paper-400">{rowIndex}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <AvatarLetter
-                            name={entry.isPublic ? entry.displayName : "A"}
-                            avatarUrl={entry.avatarUrl}
-                            avatarColor={entry.avatarColor}
-                          />
-                          <span className="font-medium text-paper-100 truncate max-w-[140px]">
-                            {entry.isPublic ? entry.displayName : "Anonim Trader"}
-                          </span>
-                          {isMe && (
-                            <span className="text-[10px] font-mono bg-mint-500/15 text-mint-400 px-1.5 py-0.5 rounded">
-                              SEN
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 hidden sm:table-cell">
-                        <RankBadge rank={entry.rank} />
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono font-semibold">
-                        <span style={{ color: scoreHexColor(entry.score) }}>
-                          {Math.round(entry.score)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono hidden md:table-cell text-paper-200">
-                        {entry.winRate.toFixed(1)}%
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono hidden lg:table-cell text-paper-200">
-                        {entry.avgRR.toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono hidden lg:table-cell text-paper-200">
-                        {formatScore(entry.netResult)}%
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono hidden md:table-cell text-paper-200">
-                        {entry.totalTrades}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+        <div className="space-y-2 animate-fade-in-up stagger-2">
+          {rest.map((entry, i) => {
+            const rank = i + 4;
+            const isMe = entry.uid === user?.uid;
+            return (
+              <div
+                key={entry.uid}
+                onClick={() => {
+                  if (!isAnonymous) setModalUid(entry.uid);
+                }}
+                className={`rounded-xl border p-4 flex items-center gap-4 transition ${
+                  isMe
+                    ? "border-mint-500/20 bg-mint-500/5"
+                    : "border-ink-800 bg-ink-900 hover:border-ink-700 hover:bg-ink-850"
+                } ${isAnonymous ? "cursor-default" : "cursor-pointer"}`}
+              >
+                <span className="font-mono text-sm text-paper-500 w-6 shrink-0 text-center">
+                  {rank}
+                </span>
+                <AvatarLetter
+                  name={entry.isPublic ? entry.displayName : "A"}
+                  avatarUrl={entry.avatarUrl}
+                  avatarColor={entry.avatarColor}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-paper-100 truncate">
+                      {entry.isPublic ? entry.displayName : "Anonim Trader"}
+                    </span>
+                    {isMe && (
+                      <span className="text-[10px] font-mono bg-mint-500/15 text-mint-400 px-1.5 py-0.5 rounded">
+                        SEN
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <RankBadge rank={entry.rank} size="sm" />
+                    <span className="text-xs font-mono text-paper-500">
+                      {entry.totalTrades} işlem
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="font-mono font-bold text-base" style={{ color: scoreHexColor(entry.score) }}>
+                    {Math.round(entry.score)}
+                  </p>
+                  <p className="text-xs font-mono text-paper-500">
+                    {entry.winRate.toFixed(0)}% · {entry.avgRR.toFixed(1)}R
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -294,6 +294,11 @@ export default function LeaderboardPage() {
         <div className="rounded-xl border border-ink-800 bg-ink-900 p-12 text-center text-paper-500">
           <p className="text-lg font-display">Henüz veri yok</p>
           <p className="text-sm mt-1">İlk liderlik kaydı eklendiğinde burada görünecek.</p>
+        </div>
+      )}
+      {sorted.length > 3 && rest.length === 0 && searchQuery && (
+        <div className="rounded-xl border border-ink-800 bg-ink-900 p-8 text-center text-paper-500">
+          <p className="text-sm">Aramanla eşleşen kullanıcı bulunamadı.</p>
         </div>
       )}
 
