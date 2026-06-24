@@ -107,6 +107,7 @@ export default function RegisterPage() {
               setGoogleSubmitting(true);
               try {
                 await signInWithGoogle();
+                router.replace("/dashboard");
               } catch (err: any) {
                 setError(err?.code || "Google ile giriş yapılamadı.");
               } finally {
