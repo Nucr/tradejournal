@@ -93,8 +93,7 @@ export default function LoginPage() {
               try {
                 await signInWithGoogle();
               } catch (err: any) {
-                if (err?.code === "auth/popup-closed-by-user") return;
-                setError("Google ile giriş yapılamadı.");
+                setError(err?.code || "Google ile giriş yapılamadı.");
               } finally {
                 setGoogleSubmitting(false);
               }

@@ -108,8 +108,7 @@ export default function RegisterPage() {
               try {
                 await signInWithGoogle();
               } catch (err: any) {
-                if (err?.code === "auth/popup-closed-by-user") return;
-                setError("Google ile kayıt yapılamadı.");
+                setError(err?.code || "Google ile giriş yapılamadı.");
               } finally {
                 setGoogleSubmitting(false);
               }
