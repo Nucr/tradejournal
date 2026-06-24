@@ -118,6 +118,30 @@ export async function savePublicProfile(uid: string, data: Partial<UserProfile>)
   }
 }
 
+export async function syncPublicProfile(uid: string) {
+  const [userSnap, publicSnap] = await Promise.all([
+    getDoc(userDoc(uid)),
+    getDoc(publicProfileDoc(uid)),
+  ]);
+  if (userSnap.exists() && !publicSnap.exists()) {
+    const data = userSnap.data() as Record<string, unknown>;
+    await setDoc(publicProfileDoc(uid), {
+      displayName: data.displayName,
+      avatarUrl: data.avatarUrl,
+      avatarColor: data.avatarColor,
+      isPublic: data.isPublic ?? true,
+      level: data.level ?? 1,
+      rank: data.rank ?? "Çaylak",
+      score: data.score ?? 0,
+      showStrategy: data.showStrategy ?? true,
+      showLeaderboard: data.showLeaderboard ?? true,
+      showTrades: data.showTrades ?? true,
+      showAchievements: data.showAchievements ?? true,
+      showStats: data.showStats ?? true,
+    }, { merge: true });
+  }
+}
+
 export async function getPublicDisplayMap(uids: string[]): Promise<Record<string, UserDisplayInfo>> {
   const map: Record<string, UserDisplayInfo> = {};
   const results = await Promise.allSettled(uids.map((uid) => getPublicProfile(uid)));

@@ -19,7 +19,7 @@ import {
   GoogleAuthProvider,
 } from "firebase/auth";
 import { auth } from "./firebase";
-import { getProfile } from "./profile";
+import { getProfile, syncPublicProfile } from "./profile";
 
 interface AuthContextValue {
   user: User | null;
@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNeedsOnboarding(true);
     } else {
       setNeedsOnboarding(false);
+      syncPublicProfile(uid).catch(() => {});
     }
   }
 
