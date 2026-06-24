@@ -57,6 +57,7 @@ export interface UserProfile {
   isPublic: boolean;
   showStrategy: boolean;
   showLeaderboard: boolean;
+  showLevel: boolean;
   showTrades: boolean;
   showAchievements: boolean;
   showStats: boolean;

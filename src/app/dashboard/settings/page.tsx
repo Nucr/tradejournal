@@ -32,6 +32,7 @@ export default function SettingsPage() {
   const [showLeaderboard, setShowLeaderboard] = useState(true);
   const [showTrades, setShowTrades] = useState(true);
   const [showAchievements, setShowAchievements] = useState(true);
+  const [showLevel, setShowLevel] = useState(true);
   const [showStats, setShowStats] = useState(true);
   const [leaderboardOptIn, setLeaderboardOptIn] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -58,6 +59,7 @@ export default function SettingsPage() {
         setShowLeaderboard(p.showLeaderboard ?? true);
         setShowTrades(p.showTrades ?? true);
         setShowAchievements(p.showAchievements ?? true);
+        setShowLevel(p.showLevel ?? true);
         setShowStats(p.showStats ?? true);
         setLeaderboardOptIn(p.leaderboardOptIn ?? false);
       }
@@ -81,8 +83,8 @@ export default function SettingsPage() {
   async function handleSavePrivacy() {
     if (!user) return;
     setSaving(true);
-    await saveProfile(user.uid, { isPublic, showStrategy, showLeaderboard, showTrades, showAchievements, showStats, leaderboardOptIn });
-    setProfile((prev) => (prev ? { ...prev, isPublic, showStrategy, showLeaderboard, showTrades, showAchievements, showStats, leaderboardOptIn } : prev));
+    await saveProfile(user.uid, { isPublic, showStrategy, showLeaderboard, showLevel, showTrades, showAchievements, showStats, leaderboardOptIn });
+    setProfile((prev) => (prev ? { ...prev, isPublic, showStrategy, showLeaderboard, showLevel, showTrades, showAchievements, showStats, leaderboardOptIn } : prev));
     setSaving(false);
   }
 
@@ -333,6 +335,7 @@ export default function SettingsPage() {
 
         <div className="space-y-4">
           <ToggleRow checked={showLeaderboard} onChange={setShowLeaderboard} label="Liderlik sıralamam" desc="Profilimde kaçıncı sırada olduğum görünsün" />
+          <ToggleRow checked={showLevel} onChange={setShowLevel} label="Seviye ve rütbem" desc="Seviye rozetim (Çaylak, Usta, Efsanevi…) profilimde ve liderlik tablosunda görünsün" />
           <ToggleRow checked={showTrades} onChange={setShowTrades} label="Paylaştığım işlemler" desc="Profilimde paylaştığım işlemler listelensin" />
           <ToggleRow checked={showAchievements} onChange={setShowAchievements} label="Rozetlerim" desc="Kazandığım rozetler profilimde görünsün" />
           <ToggleRow checked={showStats} onChange={setShowStats} label="İstatistiklerim" desc="Trade istatistiklerim profilimde yer alsın" />

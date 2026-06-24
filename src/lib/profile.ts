@@ -101,12 +101,13 @@ export async function savePublicProfile(uid: string, data: Partial<UserProfile>)
     level: data.level,
     rank: data.rank,
     score: data.score,
-    showStrategy: data.showStrategy,
-    showLeaderboard: data.showLeaderboard,
-    showTrades: data.showTrades,
-    showAchievements: data.showAchievements,
-    showStats: data.showStats,
-    leaderboardOptIn: data.leaderboardOptIn,
+  showStrategy: data.showStrategy,
+  showLeaderboard: data.showLeaderboard,
+  showLevel: data.showLevel,
+  showTrades: data.showTrades,
+  showAchievements: data.showAchievements,
+  showStats: data.showStats,
+  leaderboardOptIn: data.leaderboardOptIn,
   };
   if (data.stats) publicData.stats = data.stats;
   if (data.achievements) publicData.achievements = data.achievements;
@@ -136,6 +137,7 @@ export async function syncPublicProfile(uid: string) {
       score: data.score ?? 0,
       showStrategy: data.showStrategy ?? true,
       showLeaderboard: data.showLeaderboard ?? true,
+      showLevel: data.showLevel ?? true,
       showTrades: data.showTrades ?? true,
       showAchievements: data.showAchievements ?? true,
       showStats: data.showStats ?? true,

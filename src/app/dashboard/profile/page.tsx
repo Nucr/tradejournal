@@ -89,6 +89,7 @@ export default function ProfilePage() {
       showLeaderboard,
       showTrades,
       showAchievements,
+      showLevel: profile?.showLevel ?? true,
       showStats,
       stats: profile?.stats ?? {
         totalTrades: 0,

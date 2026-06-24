@@ -35,6 +35,8 @@ interface ApiEntry {
   displayName: string;
   avatarUrl: string | null;
   avatarColor: string;
+  level: number | 0;
+  rankTitle: string;
   score: MaskedNumber;
   winRate: MaskedNumber;
   netResult: MaskedNumber;
@@ -244,6 +246,7 @@ export default function LeaderboardPage() {
                 <tr className="border-b border-ink-800 text-paper-500 font-mono text-xs uppercase tracking-wide">
                   <th className="text-left px-4 py-3 w-12">#</th>
                   <th className="text-left px-4 py-3">Yatırımcı</th>
+                  <th className="text-left px-4 py-3 hidden sm:table-cell">Seviye</th>
                   <th className="text-right px-4 py-3">Skor</th>
                   <th className="text-right px-4 py-3 hidden sm:table-cell">Net P&amp;L</th>
                   <th className="text-right px-4 py-3 hidden md:table-cell">İşlem Sayısı</th>
@@ -289,6 +292,13 @@ export default function LeaderboardPage() {
                             </span>
                           )}
                         </div>
+                      </td>
+                      <td className="px-4 py-3 hidden sm:table-cell">
+                        {entry.rankTitle === "####" ? (
+                          <span className="text-paper-500 font-mono text-xs">####</span>
+                        ) : (
+                          <RankBadge rank={entry.rankTitle} size="sm" />
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right font-mono font-semibold">
                         {isMasked(entry.score) ? (

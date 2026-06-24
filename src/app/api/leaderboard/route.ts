@@ -39,6 +39,8 @@ export async function GET(request: NextRequest) {
           displayName: optIn ? (data.displayName ?? "Bilinmeyen") : "Anonim Trader",
           avatarUrl: optIn ? (data.avatarUrl ?? null) : null,
           avatarColor: data.avatarColor ?? "#2ED9A4",
+          level: optIn ? (data.level ?? 1) : 0,
+          rankTitle: optIn ? (data.rank ?? "Çaylak") : "####",
           score: mask(data.score ?? 0),
           winRate: mask(data.winRate ?? 0),
           netResult: mask(data.netResult ?? 0),
