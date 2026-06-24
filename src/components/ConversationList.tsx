@@ -1,6 +1,7 @@
 "use client";
 
 import { Conversation } from "@/lib/types";
+import { UserDisplayInfo } from "@/lib/profile";
 import Avatar from "./Avatar";
 
 interface ConversationListProps {
@@ -9,12 +10,16 @@ interface ConversationListProps {
   onSelect: (id: string) => void;
   unreadCounts: Map<string, number>;
   currentUid: string;
+  userDisplayMap?: Record<string, UserDisplayInfo>;
 }
 
-function getConversationName(conv: Conversation, currentUid: string): string {
+function getConversationName(conv: Conversation, currentUid: string, userDisplayMap?: Record<string, UserDisplayInfo>): string {
   if (conv.name) return conv.name;
   if (conv.type === "direct") {
-    return conv.participants.filter((p) => p !== currentUid)[0] ?? "Bilinmeyen";
+    const otherUid = conv.participants.filter((p) => p !== currentUid)[0];
+    if (!otherUid) return "Bilinmeyen";
+    if (userDisplayMap?.[otherUid]) return userDisplayMap[otherUid].displayName;
+    return otherUid.slice(0, 8);
   }
   return "İsimsiz Sohbet";
 }
@@ -33,12 +38,36 @@ function getTypeLabel(type: string): string {
   }
 }
 
+function isLastMessageUnread(conv: Conversation, currentUid: string): boolean {
+  const lastMsg = conv.lastMessage;
+  if (!lastMsg || lastMsg.senderId !== currentUid) return false;
+
+  const timestamps = conv.lastReadTimestamps;
+  if (!timestamps) return true;
+
+  const lastMsgTime = lastMsg.createdAt.getTime();
+
+  if (conv.type === "direct") {
+    const otherUid = conv.participants.find((p) => p !== currentUid);
+    if (!otherUid) return false;
+    const otherReadAt = timestamps[otherUid];
+    return !otherReadAt || otherReadAt.getTime() < lastMsgTime;
+  }
+
+  const others = conv.participants.filter((p) => p !== currentUid);
+  return others.some((uid) => {
+    const t = timestamps[uid];
+    return !t || t.getTime() < lastMsgTime;
+  });
+}
+
 export default function ConversationList({
   conversations,
   activeId,
   onSelect,
   unreadCounts,
   currentUid,
+  userDisplayMap,
 }: ConversationListProps) {
   if (conversations.length === 0) {
     return (
@@ -55,8 +84,24 @@ export default function ConversationList({
     <div className="divide-y divide-ink-800">
       {conversations.map((conv) => {
         const unread = unreadCounts.get(conv.id) ?? 0;
-        const name = getConversationName(conv, currentUid);
+        const name = getConversationName(conv, currentUid, userDisplayMap);
         const isActive = conv.id === activeId;
+        const showUnreadDot = isLastMessageUnread(conv, currentUid);
+
+        let avatarUrl: string | undefined;
+        let avatarColor: string | undefined;
+        if (conv.type === "direct") {
+          const otherUid = conv.participants.find((p) => p !== currentUid);
+          if (otherUid && userDisplayMap?.[otherUid]) {
+            avatarUrl = userDisplayMap[otherUid].avatarUrl;
+            avatarColor = userDisplayMap[otherUid].avatarColor;
+          }
+        } else if (conv.type === "community") {
+          avatarColor = "#2ED9A4";
+        } else if (conv.type === "group") {
+          avatarColor = conv.photoUrl ? undefined : "#F2B84B";
+          avatarUrl = conv.photoUrl;
+        }
 
         return (
           <button
@@ -68,11 +113,17 @@ export default function ConversationList({
                 : "hover:bg-ink-800/50 border-l-2 border-transparent"
             }`}
           >
-            <Avatar
-              displayName={name}
-              avatarColor={conv.type === "community" ? "#2ED9A4" : conv.type === "group" ? "#F2B84B" : undefined}
-              size="md"
-            />
+            <div className="relative shrink-0">
+              <Avatar
+                avatarUrl={avatarUrl}
+                avatarColor={avatarColor}
+                displayName={name}
+                size="md"
+              />
+              {showUnreadDot && (
+                <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-coral-500 border-2 border-ink-900" />
+              )}
+            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
                 <p className={`text-sm font-medium truncate ${unread > 0 ? "text-paper-100 font-semibold" : "text-paper-200"}`}>

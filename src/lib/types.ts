@@ -119,14 +119,27 @@ export interface Conversation {
   type: ConversationType;
   name?: string;
   description?: string;
+  photoUrl?: string;
   groupType?: GroupType;
   ownerId?: string;
   participants: string[];
   invitedUsers?: string[];
   createdBy: string;
   lastMessage?: LastMessage;
+  lastReadTimestamps?: Record<string, Date>;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ConversationInvitation {
+  id: string;
+  conversationId: string;
+  conversationName: string;
+  inviterId: string;
+  inviterName: string;
+  inviteeId: string;
+  status: "pending" | "accepted" | "rejected";
+  createdAt: Date;
 }
 
 export interface Message {

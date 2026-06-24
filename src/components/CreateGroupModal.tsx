@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createGroup } from "@/lib/messages";
 import { GroupType, UserSearchResult } from "@/lib/types";
 import UserSearchInput from "./UserSearchInput";
+import ConfirmDialog from "./ConfirmDialog";
 
 interface CreateGroupModalProps {
   uid: string;
@@ -19,6 +20,7 @@ export default function CreateGroupModal({ uid, onClose }: CreateGroupModalProps
   const [members, setMembers] = useState<UserSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   function handleAddMember(user: UserSearchResult) {
     if (!members.find((m) => m.uid === user.uid)) {
@@ -30,10 +32,15 @@ export default function CreateGroupModal({ uid, onClose }: CreateGroupModalProps
     setMembers((prev) => prev.filter((m) => m.uid !== uid));
   }
 
-  async function handleCreate() {
+  function handleCreate() {
     if (!name.trim() || loading) return;
+    setShowConfirm(true);
+  }
+
+  async function handleConfirmCreate() {
     setLoading(true);
     setError(null);
+    setShowConfirm(false);
     try {
       const memberUids = members.map((m) => m.uid);
       const convId = await createGroup(
@@ -169,6 +176,18 @@ export default function CreateGroupModal({ uid, onClose }: CreateGroupModalProps
           </div>
         </div>
       </div>
+
+      {showConfirm && (
+        <ConfirmDialog
+          title="Grup Oluştur"
+          message={`"${name.trim()}" adlı ${groupType === "closed" ? "kapalı" : "açık"} grubu ${members.length} üye ile oluşturmak istediğine emin misin?`}
+          confirmLabel="Oluştur"
+          cancelLabel="İptal"
+          loading={loading}
+          onConfirm={handleConfirmCreate}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
     </div>
   );
 }

@@ -15,10 +15,12 @@ import {
   arrayRemove,
   Unsubscribe,
   Timestamp,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import {
   Conversation,
+  ConversationInvitation,
   ConversationType,
   GroupType,
   Message,
@@ -43,11 +45,22 @@ function readStatusDoc(conversationId: string, uid: string) {
 }
 
 function mapConversation(id: string, data: Record<string, unknown>): Conversation {
+  const rawTimestamps = data.lastReadTimestamps as Record<string, unknown> | undefined;
+  const lastReadTimestamps: Record<string, Date> | undefined = rawTimestamps
+    ? Object.fromEntries(
+        Object.entries(rawTimestamps).map(([uid, ts]) => [
+          uid,
+          (ts as Timestamp)?.toDate?.() ?? new Date(),
+        ])
+      )
+    : undefined;
+
   return {
     id,
     type: data.type as ConversationType,
     name: data.name as string | undefined,
     description: data.description as string | undefined,
+    photoUrl: data.photoUrl as string | undefined,
     groupType: data.groupType as GroupType | undefined,
     ownerId: data.ownerId as string | undefined,
     participants: (data.participants as string[]) ?? [],
@@ -61,6 +74,7 @@ function mapConversation(id: string, data: Record<string, unknown>): Conversatio
           createdAt: ((data.lastMessage as Record<string, unknown>).createdAt as Timestamp)?.toDate?.() ?? new Date(),
         }
       : undefined,
+    lastReadTimestamps,
     createdAt: (data.createdAt as Timestamp)?.toDate?.() ?? new Date(),
     updatedAt: (data.updatedAt as Timestamp)?.toDate?.() ?? new Date(),
   };
@@ -146,6 +160,7 @@ export async function sendMessage(
       createdAt: serverTimestamp(),
     },
     updatedAt: serverTimestamp(),
+    [`lastReadTimestamps.${senderId}`]: serverTimestamp(),
   });
 }
 
@@ -153,18 +168,20 @@ export async function createConversation(
   type: ConversationType,
   participants: string[],
   createdBy: string,
-  extra?: { name?: string; description?: string; groupType?: GroupType; invitedUsers?: string[] }
+  extra?: { name?: string; description?: string; photoUrl?: string; groupType?: GroupType; invitedUsers?: string[] }
 ): Promise<string> {
   const docRef = await addDoc(conversationsRef(), {
     type,
     name: extra?.name ?? null,
     description: extra?.description ?? null,
+    photoUrl: extra?.photoUrl ?? null,
     groupType: extra?.groupType ?? null,
     ownerId: type === "group" ? createdBy : null,
     participants,
     invitedUsers: extra?.invitedUsers ?? [],
     createdBy,
     lastMessage: null,
+    lastReadTimestamps: { [createdBy]: serverTimestamp() },
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -254,6 +271,9 @@ export async function markAsRead(conversationId: string, uid: string) {
     { lastReadAt: serverTimestamp() },
     { merge: true }
   );
+  await updateDoc(conversationDoc(conversationId), {
+    [`lastReadTimestamps.${uid}`]: serverTimestamp(),
+  });
 }
 
 export async function getUnreadCounts(
@@ -298,5 +318,146 @@ export function subscribeToReadStatus(
     }
     const ts = (snap.data().lastReadAt as Timestamp | undefined)?.toDate?.();
     callback(ts ?? null);
+  });
+}
+
+// ─── Group Update ───
+
+export async function updateConversation(
+  conversationId: string,
+  updates: { name?: string; description?: string; photoUrl?: string }
+) {
+  const payload: Record<string, unknown> = { updatedAt: serverTimestamp() };
+  if (updates.name !== undefined) payload.name = updates.name;
+  if (updates.description !== undefined) payload.description = updates.description;
+  if (updates.photoUrl !== undefined) payload.photoUrl = updates.photoUrl;
+  await updateDoc(conversationDoc(conversationId), payload);
+}
+
+// ─── Invitations ───
+
+function invitationsRef() {
+  return collection(db, "invitations");
+}
+
+function mapInvitation(id: string, data: Record<string, unknown>): ConversationInvitation {
+  return {
+    id,
+    conversationId: data.conversationId as string,
+    conversationName: data.conversationName as string,
+    inviterId: data.inviterId as string,
+    inviterName: data.inviterName as string,
+    inviteeId: data.inviteeId as string,
+    status: (data.status as ConversationInvitation["status"]) ?? "pending",
+    createdAt: (data.createdAt as Timestamp)?.toDate?.() ?? new Date(),
+  };
+}
+
+export async function createInvitation(
+  conversationId: string,
+  conversationName: string,
+  inviterId: string,
+  inviterName: string,
+  inviteeId: string
+): Promise<string> {
+  const docRef = await addDoc(invitationsRef(), {
+    conversationId,
+    conversationName,
+    inviterId,
+    inviterName,
+    inviteeId,
+    status: "pending",
+    createdAt: serverTimestamp(),
+  });
+  return docRef.id;
+}
+
+export function subscribeToInvitations(
+  uid: string,
+  callback: (invitations: ConversationInvitation[]) => void
+): Unsubscribe {
+  const q = query(
+    invitationsRef(),
+    where("inviteeId", "==", uid),
+    where("status", "==", "pending"),
+    orderBy("createdAt", "desc")
+  );
+  return onSnapshot(q, (snapshot) => {
+    const list = snapshot.docs.map((d) =>
+      mapInvitation(d.id, d.data() as Record<string, unknown>)
+    );
+    callback(list);
+  });
+}
+
+export async function acceptInvitation(invitationId: string, conversationId: string, uid: string) {
+  await updateDoc(doc(invitationsRef(), invitationId), { status: "accepted" });
+  await updateDoc(conversationDoc(conversationId), {
+    participants: arrayUnion(uid),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function rejectInvitation(invitationId: string) {
+  await updateDoc(doc(invitationsRef(), invitationId), { status: "rejected" });
+}
+
+export async function deleteInvitation(invitationId: string) {
+  await deleteDoc(doc(invitationsRef(), invitationId));
+}
+
+// ─── Group Photo Upload ───
+
+export async function uploadGroupPhoto(
+  conversationId: string,
+  file: File,
+  onProgress?: (pct: number) => void
+): Promise<string> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Sadece resim dosyaları kabul edilir");
+  }
+  if (file.size > 500 * 1024) {
+    throw new Error("Dosya boyutu 500KB'dan büyük olamaz");
+  }
+
+  const signRes = await fetch("/api/cloudinary/sign", { method: "POST" });
+  if (!signRes.ok) throw new Error("Cloudinary imza alınamadı");
+  const { signature, timestamp, api_key, cloud_name, folder } = await signRes.json();
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("folder", folder + "/groups");
+  formData.append("timestamp", String(timestamp));
+  formData.append("api_key", api_key);
+  formData.append("signature", signature);
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+    xhr.onload = async () => {
+      if (xhr.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        const url = data.secure_url;
+        await updateDoc(conversationDoc(conversationId), {
+          photoUrl: url,
+          updatedAt: serverTimestamp(),
+        });
+        resolve(url);
+      } else {
+        try {
+          const err = JSON.parse(xhr.responseText);
+          reject(new Error(err.error?.message || "Cloudinary yükleme hatası"));
+        } catch {
+          reject(new Error("Cloudinary yükleme hatası"));
+        }
+      }
+    };
+    xhr.onerror = () => reject(new Error("Cloudinary bağlantı hatası"));
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`);
+    xhr.send(formData);
   });
 }

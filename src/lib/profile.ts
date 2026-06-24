@@ -48,3 +48,30 @@ export async function saveProfile(uid: string, profile: Partial<UserProfile>) {
     await setDoc(ref, payload);
   }
 }
+
+export interface UserDisplayInfo {
+  displayName: string;
+  avatarUrl?: string;
+  avatarColor: string;
+}
+
+export async function getUserDisplayMap(uids: string[]): Promise<Record<string, UserDisplayInfo>> {
+  const map: Record<string, UserDisplayInfo> = {};
+  const results = await Promise.allSettled(uids.map((uid) => getProfile(uid)));
+  uids.forEach((uid, i) => {
+    const res = results[i];
+    if (res.status === "fulfilled" && res.value) {
+      map[uid] = {
+        displayName: res.value.displayName,
+        avatarUrl: res.value.avatarUrl,
+        avatarColor: res.value.avatarColor,
+      };
+    } else {
+      map[uid] = {
+        displayName: uid.slice(0, 8),
+        avatarColor: "#2ED9A4",
+      };
+    }
+  });
+  return map;
+}

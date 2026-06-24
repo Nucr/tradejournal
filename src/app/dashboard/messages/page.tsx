@@ -3,8 +3,18 @@
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { subscribeToConversations, sendMessage, subscribeToMessages, markAsRead } from "@/lib/messages";
-import { Conversation, Message, GroupType } from "@/lib/types";
+import {
+  subscribeToConversations,
+  sendMessage,
+  subscribeToMessages,
+  markAsRead,
+  getUnreadCounts,
+  subscribeToInvitations,
+  acceptInvitation,
+  rejectInvitation,
+} from "@/lib/messages";
+import { getUserDisplayMap, UserDisplayInfo } from "@/lib/profile";
+import { Conversation, Message, ConversationInvitation } from "@/lib/types";
 import ConversationList from "@/components/ConversationList";
 import MessageBubble from "@/components/MessageBubble";
 import MessageInput from "@/components/MessageInput";
@@ -33,6 +43,11 @@ function MessagesContent() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState<Map<string, number>>(new Map());
   const [convError, setConvError] = useState<string | null>(null);
+  const [invitations, setInvitations] = useState<ConversationInvitation[]>([]);
+  const [invitationLoading, setInvitationLoading] = useState<string | null>(null);
+  const [userDisplayMap, setUserDisplayMap] = useState<Record<string, UserDisplayInfo>>({});
+
+  const displayName = user?.displayName ?? user?.email?.split("@")[0] ?? "Trader";
 
   useEffect(() => {
     const convId = searchParams?.get("conv");
@@ -46,14 +61,25 @@ function MessagesContent() {
       (list) => {
         setConversations(list);
         setConvError(null);
-        const unread = new Map<string, number>();
-        list.forEach(() => unread.set("", 0));
-        setUnreadCounts(unread);
+        getUnreadCounts(user.uid, list).then(setUnreadCounts).catch(() => {});
+        // Fetch display names for all participants
+        const allUids = new Set<string>();
+        list.forEach((c) => c.participants.forEach((p) => allUids.add(p)));
+        const uidArray = Array.from(allUids);
+        if (uidArray.length > 0) {
+          getUserDisplayMap(uidArray).then(setUserDisplayMap).catch(() => {});
+        }
       },
       (err) => {
         setConvError("Sohbetler yüklenirken hata oluştu: " + err.message);
       }
     );
+    return unsub;
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsub = subscribeToInvitations(user.uid, setInvitations);
     return unsub;
   }, [user]);
 
@@ -70,25 +96,47 @@ function MessagesContent() {
     if (!user || !activeId) return;
     setSending(true);
     try {
-      const displayName = user.displayName ?? user.email?.split("@")[0] ?? "Trader";
       await sendMessage(activeId, user.uid, displayName, text);
     } finally {
       setSending(false);
     }
-  }, [user, activeId]);
+  }, [user, activeId, displayName]);
+
+  async function handleAcceptInvitation(inv: ConversationInvitation) {
+    if (!user) return;
+    setInvitationLoading(inv.id);
+    try {
+      await acceptInvitation(inv.id, inv.conversationId, user.uid);
+    } catch {
+      setConvError("Davet kabul edilemedi");
+    } finally {
+      setInvitationLoading(null);
+    }
+  }
+
+  async function handleRejectInvitation(inv: ConversationInvitation) {
+    setInvitationLoading(inv.id);
+    try {
+      await rejectInvitation(inv.id);
+    } finally {
+      setInvitationLoading(null);
+    }
+  }
 
   function getConversationName(conv: Conversation): string {
     if (conv.name) return conv.name;
     if (conv.type === "direct" && user) {
-      return conv.participants.filter((p) => p !== user.uid)[0] ?? "Bilinmeyen";
+      const otherUid = conv.participants.filter((p) => p !== user.uid)[0];
+      if (!otherUid) return "Bilinmeyen";
+      return userDisplayMap[otherUid]?.displayName ?? otherUid.slice(0, 8);
     }
     return "İsimsiz Sohbet";
   }
 
   function getParticipantNames(conv: Conversation): string {
     if (conv.type === "direct" && user) {
-      const other = conv.participants.filter((p) => p !== user.uid)[0] ?? "";
-      return other.slice(0, 12);
+      const otherUid = conv.participants.filter((p) => p !== user.uid)[0] ?? "";
+      return userDisplayMap[otherUid]?.displayName ?? otherUid.slice(0, 12);
     }
     return `${conv.participants.length} üye`;
   }
@@ -125,9 +173,40 @@ function MessagesContent() {
       {convError && (
         <div className="rounded-xl border border-coral-500/20 bg-coral-500/5 p-4 mb-4">
           <p className="text-sm text-coral-400">{convError}</p>
-          <p className="text-xs text-paper-500 mt-1">
-            Firestore index'lerinin tanımlandığından emin ol. Terminalde: <code className="font-mono bg-ink-800 px-1 py-0.5 rounded">firebase deploy --only firestore:indexes</code>
+        </div>
+      )}
+
+      {/* Invitations banner */}
+      {invitations.length > 0 && (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 mb-4 space-y-2">
+          <p className="text-xs font-mono uppercase tracking-wide text-amber-400 font-semibold">
+            Bekleyen Davetler ({invitations.length})
           </p>
+          {invitations.map((inv) => (
+            <div key={inv.id} className="flex items-center justify-between">
+              <div className="min-w-0">
+                <p className="text-sm text-paper-100 truncate">
+                  {inv.inviterName} seni <span className="font-semibold">{inv.conversationName}</span> grubuna davet etti
+                </p>
+              </div>
+              <div className="flex gap-2 shrink-0 ml-3">
+                <button
+                  onClick={() => handleAcceptInvitation(inv)}
+                  disabled={invitationLoading === inv.id}
+                  className="rounded-lg bg-mint-500 text-ink-950 text-xs font-semibold px-3 py-1.5 hover:bg-mint-400 transition disabled:opacity-40"
+                >
+                  {invitationLoading === inv.id ? "..." : "Kabul Et"}
+                </button>
+                <button
+                  onClick={() => handleRejectInvitation(inv)}
+                  disabled={invitationLoading === inv.id}
+                  className="rounded-lg border border-ink-700 text-paper-300 text-xs font-medium px-3 py-1.5 hover:bg-ink-800 transition disabled:opacity-40"
+                >
+                  Reddet
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -144,6 +223,7 @@ function MessagesContent() {
               }}
               unreadCounts={unreadCounts}
               currentUid={user.uid}
+              userDisplayMap={userDisplayMap}
             />
           </div>
         </div>
@@ -248,6 +328,7 @@ function MessagesContent() {
         <GroupSettingsModal
           conversation={activeConversation}
           currentUid={user.uid}
+          currentDisplayName={displayName}
           onClose={() => setShowSettingsModal(false)}
           onUpdate={() => {}}
         />

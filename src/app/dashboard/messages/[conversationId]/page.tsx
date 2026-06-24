@@ -9,6 +9,7 @@ import {
   sendMessage,
   markAsRead,
 } from "@/lib/messages";
+import { getUserDisplayMap, UserDisplayInfo } from "@/lib/profile";
 import { Conversation, Message } from "@/lib/types";
 import MessageBubble from "@/components/MessageBubble";
 import MessageInput from "@/components/MessageInput";
@@ -21,10 +22,16 @@ export default function ConversationPage() {
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [sending, setSending] = useState(false);
+  const [userDisplayMap, setUserDisplayMap] = useState<Record<string, UserDisplayInfo>>({});
 
   useEffect(() => {
     if (!conversationId) return;
-    getConversation(conversationId).then(setConversation);
+    getConversation(conversationId).then((conv) => {
+      setConversation(conv);
+      if (conv) {
+        getUserDisplayMap(conv.participants).then(setUserDisplayMap).catch(() => {});
+      }
+    });
   }, [conversationId]);
 
   useEffect(() => {
@@ -42,7 +49,9 @@ export default function ConversationPage() {
     if (!conversation) return "Sohbet";
     if (conversation.name) return conversation.name;
     if (conversation.type === "direct" && user) {
-      return conversation.participants.filter((p) => p !== user.uid)[0] ?? "Bilinmeyen";
+      const otherUid = conversation.participants.filter((p) => p !== user.uid)[0];
+      if (!otherUid) return "Bilinmeyen";
+      return userDisplayMap[otherUid]?.displayName ?? otherUid.slice(0, 8);
     }
     return "İsimsiz Sohbet";
   }
