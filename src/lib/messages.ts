@@ -78,19 +78,27 @@ function mapMessage(id: string, data: Record<string, unknown>): Message {
 
 export function subscribeToConversations(
   uid: string,
-  callback: (conversations: Conversation[]) => void
+  callback: (conversations: Conversation[]) => void,
+  onError?: (err: Error) => void
 ): Unsubscribe {
   const q = query(
     conversationsRef(),
     where("participants", "array-contains", uid),
     orderBy("updatedAt", "desc")
   );
-  return onSnapshot(q, (snapshot) => {
-    const list = snapshot.docs.map((d) =>
-      mapConversation(d.id, d.data() as Record<string, unknown>)
-    );
-    callback(list);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const list = snapshot.docs.map((d) =>
+        mapConversation(d.id, d.data() as Record<string, unknown>)
+      );
+      callback(list);
+    },
+    (err) => {
+      console.error("subscribeToConversations error:", err);
+      onError?.(err);
+    }
+  );
 }
 
 export function subscribeToMessages(

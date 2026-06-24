@@ -18,6 +18,7 @@ export default function CreateGroupModal({ uid, onClose }: CreateGroupModalProps
   const [groupType, setGroupType] = useState<GroupType>("open");
   const [members, setMembers] = useState<UserSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function handleAddMember(user: UserSearchResult) {
     if (!members.find((m) => m.uid === user.uid)) {
@@ -32,6 +33,7 @@ export default function CreateGroupModal({ uid, onClose }: CreateGroupModalProps
   async function handleCreate() {
     if (!name.trim() || loading) return;
     setLoading(true);
+    setError(null);
     try {
       const memberUids = members.map((m) => m.uid);
       const convId = await createGroup(
@@ -43,6 +45,9 @@ export default function CreateGroupModal({ uid, onClose }: CreateGroupModalProps
       );
       onClose();
       router.push(`/dashboard/messages/${convId}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Grup oluşturulamadı";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -141,6 +146,10 @@ export default function CreateGroupModal({ uid, onClose }: CreateGroupModalProps
                 ))}
               </div>
             </div>
+          )}
+
+          {error && (
+            <p className="text-xs text-coral-400 bg-coral-500/10 rounded-lg px-3 py-2">{error}</p>
           )}
 
           <div className="flex gap-3 pt-2">

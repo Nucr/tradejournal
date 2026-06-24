@@ -32,6 +32,7 @@ function MessagesContent() {
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState<Map<string, number>>(new Map());
+  const [convError, setConvError] = useState<string | null>(null);
 
   useEffect(() => {
     const convId = searchParams?.get("conv");
@@ -40,12 +41,19 @@ function MessagesContent() {
 
   useEffect(() => {
     if (!user) return;
-    const unsub = subscribeToConversations(user.uid, (list) => {
-      setConversations(list);
-      const unread = new Map<string, number>();
-      list.forEach(() => unread.set("", 0));
-      setUnreadCounts(unread);
-    });
+    const unsub = subscribeToConversations(
+      user.uid,
+      (list) => {
+        setConversations(list);
+        setConvError(null);
+        const unread = new Map<string, number>();
+        list.forEach(() => unread.set("", 0));
+        setUnreadCounts(unread);
+      },
+      (err) => {
+        setConvError("Sohbetler yüklenirken hata oluştu: " + err.message);
+      }
+    );
     return unsub;
   }, [user]);
 
@@ -113,6 +121,15 @@ function MessagesContent() {
           </button>
         </div>
       </div>
+
+      {convError && (
+        <div className="rounded-xl border border-coral-500/20 bg-coral-500/5 p-4 mb-4">
+          <p className="text-sm text-coral-400">{convError}</p>
+          <p className="text-xs text-paper-500 mt-1">
+            Firestore index'lerinin tanımlandığından emin ol. Terminalde: <code className="font-mono bg-ink-800 px-1 py-0.5 rounded">firebase deploy --only firestore:indexes</code>
+          </p>
+        </div>
+      )}
 
       <div className="flex-1 flex rounded-xl border border-ink-800 bg-ink-900 overflow-hidden min-h-0">
         {/* Sidebar - conversation list */}
