@@ -7,11 +7,19 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
     }
 
-    function isConversationMember(conversationId) {
+    function isConversationMember() {
+      return resource.data.participants.hasAny([request.auth.uid]) ||
+             resource.data.type == "community" ||
+             (resource.data.groupType == "open" && resource.data.type == "group");
+    }
+
+    function isConversationMemberById(conversationId) {
       let conv = get(/databases/$(database)/documents/conversations/$(conversationId)).data;
-      return conv.participants.hasAny([request.auth.uid]) ||
-             conv.type == "community" ||
-             (conv.groupType == "open" && conv.type == "group");
+      return conv != null && (
+        conv.participants.hasAny([request.auth.uid]) ||
+        conv.type == "community" ||
+        (conv.groupType == "open" && conv.type == "group")
+      );
     }
 
     // Users doc — sadece sahibi veya admin okuyabilir/yazabilir
@@ -53,7 +61,7 @@ service cloud.firestore {
 
     // Conversations — katılımcı okuyabilir, topluluk/ açık grup herkes okuyabilir
     match /conversations/{conversationId} {
-      allow read: if request.auth != null && isConversationMember(conversationId);
+      allow read: if request.auth != null && isConversationMember();
       allow create: if request.auth != null;
       allow update: if request.auth != null && (
         resource.data.ownerId == request.auth.uid ||
@@ -64,8 +72,8 @@ service cloud.firestore {
 
     // Messages — conversation üyesi okuyabilir ve yazabilir
     match /conversations/{conversationId}/messages/{messageId} {
-      allow read: if request.auth != null && isConversationMember(conversationId);
-      allow create: if request.auth != null && isConversationMember(conversationId);
+      allow read: if request.auth != null && isConversationMemberById(conversationId);
+      allow create: if request.auth != null && isConversationMemberById(conversationId);
       allow delete: if isAdmin();
     }
 
