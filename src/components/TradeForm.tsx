@@ -16,6 +16,9 @@ export default function TradeForm({ initial, onSubmit, onCancel }: Props) {
   const { user } = useAuth();
   const [pair, setPair] = useState(initial?.pair ?? "");
   const [direction, setDirection] = useState<TradeDirection>(initial?.direction ?? "long");
+  const [outcome, setOutcome] = useState<"tp" | "sl" | "be">(
+    initial ? (initial.result > 0 ? "tp" : initial.result < 0 ? "sl" : "be") : "tp"
+  );
   const [entryDate, setEntryDate] = useState(initial?.entryDate?.slice(0, 16) ?? "");
   const [exitDate, setExitDate] = useState(initial?.exitDate?.slice(0, 16) ?? "");
   const [rr, setRr] = useState(initial?.rr?.toString() ?? "");
@@ -91,6 +94,13 @@ export default function TradeForm({ initial, onSubmit, onCancel }: Props) {
     }
   }
 
+  useEffect(() => {
+    if (outcome === "be") {
+      setResult("0");
+      setNetPnl("0");
+    }
+  }, [outcome]);
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!pair || !entryDate || !exitDate) {
@@ -100,14 +110,24 @@ export default function TradeForm({ initial, onSubmit, onCancel }: Props) {
     setError("");
     setSubmitting(true);
     try {
+      let finalResult = Number(result) || 0;
+      let finalPnl = Number(netPnl) || 0;
+      if (outcome === "sl") {
+        if (finalResult > 0) finalResult = -finalResult;
+        if (finalPnl > 0) finalPnl = -finalPnl;
+      }
+      if (outcome === "be") {
+        finalResult = 0;
+        finalPnl = 0;
+      }
       await onSubmit({
         pair: pair.toUpperCase(),
         direction,
         entryDate: new Date(entryDate).toISOString(),
         exitDate: new Date(exitDate).toISOString(),
         rr: Number(rr) || 0,
-        result: Number(result) || 0,
-        netPnl: Number(netPnl) || 0,
+        result: finalResult,
+        netPnl: finalPnl,
         strategy,
         note,
         screenshotUrl,
@@ -131,7 +151,7 @@ export default function TradeForm({ initial, onSubmit, onCancel }: Props) {
 
         <Field label="Yön">
           <div className="flex gap-2">
-            {(["long", "short", "be"] as TradeDirection[]).map((d) => (
+            {(["long", "short"] as TradeDirection[]).map((d) => (
               <button
                 type="button"
                 key={d}
@@ -140,13 +160,11 @@ export default function TradeForm({ initial, onSubmit, onCancel }: Props) {
                   direction === d
                     ? d === "long"
                       ? "border-mint-500 bg-mint-500/10 text-mint-400"
-                      : d === "short"
-                      ? "border-coral-500 bg-coral-500/10 text-coral-400"
-                      : "border-amber-400 bg-amber-400/10 text-amber-400"
+                      : "border-coral-500 bg-coral-500/10 text-coral-400"
                     : "border-ink-700 text-paper-300 hover:border-ink-600"
                 }`}
               >
-                {d === "long" ? "Long" : d === "short" ? "Short" : "BE"}
+                {d === "long" ? "Long" : "Short"}
               </button>
             ))}
           </div>
@@ -179,14 +197,38 @@ export default function TradeForm({ initial, onSubmit, onCancel }: Props) {
           />
         </Field>
 
-        <Field label="Sonuç (% kâr/zarar)">
+        <Field label="TP / SL / BE">
+          <div className="flex gap-2">
+            {(["tp", "sl", "be"] as const).map((o) => (
+              <button
+                type="button"
+                key={o}
+                onClick={() => setOutcome(o)}
+                className={`flex-1 rounded-lg border px-3 py-2.5 text-sm font-medium capitalize transition ${
+                  outcome === o
+                    ? o === "tp"
+                      ? "border-mint-500 bg-mint-500/10 text-mint-400"
+                      : o === "sl"
+                      ? "border-coral-500 bg-coral-500/10 text-coral-400"
+                      : "border-amber-400 bg-amber-400/10 text-amber-400"
+                    : "border-ink-700 text-paper-300 hover:border-ink-600"
+                }`}
+              >
+                {o === "tp" ? "TP" : o === "sl" ? "SL" : "BE"}
+              </button>
+            ))}
+          </div>
+        </Field>
+
+        <Field label={`Sonuç (% kâr/zarar)${outcome === "sl" ? " (negatif yazılacak)" : ""}`}>
           <input
             type="number"
             step="0.01"
             value={result}
             onChange={(e) => setResult(e.target.value)}
-            placeholder="örn. 1.8 veya -1"
+            placeholder={outcome === "be" ? "0" : "örn. 1.8"}
             className="w-full rounded-lg border border-ink-700 bg-ink-950 px-3 py-2.5 text-sm placeholder:text-paper-500 focus:border-mint-500"
+            disabled={outcome === "be"}
           />
         </Field>
 
