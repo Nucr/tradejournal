@@ -15,6 +15,8 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   updateProfile,
+  signInWithPopup,
+  GoogleAuthProvider,
 } from "firebase/auth";
 import { auth } from "./firebase";
 import { getProfile } from "./profile";
@@ -24,6 +26,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   needsOnboarding: boolean | null;
   refreshOnboarding: () => Promise<void>;
@@ -87,13 +90,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function signInWithGoogleHandler() {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (err: any) {
+      if (err?.code === "auth/popup-closed-by-user") return;
+      throw err;
+    }
+  }
+
   async function logout() {
     await signOut(auth);
   }
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, logout, needsOnboarding, refreshOnboarding }}
+      value={{ user, loading, login, register, signInWithGoogle: signInWithGoogleHandler, logout, needsOnboarding, refreshOnboarding }}
     >
       {children}
     </AuthContext.Provider>

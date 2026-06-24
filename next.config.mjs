@@ -3,7 +3,9 @@ const nextConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "**" }
+      { protocol: "https", hostname: "res.cloudinary.com" },
+      { protocol: "https", hostname: "s3.tradingview.com" },
+      { protocol: "https", hostname: "www.tradingview.com" }
     ]
   },
   async headers() {

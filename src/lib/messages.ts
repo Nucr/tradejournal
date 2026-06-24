@@ -360,6 +360,18 @@ export async function createInvitation(
   inviterName: string,
   inviteeId: string
 ): Promise<string> {
+  // Check for existing pending invitation
+  const existing = query(
+    invitationsRef(),
+    where("conversationId", "==", conversationId),
+    where("inviteeId", "==", inviteeId),
+    where("status", "==", "pending")
+  );
+  const snap = await getDocs(existing);
+  if (!snap.empty) {
+    throw new Error("Bu kullanıcıya zaten bekleyen bir davet var");
+  }
+
   const docRef = await addDoc(invitationsRef(), {
     conversationId,
     conversationName,
