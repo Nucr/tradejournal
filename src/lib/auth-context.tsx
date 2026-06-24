@@ -15,8 +15,7 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   updateProfile,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   GoogleAuthProvider,
 } from "firebase/auth";
 import { auth } from "./firebase";
@@ -60,10 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    getRedirectResult(auth).catch(() => {});
-  }, []);
-
-  useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       setLoading(false);
@@ -97,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signInWithGoogleHandler() {
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
+    await signInWithPopup(auth, provider);
   }
 
   async function logout() {
