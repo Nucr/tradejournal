@@ -169,8 +169,7 @@ export default function LeaderboardPage() {
     return list.filter((e) => e.displayName.toLowerCase().includes(q));
   }, [entries, myEntry, user, searchQuery]);
 
-  const top3 = merged.slice(0, 3);
-  const rest = merged.slice(3);
+  const MEDALS = ["🥇", "🥈", "🥉"];
 
   const modalEntry = useMemo(
     () => merged.find((e) => e.uid === modalUid) ?? null,
@@ -236,65 +235,25 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      {/* Podium */}
-      {!loading && top3.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end animate-fade-in-up">
-          {top3[1] && (
-            <PodiumCard
-              entry={top3[1]}
-              rank={2}
-              medal="🥈"
-              bgClass="border-paper-300/10 bg-paper-300/5"
-              className="sm:order-1"
-              onSelect={setModalUid}
-              currentUid={user?.uid ?? ""}
-              disabled={isAnonymous}
-            />
-          )}
-          {top3[0] && (
-            <PodiumCard
-              entry={top3[0]}
-              rank={1}
-              medal="🥇"
-              bgClass="border-amber-400/20 bg-amber-400/10"
-              className="sm:order-2 sm:scale-105 sm:-translate-y-2"
-              onSelect={setModalUid}
-              currentUid={user?.uid ?? ""}
-              disabled={isAnonymous}
-            />
-          )}
-          {top3[2] && (
-            <PodiumCard
-              entry={top3[2]}
-              rank={3}
-              medal="🥉"
-              bgClass="border-coral-400/10 bg-coral-400/5"
-              className="sm:order-3"
-              onSelect={setModalUid}
-              currentUid={user?.uid ?? ""}
-              disabled={isAnonymous}
-            />
-          )}
-        </div>
-      )}
-
-      {/* List (sıra, yatırımcı, kazanç, toplam kâr, işlem sayısı) */}
-      {!loading && rest.length > 0 && (
+      {/* Table (sıra, yatırımcı, skor, net p&l, işlem sayısı) */}
+      {!loading && merged.length > 0 && (
         <div className="rounded-xl border border-ink-800 bg-ink-900 overflow-hidden animate-fade-in-up stagger-2">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-ink-800 text-paper-500 font-mono text-xs uppercase tracking-wide">
-                  <th className="text-left px-4 py-3 w-10">#</th>
+                  <th className="text-left px-4 py-3 w-12">#</th>
                   <th className="text-left px-4 py-3">Yatırımcı</th>
-                  <th className="text-right px-4 py-3">Kazanç</th>
-                  <th className="text-right px-4 py-3 hidden sm:table-cell">Toplam Kâr</th>
-                  <th className="text-right px-4 py-3 hidden sm:table-cell">İşlem</th>
+                  <th className="text-right px-4 py-3">Skor</th>
+                  <th className="text-right px-4 py-3 hidden sm:table-cell">Net P&amp;L</th>
+                  <th className="text-right px-4 py-3 hidden md:table-cell">İşlem Sayısı</th>
                 </tr>
               </thead>
               <tbody>
-                {rest.map((entry) => {
+                {merged.map((entry) => {
                   const isMe = entry.uid === user?.uid;
+                  const rank = entry.rank;
+                  const isTop3 = rank >= 1 && rank <= 3;
                   return (
                     <tr
                       key={entry.uid}
@@ -307,7 +266,13 @@ export default function LeaderboardPage() {
                           : "hover:bg-ink-800/50 cursor-pointer"
                       } ${isAnonymous ? "cursor-default" : ""}`}
                     >
-                      <td className="px-4 py-3 font-mono text-paper-500 w-10">{entry.rank}</td>
+                      <td className="px-4 py-3 font-mono text-paper-500 w-12">
+                        {isTop3 ? (
+                          <span className="text-lg leading-none">{MEDALS[rank - 1]}</span>
+                        ) : (
+                          <span>{rank}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <AvatarLetter
@@ -325,13 +290,19 @@ export default function LeaderboardPage() {
                           )}
                         </div>
                       </td>
-                      <td className={`px-4 py-3 text-right font-mono font-semibold ${getMaskColor(entry.winRate)}`}>
-                        {isMasked(entry.winRate) ? entry.winRate : `${entry.winRate.toFixed(1)}%`}
+                      <td className="px-4 py-3 text-right font-mono font-semibold">
+                        {isMasked(entry.score) ? (
+                          <span className="text-paper-500">####</span>
+                        ) : (
+                          <span style={{ color: scoreHexColor(entry.score) }}>
+                            {Math.round(entry.score)}
+                          </span>
+                        )}
                       </td>
                       <td className={`px-4 py-3 text-right font-mono font-semibold hidden sm:table-cell ${getMaskColor(entry.netResult)}`}>
                         {isMasked(entry.netResult) ? entry.netResult : `${entry.netResult >= 0 ? "+" : ""}${entry.netResult.toFixed(2)}%`}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-paper-300 hidden sm:table-cell">
+                      <td className="px-4 py-3 text-right font-mono text-paper-300 hidden md:table-cell">
                         {isMasked(entry.totalTrades) ? entry.totalTrades : entry.totalTrades}
                       </td>
                     </tr>
@@ -360,59 +331,6 @@ export default function LeaderboardPage() {
         <ProfileModal entry={modalEntry} onClose={closeModal} />,
         document.body
       )}
-    </div>
-  );
-}
-
-function PodiumCard({
-  entry,
-  rank,
-  medal,
-  bgClass,
-  className,
-  onSelect,
-  currentUid,
-  disabled,
-}: {
-  entry: ApiEntry;
-  rank: number;
-  medal: string;
-  bgClass: string;
-  className?: string;
-  onSelect: (uid: string) => void;
-  currentUid: string;
-  disabled: boolean;
-}) {
-  const isMe = entry.uid === currentUid;
-  return (
-    <div
-      onClick={() => {
-        if (!disabled) onSelect(entry.uid);
-      }}
-      className={`rounded-xl border p-5 text-center transition ${bgClass} ${className} ${
-        disabled ? "cursor-default" : "cursor-pointer hover:opacity-80"
-      }`}
-    >
-      <div className="text-3xl mb-2">{medal}</div>
-      <div className="flex justify-center mb-3">
-        <AvatarLetter
-          name={entry.displayName}
-          avatarUrl={entry.avatarUrl}
-          avatarColor={entry.avatarColor}
-          className="w-14 h-14 text-lg"
-        />
-      </div>
-      <p className="font-display font-semibold text-paper-100 truncate">
-        {entry.displayName}
-        {isMe && (
-          <span className="ml-1.5 text-[10px] font-mono bg-mint-500/15 text-mint-400 px-1.5 py-0.5 rounded align-middle">
-            SEN
-          </span>
-        )}
-      </p>
-      <p className="text-2xl font-bold font-mono mt-2" style={{ color: scoreHexColor(isMasked(entry.score) ? 0 : entry.score as number) }}>
-        {isMasked(entry.score) ? entry.score : Math.round(entry.score as number)}
-      </p>
     </div>
   );
 }
