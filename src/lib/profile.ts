@@ -106,6 +106,7 @@ export async function savePublicProfile(uid: string, data: Partial<UserProfile>)
     showTrades: data.showTrades,
     showAchievements: data.showAchievements,
     showStats: data.showStats,
+    leaderboardOptIn: data.leaderboardOptIn,
   };
   if (data.stats) publicData.stats = data.stats;
   if (data.achievements) publicData.achievements = data.achievements;
@@ -138,6 +139,7 @@ export async function syncPublicProfile(uid: string) {
       showTrades: data.showTrades ?? true,
       showAchievements: data.showAchievements ?? true,
       showStats: data.showStats ?? true,
+      leaderboardOptIn: data.leaderboardOptIn ?? false,
     }, { merge: true });
   }
 }

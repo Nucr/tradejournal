@@ -60,6 +60,7 @@ export interface UserProfile {
   showTrades: boolean;
   showAchievements: boolean;
   showStats: boolean;
+  leaderboardOptIn?: boolean;
   stats: UserStats;
   achievements?: string[];
   role?: "user" | "admin";

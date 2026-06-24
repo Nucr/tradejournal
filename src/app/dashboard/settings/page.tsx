@@ -33,6 +33,7 @@ export default function SettingsPage() {
   const [showTrades, setShowTrades] = useState(true);
   const [showAchievements, setShowAchievements] = useState(true);
   const [showStats, setShowStats] = useState(true);
+  const [leaderboardOptIn, setLeaderboardOptIn] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -58,6 +59,7 @@ export default function SettingsPage() {
         setShowTrades(p.showTrades ?? true);
         setShowAchievements(p.showAchievements ?? true);
         setShowStats(p.showStats ?? true);
+        setLeaderboardOptIn(p.leaderboardOptIn ?? false);
       }
     });
     const ninetyDaysAgo = new Date();
@@ -79,8 +81,8 @@ export default function SettingsPage() {
   async function handleSavePrivacy() {
     if (!user) return;
     setSaving(true);
-    await saveProfile(user.uid, { isPublic, showStrategy, showLeaderboard, showTrades, showAchievements, showStats });
-    setProfile((prev) => (prev ? { ...prev, isPublic, showStrategy, showLeaderboard, showTrades, showAchievements, showStats } : prev));
+    await saveProfile(user.uid, { isPublic, showStrategy, showLeaderboard, showTrades, showAchievements, showStats, leaderboardOptIn });
+    setProfile((prev) => (prev ? { ...prev, isPublic, showStrategy, showLeaderboard, showTrades, showAchievements, showStats, leaderboardOptIn } : prev));
     setSaving(false);
   }
 
@@ -303,6 +305,24 @@ export default function SettingsPage() {
               className={`relative w-11 h-6 rounded-full transition cursor-pointer shrink-0 ml-4 ${showStrategy ? "bg-mint-500" : "bg-ink-700"}`}
             >
               <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition ${showStrategy ? "translate-x-5" : ""}`} />
+            </div>
+          </label>
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <p className="text-sm font-medium text-paper-100">Liderlik tablosunda görün</p>
+              <p className="text-xs text-paper-500 mt-0.5">
+                Kapalıyken adın ve sayıların yerine "Anonim Trader" ve #### gösterilir, ama sıralamadaki yerin korunur.
+              </p>
+            </div>
+            <div
+              role="checkbox"
+              aria-checked={leaderboardOptIn}
+              tabIndex={0}
+              onClick={() => setLeaderboardOptIn((v) => !v)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setLeaderboardOptIn((v) => !v); }}
+              className={`relative w-11 h-6 rounded-full transition cursor-pointer shrink-0 ml-4 ${leaderboardOptIn ? "bg-mint-500" : "bg-ink-700"}`}
+            >
+              <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition ${leaderboardOptIn ? "translate-x-5" : ""}`} />
             </div>
           </label>
         </div>

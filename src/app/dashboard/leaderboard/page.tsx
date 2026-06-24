@@ -5,11 +5,7 @@ import { createPortal } from "react-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
-import { subscribeToLeaderboard } from "@/lib/leaderboard";
-import {
-  LeaderboardEntry,
-  LeaderboardPeriod,
-} from "@/lib/types";
+import { LeaderboardPeriod } from "@/lib/types";
 import {
   RadarChart,
   PolarGrid,
@@ -31,48 +27,30 @@ const PERIODS: PeriodTab[] = [
   { key: "alltime", label: "Tüm Zamanlar" },
 ];
 
-const AVATAR_COLORS = [
-  "#2ED9A4", "#FF5D5D", "#F2B84B", "#6C8EF0",
-  "#D16BF0", "#F06C6C", "#4ECDC4", "#FF6B6B",
-];
+type MaskedNumber = number | "####";
 
-function hashColor(id: string): string {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+interface ApiEntry {
+  uid: string;
+  rank: number;
+  displayName: string;
+  avatarUrl: string | null;
+  avatarColor: string;
+  score: MaskedNumber;
+  winRate: MaskedNumber;
+  netResult: MaskedNumber;
+  totalTrades: MaskedNumber;
+  isPublic: boolean;
+  leaderboardOptIn: boolean;
+}
+
+function isMasked(v: MaskedNumber): v is "####" {
+  return v === "####";
 }
 
 function scoreHexColor(score: number): string {
   if (score >= 70) return "#2ED9A4";
   if (score >= 40) return "#F2B84B";
   return "#FF5D5D";
-}
-
-function ScoreHexagon({ score, size = 120 }: { score: number; size?: number }) {
-  const cx = size / 2;
-  const cy = size / 2;
-  const r = size * 0.38;
-  const color = scoreHexColor(score);
-
-  const points = Array.from({ length: 6 }, (_, i) => {
-    const angle = (Math.PI / 3) * i - Math.PI / 2;
-    return `${(cx + r * Math.cos(angle)).toFixed(1)},${(cy + r * Math.sin(angle)).toFixed(1)}`;
-  }).join(" ");
-
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <polygon points={points} fill="none" stroke={color} strokeWidth={1.5} opacity={0.25} />
-      <polygon points={points} fill={color} fillOpacity={0.12} stroke={color} strokeWidth={2} />
-      <text x={cx} y={cy - 4} textAnchor="middle" fill={color} fontSize={size * 0.28} fontWeight={800} fontFamily="monospace">
-        {Math.round(score)}
-      </text>
-      <text x={cx} y={cy + size * 0.14} textAnchor="middle" fill={color} fontSize={size * 0.075} fontWeight={700} fontFamily="monospace" opacity={0.7}>
-        SCORE
-      </text>
-    </svg>
-  );
 }
 
 function AvatarLetter({
@@ -82,7 +60,7 @@ function AvatarLetter({
   className = "w-10 h-10 text-sm",
 }: {
   name: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   avatarColor?: string;
   className?: string;
 }) {
@@ -95,15 +73,21 @@ function AvatarLetter({
       </div>
     );
   }
-  const letter = name ? name[0].toUpperCase() : "?";
   return (
     <div
       className={`rounded-full flex items-center justify-center font-bold text-ink-950 shrink-0 ${className}`}
-      style={{ backgroundColor: avatarColor ?? hashColor(name) }}
+      style={{ backgroundColor: avatarColor ?? "#2ED9A4" }}
     >
-      {letter}
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
     </div>
   );
+}
+
+function formatNumber(v: MaskedNumber): string {
+  if (isMasked(v)) return v;
+  return v.toFixed(1);
 }
 
 function formatScore(num: number): string {
@@ -113,48 +97,103 @@ function formatScore(num: number): string {
 export default function LeaderboardPage() {
   const { user } = useAuth();
   const [period, setPeriod] = useState<LeaderboardPeriod>("alltime");
-  const [entries, setEntries] = useState<(LeaderboardEntry & { uid: string })[]>([]);
+  const [entries, setEntries] = useState<ApiEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [modalUid, setModalUid] = useState<string | null>(null);
-
-  useEffect(() => {
-    const unsub = subscribeToLeaderboard(period, setEntries);
-    return unsub;
-  }, [period]);
-
   const [searchQuery, setSearchQuery] = useState("");
 
-  const sorted = useMemo(
-    () => [...entries].sort((a, b) => b.score - a.score),
-    [entries]
-  );
+  // Current user's real data (unmasked)
+  const [myEntry, setMyEntry] = useState<{
+    displayName: string;
+    avatarUrl: string | null;
+    avatarColor: string;
+    score: number;
+    winRate: number;
+    netResult: number;
+    totalTrades: number;
+    isPublic: boolean;
+  } | null>(null);
 
-  const top3 = sorted.slice(0, 3);
-  const rest = useMemo(
-    () => sorted.slice(3).filter((e) => {
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      return e.displayName.toLowerCase().includes(q) || e.rank.toLowerCase().includes(q);
-    }),
-    [sorted, searchQuery]
-  );
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/leaderboard?period=${period}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setEntries(data.entries ?? []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [period]);
+
+  useEffect(() => {
+    if (!user) return;
+    getDoc(doc(db, "users", user.uid)).then((snap) => {
+      if (snap.exists()) {
+        const d = snap.data();
+        setMyEntry({
+          displayName: d.displayName ?? user.displayName ?? "Trader",
+          avatarUrl: d.avatarUrl ?? null,
+          avatarColor: d.avatarColor ?? "#2ED9A4",
+          score: d.score ?? 0,
+          winRate: d.stats?.winRate ?? 0,
+          netResult: d.stats?.netResult ?? 0,
+          totalTrades: d.stats?.totalTrades ?? 0,
+          isPublic: d.isPublic ?? false,
+        });
+      }
+    });
+  }, [user]);
+
+  const merged = useMemo(() => {
+    let list = entries;
+    if (user && myEntry) {
+      list = entries.map((e) => {
+        if (e.uid === user.uid) {
+          return {
+            ...e,
+            displayName: myEntry.displayName,
+            avatarUrl: myEntry.avatarUrl,
+            avatarColor: myEntry.avatarColor,
+            score: myEntry.score,
+            winRate: myEntry.winRate,
+            netResult: myEntry.netResult,
+            totalTrades: myEntry.totalTrades,
+            leaderboardOptIn: true,
+          };
+        }
+        return e;
+      });
+    }
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter((e) => e.displayName.toLowerCase().includes(q));
+  }, [entries, myEntry, user, searchQuery]);
+
+  const top3 = merged.slice(0, 3);
+  const rest = merged.slice(3);
 
   const modalEntry = useMemo(
-    () => sorted.find((e) => e.uid === modalUid) ?? null,
-    [sorted, modalUid]
+    () => merged.find((e) => e.uid === modalUid) ?? null,
+    [merged, modalUid]
   );
 
   const closeModal = useCallback(() => setModalUid(null), []);
 
   const isAnonymous = !user;
 
+  function getMaskColor(val: MaskedNumber): string {
+    if (isMasked(val)) return "text-paper-500";
+    if (typeof val === "number" && val > 0) return "text-mint-400";
+    if (typeof val === "number" && val < 0) return "text-coral-400";
+    return "text-paper-100";
+  }
+
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="font-display text-2xl font-semibold">Liderlik Tablosu</h1>
-          <p className="text-sm text-paper-300 mt-1">
-            En başarılı traderlar sıralamada.
-          </p>
+          <p className="text-sm text-paper-300 mt-1">En başarılı traderlar sıralamada.</p>
         </div>
       </div>
 
@@ -167,31 +206,38 @@ export default function LeaderboardPage() {
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Kullanıcı veya unvan ara…"
+            placeholder="Yatırımcı ara…"
             className="w-full rounded-xl border border-ink-800 bg-ink-900 pl-9 pr-3 py-2 text-sm text-paper-100 placeholder:text-paper-500 focus:outline-none focus:border-mint-500/50 focus:ring-1 focus:ring-mint-500/20 transition"
           />
         </div>
         <div className="flex gap-1 rounded-xl border border-ink-800 bg-ink-900 p-1 w-fit flex-wrap">
-        {PERIODS.map((p) => (
-          <button
-            key={p.key}
-            onClick={() => {
-              if (!isAnonymous) setPeriod(p.key);
-            }}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-              period === p.key
-                ? "bg-mint-500/15 text-mint-400 border border-mint-500/20"
-                : "text-paper-400 hover:text-paper-200"
-            } ${isAnonymous ? "cursor-not-allowed opacity-50" : ""}`}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+          {PERIODS.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => {
+                if (!isAnonymous) setPeriod(p.key);
+              }}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                period === p.key
+                  ? "bg-mint-500/15 text-mint-400 border border-mint-500/20"
+                  : "text-paper-400 hover:text-paper-200"
+              } ${isAnonymous ? "cursor-not-allowed opacity-50" : ""}`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {/* Loading */}
+      {loading && (
+        <div className="flex justify-center py-12">
+          <div className="w-8 h-8 rounded-full border-2 border-mint-500 border-t-transparent animate-spin" />
+        </div>
+      )}
+
       {/* Podium */}
-      {top3.length > 0 && (
+      {!loading && top3.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end animate-fade-in-up">
           {top3[1] && (
             <PodiumCard
@@ -232,73 +278,80 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      {/* Vertical List */}
-      {rest.length > 0 && (
-        <div className="space-y-2 animate-fade-in-up stagger-2">
-          {rest.map((entry, i) => {
-            const rank = i + 4;
-            const isMe = entry.uid === user?.uid;
-            return (
-              <div
-                key={entry.uid}
-                onClick={() => {
-                  if (!isAnonymous) setModalUid(entry.uid);
-                }}
-                className={`rounded-xl border p-4 flex items-center gap-4 transition ${
-                  isMe
-                    ? "border-mint-500/20 bg-mint-500/5"
-                    : "border-ink-800 bg-ink-900 hover:border-ink-700 hover:bg-ink-850"
-                } ${isAnonymous ? "cursor-default" : "cursor-pointer"}`}
-              >
-                <span className="font-mono text-sm text-paper-500 w-6 shrink-0 text-center">
-                  {rank}
-                </span>
-                <AvatarLetter
-                  name={entry.isPublic ? entry.displayName : "A"}
-                  avatarUrl={entry.avatarUrl}
-                  avatarColor={entry.avatarColor}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-paper-100 truncate">
-                      {entry.isPublic ? entry.displayName : "Anonim Trader"}
-                    </span>
-                    {isMe && (
-                      <span className="text-[10px] font-mono bg-mint-500/15 text-mint-400 px-1.5 py-0.5 rounded">
-                        SEN
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <RankBadge rank={entry.rank} size="sm" />
-                    <span className="text-xs font-mono text-paper-500">
-                      {entry.totalTrades} işlem
-                    </span>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="font-mono font-bold text-base" style={{ color: scoreHexColor(entry.score) }}>
-                    {Math.round(entry.score)}
-                  </p>
-                  <p className="text-xs font-mono text-paper-500">
-                    {entry.winRate.toFixed(0)}% · {entry.avgRR.toFixed(1)}R
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+      {/* List (sıra, yatırımcı, kazanç, toplam kâr, işlem sayısı) */}
+      {!loading && rest.length > 0 && (
+        <div className="rounded-xl border border-ink-800 bg-ink-900 overflow-hidden animate-fade-in-up stagger-2">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-ink-800 text-paper-500 font-mono text-xs uppercase tracking-wide">
+                  <th className="text-left px-4 py-3 w-10">#</th>
+                  <th className="text-left px-4 py-3">Yatırımcı</th>
+                  <th className="text-right px-4 py-3">Kazanç</th>
+                  <th className="text-right px-4 py-3 hidden sm:table-cell">Toplam Kâr</th>
+                  <th className="text-right px-4 py-3 hidden sm:table-cell">İşlem</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rest.map((entry) => {
+                  const isMe = entry.uid === user?.uid;
+                  return (
+                    <tr
+                      key={entry.uid}
+                      onClick={() => {
+                        if (!isAnonymous) setModalUid(entry.uid);
+                      }}
+                      className={`border-b border-ink-800/50 transition ${
+                        isMe
+                          ? "bg-mint-500/10 cursor-pointer"
+                          : "hover:bg-ink-800/50 cursor-pointer"
+                      } ${isAnonymous ? "cursor-default" : ""}`}
+                    >
+                      <td className="px-4 py-3 font-mono text-paper-500 w-10">{entry.rank}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <AvatarLetter
+                            name={entry.displayName}
+                            avatarUrl={entry.avatarUrl}
+                            avatarColor={entry.avatarColor}
+                          />
+                          <span className="font-medium text-paper-100 truncate max-w-[160px]">
+                            {entry.displayName}
+                          </span>
+                          {isMe && (
+                            <span className="text-[10px] font-mono bg-mint-500/15 text-mint-400 px-1.5 py-0.5 rounded">
+                              SEN
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className={`px-4 py-3 text-right font-mono font-semibold ${getMaskColor(entry.winRate)}`}>
+                        {isMasked(entry.winRate) ? entry.winRate : `${entry.winRate.toFixed(1)}%`}
+                      </td>
+                      <td className={`px-4 py-3 text-right font-mono font-semibold hidden sm:table-cell ${getMaskColor(entry.netResult)}`}>
+                        {isMasked(entry.netResult) ? entry.netResult : `${entry.netResult >= 0 ? "+" : ""}${entry.netResult.toFixed(2)}%`}
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono text-paper-300 hidden sm:table-cell">
+                        {isMasked(entry.totalTrades) ? entry.totalTrades : entry.totalTrades}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
-      {sorted.length === 0 && (
+      {/* Empty states */}
+      {!loading && merged.length === 0 && (
         <div className="rounded-xl border border-ink-800 bg-ink-900 p-12 text-center text-paper-500">
-          <p className="text-lg font-display">Henüz veri yok</p>
-          <p className="text-sm mt-1">İlk liderlik kaydı eklendiğinde burada görünecek.</p>
-        </div>
-      )}
-      {sorted.length > 3 && rest.length === 0 && searchQuery && (
-        <div className="rounded-xl border border-ink-800 bg-ink-900 p-8 text-center text-paper-500">
-          <p className="text-sm">Aramanla eşleşen kullanıcı bulunamadı.</p>
+          <p className="text-lg font-display">
+            {searchQuery ? "Aramanla eşleşen yatırımcı bulunamadı." : "Henüz veri yok"}
+          </p>
+          <p className="text-sm mt-1">
+            {searchQuery ? "Farklı bir isim dene." : "İlk liderlik kaydı eklendiğinde burada görünecek."}
+          </p>
         </div>
       )}
 
@@ -321,7 +374,7 @@ function PodiumCard({
   currentUid,
   disabled,
 }: {
-  entry: LeaderboardEntry & { uid: string };
+  entry: ApiEntry;
   rank: number;
   medal: string;
   bgClass: string;
@@ -343,30 +396,23 @@ function PodiumCard({
       <div className="text-3xl mb-2">{medal}</div>
       <div className="flex justify-center mb-3">
         <AvatarLetter
-          name={entry.isPublic ? entry.displayName : "A"}
+          name={entry.displayName}
           avatarUrl={entry.avatarUrl}
           avatarColor={entry.avatarColor}
           className="w-14 h-14 text-lg"
         />
       </div>
       <p className="font-display font-semibold text-paper-100 truncate">
-        {entry.isPublic ? entry.displayName : "Anonim Trader"}
+        {entry.displayName}
         {isMe && (
           <span className="ml-1.5 text-[10px] font-mono bg-mint-500/15 text-mint-400 px-1.5 py-0.5 rounded align-middle">
             SEN
           </span>
         )}
       </p>
-      <div className="mt-1 flex justify-center">
-        <RankBadge rank={entry.rank} size="sm" />
-      </div>
-      <p className="text-2xl font-bold font-mono mt-2" style={{ color: scoreHexColor(entry.score) }}>
-        {Math.round(entry.score)}
+      <p className="text-2xl font-bold font-mono mt-2" style={{ color: scoreHexColor(isMasked(entry.score) ? 0 : entry.score as number) }}>
+        {isMasked(entry.score) ? entry.score : Math.round(entry.score as number)}
       </p>
-      <div className="flex justify-center gap-4 mt-2 text-xs text-paper-500 font-mono">
-        <span>{entry.winRate.toFixed(0)}% Kazanç</span>
-        <span>{entry.avgRR.toFixed(2)} R</span>
-      </div>
     </div>
   );
 }
@@ -375,10 +421,10 @@ function ProfileModal({
   entry,
   onClose,
 }: {
-  entry: LeaderboardEntry & { uid: string };
+  entry: ApiEntry;
   onClose: () => void;
 }) {
-  const displayName = entry.isPublic ? entry.displayName : "Anonim Trader";
+  const displayName = entry.displayName;
   const [achievements, setAchievements] = useState<string[]>([]);
 
   useEffect(() => {
@@ -390,14 +436,14 @@ function ProfileModal({
   }, [entry.uid]);
 
   const radarData = useMemo(() => {
-    const consistencyPct = Math.round(entry.totalTrades > 0 ? Math.min(1, 1) * 100 : 0);
-    const profitability = Math.max(0, Math.min(entry.netResult / 50, 1)) * 100;
-    const rr = Math.min(entry.avgRR / 3, 1) * 100;
+    const wr = isMasked(entry.winRate) ? 0 : entry.winRate;
+    const nr = isMasked(entry.netResult) ? 0 : entry.netResult;
+    const tt = isMasked(entry.totalTrades) ? 0 : entry.totalTrades;
+    const profitability = Math.max(0, Math.min(nr / 50, 1)) * 100;
     return [
-      { axis: "Kazanma", value: Math.round(entry.winRate) },
+      { axis: "Kazanma", value: Math.round(wr) },
       { axis: "Karlılık", value: Math.round(profitability) },
-      { axis: "R:R", value: Math.round(rr) },
-      { axis: "İstikrar", value: consistencyPct },
+      { axis: "İstikrar", value: tt > 0 ? 100 : 0 },
     ];
   }, [entry]);
 
@@ -426,12 +472,6 @@ function ProfileModal({
               <h2 className="font-display text-xl font-semibold text-paper-100">
                 {displayName}
               </h2>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="rounded-full bg-mint-500/10 text-mint-400 px-2 py-0.5 text-xs font-semibold font-mono">
-                  Seviye {entry.level}
-                </span>
-                <RankBadge rank={entry.rank} />
-              </div>
             </div>
           </div>
           <button
@@ -444,21 +484,22 @@ function ProfileModal({
           </button>
         </div>
 
-        {/* Score hexagon + breakdown */}
-        <div className="flex flex-col sm:flex-row items-center gap-6">
-          <ScoreHexagon score={entry.score} size={130} />
-          <div className="flex-1 w-full space-y-2.5">
-            <ScoreBar label="İstikrar" value={entry.totalTrades > 0 ? 100 : 0} max={100} color="#2ED9A4" />
-            <ScoreBar label="Karlılık" value={Math.max(0, Math.min(entry.netResult / 50, 1)) * 100} max={100} color="#F2B84B" />
-            <ScoreBar label="R:R" value={Math.min(entry.avgRR / 3, 1) * 100} max={100} color="#6C8EF0" />
-            <ScoreBar label="Kazanma" value={entry.winRate} max={100} color="#D16BF0" />
-          </div>
+        {/* Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <MiniStat label="İşlem" value={isMasked(entry.totalTrades) ? entry.totalTrades : String(entry.totalTrades)} />
+          <MiniStat label="Kazanç" value={isMasked(entry.winRate) ? entry.winRate : `${entry.winRate.toFixed(1)}%`} />
+          <MiniStat
+            label="Net P&L"
+            value={isMasked(entry.netResult) ? entry.netResult : (entry.netResult >= 0 ? "+" : "") + entry.netResult.toFixed(2) + "%"}
+            tone={!isMasked(entry.netResult) ? (entry.netResult >= 0 ? "mint" : "coral") : undefined}
+          />
+          <MiniStat label="Score" value={isMasked(entry.score) ? entry.score : String(Math.round(entry.score as number))} />
         </div>
 
         {/* Radar chart */}
         <div className="rounded-xl border border-ink-800 bg-ink-950 p-4">
           <p className="text-xs font-mono uppercase tracking-wide text-paper-500 mb-3">Performans Radar</p>
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={200}>
             <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
               <PolarGrid stroke="rgba(255,255,255,0.08)" />
               <PolarAngleAxis
@@ -477,26 +518,6 @@ function ProfileModal({
           </ResponsiveContainer>
         </div>
 
-        {/* Top strategy */}
-        {entry.showStrategy && entry.topStrategy && (
-          <div className="rounded-xl border border-ink-800 bg-ink-950 p-4">
-            <p className="text-xs font-mono uppercase tracking-wide text-paper-500 mb-1">Kullandığı Strateji</p>
-            <p className="font-display text-base font-semibold text-paper-100">{entry.topStrategy}</p>
-          </div>
-        )}
-
-        {/* Summary stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <MiniStat label="İşlem" value={String(entry.totalTrades)} />
-          <MiniStat label="Win Rate" value={`${entry.winRate.toFixed(1)}%`} />
-          <MiniStat label="Ort. RR" value={entry.avgRR.toFixed(2)} />
-          <MiniStat
-            label="Net P&L"
-            value={`${formatScore(entry.netResult)}%`}
-            tone={entry.netResult >= 0 ? "mint" : "coral"}
-          />
-        </div>
-
         {/* Achievements */}
         {achievements.length > 0 && (
           <div>
@@ -504,34 +525,6 @@ function ProfileModal({
             <AchievementsGrid earned={achievements} />
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function ScoreBar({
-  label,
-  value,
-  max,
-  color,
-}: {
-  label: string;
-  value: number;
-  max: number;
-  color: string;
-}) {
-  const pct = Math.min((value / max) * 100, 100);
-  return (
-    <div>
-      <div className="flex justify-between text-xs font-mono mb-1">
-        <span className="text-paper-400">{label}</span>
-        <span className="text-paper-200">{Math.round(pct)}%</span>
-      </div>
-      <div className="h-1.5 rounded-full bg-ink-700 overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${pct}%`, backgroundColor: color }}
-        />
       </div>
     </div>
   );
