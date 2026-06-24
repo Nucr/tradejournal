@@ -56,6 +56,10 @@ export interface UserProfile {
   score: number;
   isPublic: boolean;
   showStrategy: boolean;
+  showLeaderboard: boolean;
+  showTrades: boolean;
+  showAchievements: boolean;
+  showStats: boolean;
   stats: UserStats;
   achievements?: string[];
   role?: "user" | "admin";
@@ -96,4 +100,56 @@ export interface LeaderboardEntry {
   isPublic: boolean;
   showStrategy: boolean;
   updatedAt: Date;
+}
+
+// --- Conversations / Messaging ---
+
+export type ConversationType = "direct" | "group" | "community";
+export type GroupType = "open" | "closed";
+
+export interface LastMessage {
+  text: string;
+  senderId: string;
+  senderName: string;
+  createdAt: Date;
+}
+
+export interface Conversation {
+  id: string;
+  type: ConversationType;
+  name?: string;
+  description?: string;
+  groupType?: GroupType;
+  ownerId?: string;
+  participants: string[];
+  invitedUsers?: string[];
+  createdBy: string;
+  lastMessage?: LastMessage;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Message {
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  createdAt: Date;
+}
+
+export interface UnreadCount {
+  conversationId: string;
+  count: number;
+}
+
+// --- User search result ---
+
+export interface UserSearchResult {
+  uid: string;
+  displayName: string;
+  avatarUrl?: string;
+  avatarColor: string;
+  level: number;
+  rank: Rank;
+  score: number;
 }

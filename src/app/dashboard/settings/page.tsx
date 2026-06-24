@@ -29,6 +29,10 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isPublic, setIsPublic] = useState(true);
   const [showStrategy, setShowStrategy] = useState(true);
+  const [showLeaderboard, setShowLeaderboard] = useState(true);
+  const [showTrades, setShowTrades] = useState(true);
+  const [showAchievements, setShowAchievements] = useState(true);
+  const [showStats, setShowStats] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -50,6 +54,10 @@ export default function SettingsPage() {
         setProfile(p);
         setIsPublic(p.isPublic);
         setShowStrategy(p.showStrategy);
+        setShowLeaderboard(p.showLeaderboard ?? true);
+        setShowTrades(p.showTrades ?? true);
+        setShowAchievements(p.showAchievements ?? true);
+        setShowStats(p.showStats ?? true);
       }
     });
     const ninetyDaysAgo = new Date();
@@ -71,8 +79,8 @@ export default function SettingsPage() {
   async function handleSavePrivacy() {
     if (!user) return;
     setSaving(true);
-    await saveProfile(user.uid, { isPublic, showStrategy });
-    setProfile((prev) => (prev ? { ...prev, isPublic, showStrategy } : prev));
+    await saveProfile(user.uid, { isPublic, showStrategy, showLeaderboard, showTrades, showAchievements, showStats });
+    setProfile((prev) => (prev ? { ...prev, isPublic, showStrategy, showLeaderboard, showTrades, showAchievements, showStats } : prev));
     setSaving(false);
   }
 
@@ -298,6 +306,17 @@ export default function SettingsPage() {
             </div>
           </label>
         </div>
+
+        <p className="text-xs text-paper-500 mt-6 mb-3 font-mono uppercase tracking-wide">
+          Profilimde gösterilecekler
+        </p>
+
+        <div className="space-y-4">
+          <ToggleRow checked={showLeaderboard} onChange={setShowLeaderboard} label="Liderlik sıralamam" desc="Profilimde kaçıncı sırada olduğum görünsün" />
+          <ToggleRow checked={showTrades} onChange={setShowTrades} label="Paylaştığım işlemler" desc="Profilimde paylaştığım işlemler listelensin" />
+          <ToggleRow checked={showAchievements} onChange={setShowAchievements} label="Rozetlerim" desc="Kazandığım rozetler profilimde görünsün" />
+          <ToggleRow checked={showStats} onChange={setShowStats} label="İstatistiklerim" desc="Trade istatistiklerim profilimde yer alsın" />
+        </div>
         <button
           onClick={handleSavePrivacy}
           disabled={saving}
@@ -390,5 +409,36 @@ export default function SettingsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function ToggleRow({
+  checked,
+  onChange,
+  label,
+  desc,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  desc: string;
+}) {
+  return (
+    <label className="flex items-center justify-between cursor-pointer">
+      <div>
+        <p className="text-sm font-medium text-paper-100">{label}</p>
+        <p className="text-xs text-paper-500 mt-0.5">{desc}</p>
+      </div>
+      <div
+        role="checkbox"
+        aria-checked={checked}
+        tabIndex={0}
+        onClick={() => onChange(!checked)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onChange(!checked); }}
+        className={`relative w-11 h-6 rounded-full transition cursor-pointer shrink-0 ml-4 ${checked ? "bg-mint-500" : "bg-ink-700"}`}
+      >
+        <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition ${checked ? "translate-x-5" : ""}`} />
+      </div>
+    </label>
   );
 }

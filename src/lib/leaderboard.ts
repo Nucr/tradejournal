@@ -74,6 +74,17 @@ export async function setLeaderboardEntry(
   });
 }
 
+export async function getLeaderboardRank(
+  period: LeaderboardPeriod,
+  uid: string
+): Promise<{ rank: number; entry: (LeaderboardEntry & { uid: string }) | null }> {
+  const entries = await getLeaderboard(period);
+  const sorted = entries.sort((a, b) => b.score - a.score);
+  const idx = sorted.findIndex((e) => e.uid === uid);
+  if (idx === -1) return { rank: 0, entry: null };
+  return { rank: idx + 1, entry: sorted[idx] };
+}
+
 export async function updateLeaderboardEntry(
   period: LeaderboardPeriod,
   uid: string,

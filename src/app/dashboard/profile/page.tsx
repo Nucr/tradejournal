@@ -4,13 +4,21 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { getProfile, saveProfile, subscribeToProfile } from "@/lib/profile";
 import { subscribeToTrades } from "@/lib/trades";
+import { getLeaderboardRank } from "@/lib/leaderboard";
 import { computeStats } from "@/lib/date-utils";
-import { Trade, UserProfile } from "@/lib/types";
+import { Trade, UserProfile, LeaderboardPeriod } from "@/lib/types";
 import AchievementsGrid from "@/components/AchievementsGrid";
 import RankBadge from "@/components/RankBadge";
 import Avatar from "@/components/Avatar";
+import SharedTradeList from "@/components/SharedTradeList";
 
 const DEFAULT_AVATAR_COLOR = "#2ED9A4";
+
+const PERIOD_LABELS: Record<LeaderboardPeriod, string> = {
+  weekly: "Haftalık",
+  monthly: "Aylık",
+  alltime: "Tüm Zamanlar",
+};
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -21,7 +29,12 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [showStrategy, setShowStrategy] = useState(true);
+  const [showLeaderboard, setShowLeaderboard] = useState(true);
+  const [showTrades, setShowTrades] = useState(true);
+  const [showAchievements, setShowAchievements] = useState(true);
+  const [showStats, setShowStats] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [leaderboardRanks, setLeaderboardRanks] = useState<{ period: LeaderboardPeriod; rank: number }[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -32,6 +45,10 @@ export default function ProfilePage() {
         setAvatarUrl(p.avatarUrl || "");
         setIsPublic(p.isPublic);
         setShowStrategy(p.showStrategy);
+        setShowLeaderboard(p.showLeaderboard ?? true);
+        setShowTrades(p.showTrades ?? true);
+        setShowAchievements(p.showAchievements ?? true);
+        setShowStats(p.showStats ?? true);
       } else {
         setDisplayName(user.displayName || "");
       }
@@ -39,6 +56,21 @@ export default function ProfilePage() {
     const unsubTrades = subscribeToTrades(user.uid, setTrades);
     return () => { unsubProfile(); unsubTrades(); };
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !profile?.showLeaderboard) return;
+    const uid = user.uid;
+    async function fetchRanks() {
+      const periods: LeaderboardPeriod[] = ["weekly", "monthly", "alltime"];
+      const results: { period: LeaderboardPeriod; rank: number }[] = [];
+      for (const p of periods) {
+        const { rank } = await getLeaderboardRank(p, uid);
+        if (rank > 0) results.push({ period: p, rank });
+      }
+      setLeaderboardRanks(results);
+    }
+    fetchRanks();
+  }, [user, profile?.showLeaderboard]);
 
   const stats = computeStats(trades);
 
@@ -54,6 +86,10 @@ export default function ProfilePage() {
       score: profile?.score ?? 0,
       isPublic,
       showStrategy,
+      showLeaderboard,
+      showTrades,
+      showAchievements,
+      showStats,
       stats: profile?.stats ?? {
         totalTrades: 0,
         winRate: 0,
@@ -99,7 +135,7 @@ export default function ProfilePage() {
                   />
                 </div>
                 <p className="text-xs text-paper-500">Profil fotoğrafını Ayarlar sayfasından değiştirebilirsin.</p>
-                <div className="flex items-center gap-6 flex-wrap">
+                <div className="flex flex-col gap-2">
                   <label className="flex items-center gap-2 text-sm text-paper-300">
                     <input
                       type="checkbox"
@@ -117,6 +153,42 @@ export default function ProfilePage() {
                       className="rounded border-ink-700 bg-ink-950 text-mint-500 focus:ring-mint-500"
                     />
                     Strateji bilgisini göster
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-paper-300">
+                    <input
+                      type="checkbox"
+                      checked={showLeaderboard}
+                      onChange={(e) => setShowLeaderboard(e.target.checked)}
+                      className="rounded border-ink-700 bg-ink-950 text-mint-500 focus:ring-mint-500"
+                    />
+                    Liderlik sıramı göster
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-paper-300">
+                    <input
+                      type="checkbox"
+                      checked={showTrades}
+                      onChange={(e) => setShowTrades(e.target.checked)}
+                      className="rounded border-ink-700 bg-ink-950 text-mint-500 focus:ring-mint-500"
+                    />
+                    Paylaştığım işlemleri göster
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-paper-300">
+                    <input
+                      type="checkbox"
+                      checked={showAchievements}
+                      onChange={(e) => setShowAchievements(e.target.checked)}
+                      className="rounded border-ink-700 bg-ink-950 text-mint-500 focus:ring-mint-500"
+                    />
+                    Rozetlerimi göster
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-paper-300">
+                    <input
+                      type="checkbox"
+                      checked={showStats}
+                      onChange={(e) => setShowStats(e.target.checked)}
+                      className="rounded border-ink-700 bg-ink-950 text-mint-500 focus:ring-mint-500"
+                    />
+                    İstatistiklerimi göster
                   </label>
                 </div>
                 <div className="flex gap-2 pt-1">
@@ -162,7 +234,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Stats from profile */}
-        {profile?.stats && (
+        {showStats && profile?.stats && (
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-6 pt-6 border-t border-ink-800">
             <StatBox label="Toplam İşlem" value={String(profile.stats.totalTrades)} />
             <StatBox label="Win Rate" value={`${profile.stats.winRate.toFixed(1)}%`} />
@@ -173,31 +245,51 @@ export default function ProfilePage() {
         )}
       </div>
 
+      {/* Leaderboard ranks */}
+      {showLeaderboard && leaderboardRanks.length > 0 && (
+        <div className="rounded-xl border border-ink-800 bg-ink-900 p-5 animate-fade-in-up stagger-2">
+          <h3 className="font-display text-base font-semibold mb-3">Liderlik Sıralamam</h3>
+          <div className="flex flex-wrap gap-3">
+            {leaderboardRanks.map((pos) => (
+              <div
+                key={pos.period}
+                className="flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-950 px-3 py-2"
+              >
+                <span className="text-xs font-mono text-paper-500">{PERIOD_LABELS[pos.period]}</span>
+                <span className="text-lg font-bold font-mono text-mint-400">#{pos.rank}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Stats from trades */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-fade-in-up stagger-3">
-        <StatBox label="Toplam İşlem" value={String(stats.total)} />
-        <StatBox
-          label="Kazanma Oranı"
-          value={`${stats.winRate.toFixed(1)}%`}
-          sub={`${stats.wins}K / ${stats.losses}Z`}
-          tone={stats.winRate >= 50 ? "mint" : "coral"}
-        />
-        <StatBox
-          label="En İyi Win Streak"
-          value={String(stats.maxWinStreak)}
-          sub={`Aktif: ${stats.currentWinStreak}`}
-          tone="mint"
-        />
-        <StatBox
-          label="En Kötü Lose Streak"
-          value={String(stats.maxLoseStreak)}
-          sub={`Aktif: ${stats.currentLoseStreak}`}
-          tone="coral"
-        />
-      </div>
+      {showStats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-fade-in-up stagger-3">
+          <StatBox label="Toplam İşlem" value={String(stats.total)} />
+          <StatBox
+            label="Kazanma Oranı"
+            value={`${stats.winRate.toFixed(1)}%`}
+            sub={`${stats.wins}K / ${stats.losses}Z`}
+            tone={stats.winRate >= 50 ? "mint" : "coral"}
+          />
+          <StatBox
+            label="En İyi Win Streak"
+            value={String(stats.maxWinStreak)}
+            sub={`Aktif: ${stats.currentWinStreak}`}
+            tone="mint"
+          />
+          <StatBox
+            label="En Kötü Lose Streak"
+            value={String(stats.maxLoseStreak)}
+            sub={`Aktif: ${stats.currentLoseStreak}`}
+            tone="coral"
+          />
+        </div>
+      )}
 
       {/* Current streak */}
-      {(stats.currentWinStreak > 0 || stats.currentLoseStreak > 0) && (
+      {showStats && (stats.currentWinStreak > 0 || stats.currentLoseStreak > 0) && (
         <div className={`rounded-xl border p-4 animate-fade-in-up stagger-4 flex items-center gap-4 ${
           stats.currentWinStreak > 0
             ? "border-mint-500/30 bg-mint-500/5"
@@ -221,11 +313,21 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* Shared trades */}
+      {showTrades && (
+        <div className="rounded-xl border border-ink-800 bg-ink-900 p-5 animate-fade-in-up stagger-5">
+          <h3 className="font-display text-base font-semibold mb-3">Paylaşılan İşlemlerim</h3>
+          <SharedTradeList uid={user?.uid ?? ""} />
+        </div>
+      )}
+
       {/* Achievements */}
-      <div className="animate-fade-in-up stagger-5">
-        <h2 className="font-display text-lg font-semibold mb-3">Rozetler</h2>
-        <AchievementsGrid earned={profile?.achievements ?? []} />
-      </div>
+      {showAchievements && (
+        <div className="animate-fade-in-up stagger-5">
+          <h2 className="font-display text-lg font-semibold mb-3">Rozetler</h2>
+          <AchievementsGrid earned={profile?.achievements ?? []} />
+        </div>
+      )}
     </div>
   );
 }
