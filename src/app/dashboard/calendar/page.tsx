@@ -63,9 +63,10 @@ export default function CalendarPage() {
   const monthStats = useMemo(() => {
     const total = monthTrades.length;
     const totalResult = monthTrades.reduce((s, t) => s + t.result, 0);
+    const totalPnl = monthTrades.reduce((s, t) => s + t.netPnl, 0);
     const wins = monthTrades.filter((t) => t.result > 0).length;
     const winRate = total > 0 ? (wins / total) * 100 : 0;
-    return { total, totalResult, winRate, wins };
+    return { total, totalResult, totalPnl, winRate, wins };
   }, [monthTrades]);
 
   const tradesByDay = useMemo(() => {
@@ -208,6 +209,7 @@ export default function CalendarPage() {
         <StatCard
           label="Aylık Net Kâr/Zarar"
           value={`${monthStats.totalResult >= 0 ? "+" : ""}${monthStats.totalResult.toFixed(2)}%`}
+          sub={`${monthStats.totalPnl >= 0 ? "+" : ""}${monthStats.totalPnl.toFixed(2)}$`}
           tone={monthStats.totalResult >= 0 ? "mint" : "coral"}
         />
         <StatCard
@@ -282,6 +284,7 @@ export default function CalendarPage() {
               const cellColor = getCellColor(cell.dateStr);
               const isSelected = cell.dateStr === selectedDay;
               const netResult = dayTrades?.reduce((s, t) => s + t.result, 0) ?? 0;
+              const netPnlDay = dayTrades?.reduce((s, t) => s + t.netPnl, 0) ?? 0;
 
               return (
                 <button
@@ -326,15 +329,26 @@ export default function CalendarPage() {
                   </div>
 
                   {tradeCount > 0 && (
-                    <span className={`mt-auto text-[11px] font-mono font-semibold ${
-                      netResult > 0
-                        ? "text-mint-400"
-                        : netResult < 0
-                        ? "text-coral-400"
-                        : "text-amber-400"
-                    }`}>
-                      {netResult >= 0 ? "+" : ""}{netResult.toFixed(1)}%
-                    </span>
+                    <div className="mt-auto flex flex-col">
+                      <span className={`text-[11px] font-mono font-semibold ${
+                        netResult > 0
+                          ? "text-mint-400"
+                          : netResult < 0
+                          ? "text-coral-400"
+                          : "text-amber-400"
+                      }`}>
+                        {netResult >= 0 ? "+" : ""}{netResult.toFixed(1)}%
+                      </span>
+                      <span className={`text-[10px] font-mono ${
+                        netPnlDay > 0
+                          ? "text-mint-400/70"
+                          : netPnlDay < 0
+                          ? "text-coral-400/70"
+                          : "text-amber-400/70"
+                      }`}>
+                        {netPnlDay >= 0 ? "+" : ""}{netPnlDay.toFixed(2)}$
+                      </span>
+                    </div>
                   )}
                 </button>
               );
@@ -552,6 +566,9 @@ function DayTradeCard({ trade }: { trade: Trade }) {
       <div className="text-right">
         <p className={`font-mono font-semibold text-base ${resultColor}`}>
           {trade.result >= 0 ? "+" : ""}{trade.result}%
+        </p>
+        <p className={`text-xs font-mono ${resultColor.replace("400", "400/80")}`}>
+          {trade.netPnl >= 0 ? "+" : ""}{trade.netPnl.toFixed(2)}$
         </p>
         <p className="text-xs text-paper-500 font-mono">{trade.rr}R</p>
       </div>
