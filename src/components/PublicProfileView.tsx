@@ -2,14 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { getProfile } from "@/lib/profile";
+import { getPublicProfile, PublicProfileData } from "@/lib/profile";
 import { getLeaderboardRank } from "@/lib/leaderboard";
 import {
-  UserProfile,
-  LeaderboardEntry,
   LeaderboardPeriod,
   UserSearchResult,
-  Trade,
 } from "@/lib/types";
 import Avatar from "./Avatar";
 import RankBadge from "./RankBadge";
@@ -38,7 +35,7 @@ const PERIODS: { key: LeaderboardPeriod; label: string }[] = [
 export default function PublicProfileView({ userData }: PublicProfileViewProps) {
   const { user } = useAuth();
   const router = useRouter();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<PublicProfileData | null>(null);
   const [leaderboardPositions, setLeaderboardPositions] = useState<
     { period: LeaderboardPeriod; rank: number }[]
   >([]);
@@ -46,7 +43,7 @@ export default function PublicProfileView({ userData }: PublicProfileViewProps) 
   const [messaging, setMessaging] = useState(false);
 
   useEffect(() => {
-    getProfile(userData.uid).then((p) => setProfile(p));
+    getPublicProfile(userData.uid).then((p) => setProfile(p));
   }, [userData.uid]);
 
   useEffect(() => {

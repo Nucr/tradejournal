@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getPublicProfile, PublicProfileData } from "@/lib/profile";
 import { UserSearchResult } from "@/lib/types";
 import PublicProfileView from "@/components/PublicProfileView";
 
@@ -19,24 +18,23 @@ export default function UserProfilePage() {
     if (!uid) return;
     async function load() {
       try {
-        const snap = await getDoc(doc(db, "users", uid));
-        if (!snap.exists()) {
+        const publicProfile = await getPublicProfile(uid);
+        if (!publicProfile) {
           setError("Kullanıcı bulunamadı.");
           return;
         }
-        const data = snap.data();
-        if (data.isPublic === false) {
+        if (publicProfile.isPublic === false) {
           setError("Bu kullanıcının profili gizli.");
           return;
         }
         setUserData({
           uid,
-          displayName: data.displayName as string,
-          avatarUrl: data.avatarUrl as string | undefined,
-          avatarColor: (data.avatarColor as string) ?? "#2ED9A4",
-          level: (data.level as number) ?? 1,
-          rank: (data.rank as UserSearchResult["rank"]) ?? "Çaylak",
-          score: (data.score as number) ?? 0,
+          displayName: publicProfile.displayName,
+          avatarUrl: publicProfile.avatarUrl,
+          avatarColor: publicProfile.avatarColor ?? "#2ED9A4",
+          level: publicProfile.level ?? 1,
+          rank: (publicProfile.rank as UserSearchResult["rank"]) ?? "Çaylak",
+          score: publicProfile.score ?? 0,
         });
       } catch {
         setError("Profil yüklenirken bir hata oluştu.");

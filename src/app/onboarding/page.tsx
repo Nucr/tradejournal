@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import RankBadge from "@/components/RankBadge";
+import { savePublicProfile } from "@/lib/profile";
 
 const AVATAR_COLORS = [
   "#2ED9A4",
@@ -78,7 +79,7 @@ export default function OnboardingPage() {
     if (val.length < 3) return true;
     setNameChecking(true);
     try {
-      const q = query(collection(db, "users"), where("displayName", "==", val));
+      const q = query(collection(db, "publicProfiles"), where("displayName", "==", val));
       const snap = await getDocs(q);
       return snap.empty;
     } finally {
@@ -161,6 +162,20 @@ export default function OnboardingPage() {
         },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+      });
+      await savePublicProfile(user.uid, {
+        displayName: displayName.trim(),
+        avatarColor,
+        isPublic,
+        showStrategy,
+        showLeaderboard: true,
+        showTrades: true,
+        showAchievements: true,
+        showStats: true,
+        level: 1,
+        rank: "Çaylak",
+        score: 0,
+        stats: { totalTrades: 0, winRate: 0, avgRR: 0, netResult: 0, consistency: 0 },
       });
       await refreshOnboarding();
       setStep(2);

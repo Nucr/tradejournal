@@ -13,7 +13,7 @@ import {
   acceptInvitation,
   rejectInvitation,
 } from "@/lib/messages";
-import { getUserDisplayMap, UserDisplayInfo } from "@/lib/profile";
+import { getPublicDisplayMap, UserDisplayInfo } from "@/lib/profile";
 import { Conversation, Message, ConversationInvitation } from "@/lib/types";
 import ConversationList from "@/components/ConversationList";
 import MessageBubble from "@/components/MessageBubble";
@@ -67,7 +67,7 @@ function MessagesContent() {
         list.forEach((c) => c.participants.forEach((p) => allUids.add(p)));
         const uidArray = Array.from(allUids);
         if (uidArray.length > 0) {
-          getUserDisplayMap(uidArray).then(setUserDisplayMap).catch(() => {});
+          getPublicDisplayMap(uidArray).then(setUserDisplayMap).catch(() => {});
         }
       },
       (err) => {

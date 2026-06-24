@@ -16,7 +16,7 @@ export async function searchUsers(
   if (!queryText.trim()) return [];
 
   const q = query(
-    collection(db, "users"),
+    collection(db, "publicProfiles"),
     where("displayName", ">=", queryText),
     where("displayName", "<", queryText + "\uf8ff"),
     orderBy("displayName"),

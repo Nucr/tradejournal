@@ -9,7 +9,7 @@ import {
   sendMessage,
   markAsRead,
 } from "@/lib/messages";
-import { getUserDisplayMap, UserDisplayInfo } from "@/lib/profile";
+import { getPublicDisplayMap, UserDisplayInfo } from "@/lib/profile";
 import { Conversation, Message } from "@/lib/types";
 import MessageBubble from "@/components/MessageBubble";
 import MessageInput from "@/components/MessageInput";
@@ -29,7 +29,7 @@ export default function ConversationPage() {
     getConversation(conversationId).then((conv) => {
       setConversation(conv);
       if (conv) {
-        getUserDisplayMap(conv.participants).then(setUserDisplayMap).catch(() => {});
+        getPublicDisplayMap(conv.participants).then(setUserDisplayMap).catch(() => {});
       }
     });
   }, [conversationId]);
