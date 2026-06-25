@@ -1,13 +1,19 @@
 "use client";
 
+import { useCallback } from "react";
 import { useI18n } from "@/lib/i18n/context";
 
 export default function LanguageToggle() {
   const { locale, toggle } = useI18n();
 
+  const handleClick = useCallback(() => {
+    document.cookie = `locale=${locale === "tr" ? "en" : "tr"}; path=/; max-age=31536000; SameSite=Lax`;
+    toggle();
+  }, [locale, toggle]);
+
   return (
     <button
-      onClick={toggle}
+      onClick={handleClick}
       className="flex items-center gap-1.5 rounded-lg border border-ink-700 px-2.5 py-1.5 text-xs font-mono font-medium text-paper-300 hover:bg-ink-800 hover:text-paper-100 transition"
       title={locale === "tr" ? "Switch to English" : "Türkçe'ye geç"}
     >

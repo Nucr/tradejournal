@@ -18,13 +18,43 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Trade Journal",
-  description: "İşlem Günlüğü & Analizleri",
+  title: {
+    default: "Ledger — Trade Journal & Performans Defteri",
+    template: "%s | Ledger",
+  },
+  description:
+    "İşlemlerini kaydet, performansını analiz et. Ekran görüntüsü, strateji ve RR ile her işlemini tek bir deftere kaydet.",
+  keywords: [
+    "trade journal",
+    "işlem günlüğü",
+    "trader",
+    "performans analizi",
+    "forex",
+    "kripto",
+    "borsa",
+    "trade defteri",
+  ],
   icons: {
     icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }, { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }],
     apple: "/icons/icon-192.png",
   },
   manifest: "/manifest.json",
+  openGraph: {
+    title: "Ledger — Trade Journal & Performans Defteri",
+    description:
+      "İşlemlerini kaydet, performansını analiz et. Ekran görüntüsü, strateji ve RR ile her işlemini tek bir deftere kaydet.",
+    url: "https://ledger.app",
+    siteName: "Ledger",
+    locale: "tr_TR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ledger — Trade Journal",
+    description:
+      "İşlemlerini kaydet, performansını analiz et.",
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -37,6 +67,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              name: "Ledger",
+              applicationCategory: "BusinessApplication",
+              operatingSystem: "Web",
+              description: "Trade journal & performans defteri",
+              offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+            }),
+          }}
+        />
         <script dangerouslySetInnerHTML={{
           __html: `
             (function() {

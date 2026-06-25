@@ -1,7 +1,10 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useCallback, ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Locale, translations } from "./translations";
+
+const LOCALES: Locale[] = ["tr", "en"];
 
 interface I18nContextValue {
   locale: Locale;
@@ -18,7 +21,11 @@ const I18nContext = createContext<I18nContextValue>({
 });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocale] = useState<Locale>("tr");
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const rawLocale = pathname.split("/")[1];
+  const locale: Locale = rawLocale === "en" ? "en" : "tr";
 
   const t = useCallback(
     (key: string): string => {
@@ -27,9 +34,16 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     [locale]
   );
 
+  const setLocale = useCallback(
+    (l: Locale) => {
+      router.push(`/${l}`);
+    },
+    [router]
+  );
+
   const toggle = useCallback(() => {
-    setLocale((prev) => (prev === "tr" ? "en" : "tr"));
-  }, []);
+    router.push(`/${locale === "tr" ? "en" : "tr"}`);
+  }, [locale, router]);
 
   return (
     <I18nContext.Provider value={{ locale, setLocale, t, toggle }}>
