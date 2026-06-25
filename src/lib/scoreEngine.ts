@@ -213,7 +213,12 @@ export async function syncUserScore(uid: string): Promise<void> {
       );
     }
 
-    await checkAndAwardAchievements(uid, stats, level, trades);
+    await checkAndAwardAchievements(uid, stats, level, trades.map((t) => ({
+      result: t.result,
+      netPnl: t.netPnl,
+      entryDate: t.entryDate,
+      pair: t.pair,
+    })));
   } catch (err) {
     console.error("syncUserScore error:", err);
   }

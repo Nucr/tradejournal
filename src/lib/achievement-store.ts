@@ -21,11 +21,11 @@ export async function checkAndAwardAchievements(
   uid: string,
   stats: { totalTrades: number; winRate: number; avgRR: number; netResult: number; consistency: number },
   level: number,
-  trades: { result: number; entryDate: string }[]
+  trades: { result: number; netPnl: number; entryDate: string; pair: string }[]
 ): Promise<Achievement[]> {
   const earned = checkEarned(
     ACHIEVEMENT_DEFS,
-    { totalTrades: stats.totalTrades, winRate: stats.winRate, avgRR: stats.avgRR, consistency: stats.consistency, level },
+    { totalTrades: stats.totalTrades, winRate: stats.winRate, avgRR: stats.avgRR, consistency: stats.consistency, level, netResult: stats.netResult },
     trades
   );
 
@@ -51,6 +51,7 @@ export async function checkAndAwardAchievements(
       label: def?.label ?? id,
       desc: def?.desc ?? "",
       icon: def?.icon ?? "🏆",
+      rarity: def?.rarity ?? "common",
       earnedAt: new Date().toISOString(),
     };
   });
