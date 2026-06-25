@@ -95,6 +95,7 @@ export async function getPublicProfile(uid: string): Promise<PublicProfileData |
 export async function savePublicProfile(uid: string, data: Partial<UserProfile>) {
   const publicData: Record<string, unknown> = {
     displayName: data.displayName,
+    displayName_lower: data.displayName?.toLowerCase(),
     avatarUrl: data.avatarUrl,
     avatarColor: data.avatarColor,
     isPublic: data.isPublic,
@@ -129,6 +130,7 @@ export async function syncPublicProfile(uid: string) {
     const data = userSnap.data() as Record<string, unknown>;
     await setDoc(publicProfileDoc(uid), {
       displayName: data.displayName,
+      displayName_lower: (data.displayName as string)?.toLowerCase(),
       avatarUrl: data.avatarUrl,
       avatarColor: data.avatarColor,
       isPublic: data.isPublic ?? true,

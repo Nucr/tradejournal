@@ -15,11 +15,13 @@ export async function searchUsers(
 ): Promise<UserSearchResult[]> {
   if (!queryText.trim()) return [];
 
+  const lower = queryText.toLowerCase();
+
   const q = query(
     collection(db, "publicProfiles"),
-    where("displayName", ">=", queryText),
-    where("displayName", "<", queryText + "\uf8ff"),
-    orderBy("displayName"),
+    where("displayName_lower", ">=", lower),
+    where("displayName_lower", "<", lower + "\uf8ff"),
+    orderBy("displayName_lower"),
     limit(maxResults)
   );
 

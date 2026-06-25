@@ -162,6 +162,19 @@ export async function syncUserScore(uid: string): Promise<void> {
     const avatarUrl = typeof userData.avatarUrl === "string" ? userData.avatarUrl : "";
     const avatarColor = typeof userData.avatarColor === "string" ? userData.avatarColor : "#2ED9A4";
 
+    // Sync public profile with latest score/level/rank
+    await setDoc(doc(db, "publicProfiles", uid), {
+      displayName,
+      displayName_lower: displayName.toLowerCase(),
+      avatarUrl: avatarUrl || null,
+      avatarColor,
+      level,
+      rank,
+      score,
+      isPublic: userData.isPublic ?? true,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+
     const now = new Date();
 
     const alltimeEntry = {
