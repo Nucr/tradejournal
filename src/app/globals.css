@@ -384,3 +384,37 @@ html.light .rounded-lg.border.border-mint-500 {
 html.light .text-xs.font-mono.px-2.py-1.rounded {
   border-color: #CBD5E1;
 }
+
+/* ===== LANDING PAGE OVERRIDES ===== */
+html.light section#features .rounded-xl.border.border-ink-800.bg-ink-900\/50,
+html.light section#testimonials .rounded-xl.border.border-ink-800.bg-ink-900\/50 {
+  background-color: #ffffff !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 1px 3px rgba(15,23,42,0.04), 0 1px 2px rgba(15,23,42,0.02);
+}
+
+html.light section#how-it-works {
+  background-color: #F8FAFC !important;
+}
+
+html.light section#how-it-works .rounded-2xl.bg-mint-500\/10 {
+  background-color: rgba(46,217,164,0.1) !important;
+}
+
+html.light footer {
+  border-color: #E2E8F0 !important;
+}
+
+html.light nav.fixed {
+  border-color: #E2E8F0 !important;
+}
+
+html.light nav.fixed.bg-ink-950\/80 {
+  background-color: rgba(255,255,255,0.85) !important;
+  backdrop-filter: blur(12px);
+}
+
+html.light .bg-gradient-to-br.from-mint-500\/5 {
+  background: linear-gradient(to bottom right, rgba(46,217,164,0.08), #ffffff) !important;
+  border-color: rgba(46,217,164,0.2) !important;
+}
