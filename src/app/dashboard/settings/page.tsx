@@ -20,11 +20,13 @@ import { db } from "@/lib/firebase";
 import type { UserProfile, LeaderboardPeriod } from "@/lib/types";
 import { cleanupOldDeletedTrades } from "@/lib/trades";
 import { uploadAvatar, deleteAvatar } from "@/lib/storage";
+import { useTheme } from "@/lib/theme-context";
 import Avatar from "@/components/Avatar";
 import AchievementsGrid from "@/components/AchievementsGrid";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
+  const { accentColor, setAccent, accentColors } = useTheme();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isPublic, setIsPublic] = useState(true);
@@ -378,6 +380,30 @@ export default function SettingsPage() {
         {cleanCount !== null && (
           <p className="text-xs text-paper-500 mt-2">{cleanCount} işlem kalıcı olarak silindi.</p>
         )}
+      </section>
+
+      {/* Theme accent color */}
+      <section className="rounded-xl border border-ink-800 bg-ink-900 p-6 mb-6 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-mint-500/40 to-transparent" />
+        <h2 className="font-display text-base font-semibold mb-4">Tema Rengi</h2>
+        <p className="text-sm text-paper-500 mb-4">
+          Dashboard&apos;da kullanılacak vurgu rengini seç.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          {accentColors.map((c) => (
+            <button
+              key={c.value}
+              onClick={() => setAccent(c.value)}
+              className={`w-10 h-10 rounded-xl border-2 transition-all ${
+                accentColor === c.value
+                  ? "border-paper-100 scale-110 shadow-lg shadow-black/30"
+                  : "border-transparent hover:scale-105"
+              }`}
+              style={{ backgroundColor: c.value }}
+              title={c.name}
+            />
+          ))}
+        </div>
       </section>
 
       {/* Delete account */}

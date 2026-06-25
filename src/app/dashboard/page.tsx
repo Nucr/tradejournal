@@ -10,6 +10,14 @@ import { filterTradesByRange, computeStats } from "@/lib/date-utils";
 import DateRangeTabs from "@/components/DateRangeTabs";
 import StatCard from "@/components/StatCard";
 import EquityCurveChart from "@/components/EquityCurveChart";
+import { StatCardSkeleton, BannerSkeleton, ChartSkeleton } from "@/components/dashboard/Skeleton";
+import WidgetCard from "@/components/dashboard/WidgetCard";
+import RecentTradesWidget from "@/components/dashboard/RecentTradesWidget";
+import MonthlyProgressWidget from "@/components/dashboard/MonthlyProgressWidget";
+import TradeFrequencyWidget from "@/components/dashboard/TradeFrequencyWidget";
+import DailySummaryWidget from "@/components/dashboard/DailySummaryWidget";
+import GoalsWidget from "@/components/dashboard/GoalsWidget";
+import PeriodComparisonWidget from "@/components/dashboard/PeriodComparisonWidget";
 import { format, parseISO } from "date-fns";
 
 export default function DashboardPage() {
@@ -19,12 +27,20 @@ export default function DashboardPage() {
   const [range, setRange] = useState<RangeKey>("month");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    const unsub = subscribeToTrades(user.uid, setTrades);
-    getProfile(user.uid).then(setProfile);
-    return unsub;
+    const unsub = subscribeToTrades(user.uid, (data) => {
+      setTrades(data);
+      setLoading(false);
+    });
+    getProfile(user.uid).then((p) => {
+      setProfile(p);
+    });
+    return () => {
+      unsub();
+    };
   }, [user]);
 
   const filtered = useMemo(
@@ -36,6 +52,10 @@ export default function DashboardPage() {
   const allStats = useMemo(() => computeStats(trades), [trades]);
 
   const filteredNetPnl = stats.totalNetPnl;
+
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="space-y-8">
@@ -125,6 +145,51 @@ export default function DashboardPage() {
       <div className="grid sm:grid-cols-2 gap-4 animate-fade-in-up stagger-5">
         <BestWorst label="En İyi İşlem" trade={stats.bestTrade} tone="mint" />
         <BestWorst label="En Kötü İşlem" trade={stats.worstTrade} tone="coral" />
+      </div>
+
+      {/* Widgets */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in-up stagger-6">
+        <WidgetCard title="Bugünkü Özet">
+          <DailySummaryWidget trades={trades} />
+        </WidgetCard>
+        <WidgetCard title="Aylık İlerleme">
+          <MonthlyProgressWidget trades={trades} />
+        </WidgetCard>
+        <WidgetCard title="Dönem Karşılaştırma">
+          <PeriodComparisonWidget trades={trades} />
+        </WidgetCard>
+        <WidgetCard title="Hedefler">
+          <GoalsWidget />
+        </WidgetCard>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in-up stagger-7">
+        <WidgetCard title="Son İşlemler">
+          <RecentTradesWidget trades={trades} />
+        </WidgetCard>
+        <WidgetCard title="Trade Sıklığı">
+          <TradeFrequencyWidget trades={trades} />
+        </WidgetCard>
+      </div>
+    </div>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-8">
+      <div>
+        <div className="h-7 w-32 bg-ink-800 rounded animate-pulse" />
+        <div className="h-4 w-64 bg-ink-800 rounded mt-2 animate-pulse" />
+      </div>
+      <BannerSkeleton />
+      <div className="h-9 w-96 bg-ink-800 rounded animate-pulse" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {Array.from({ length: 6 }).map((_, i) => <StatCardSkeleton key={i} />)}
+      </div>
+      <ChartSkeleton />
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div className="h-24 rounded-xl border border-ink-800 bg-ink-900 animate-pulse" />
+        <div className="h-24 rounded-xl border border-ink-800 bg-ink-900 animate-pulse" />
       </div>
     </div>
   );

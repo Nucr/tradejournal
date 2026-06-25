@@ -68,6 +68,20 @@ export interface UserProfile {
   updatedAt: Date;
 }
 
+// --- Goals ---
+
+export interface Goal {
+  id: string;
+  title: string;
+  targetValue: number;
+  currentValue: number;
+  metric: "totalTrades" | "winRate" | "totalResult" | "totalRR" | "consecutiveWins";
+  period: "weekly" | "monthly" | "yearly";
+  createdAt: string;
+}
+
+export type GoalInput = Omit<Goal, "id" | "createdAt" | "currentValue">;
+
 // --- Strategies ---
 
 export interface Strategy {
