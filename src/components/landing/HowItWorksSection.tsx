@@ -1,3 +1,7 @@
+"use client";
+
+import { useInView } from "@/lib/useInView";
+
 const STEPS = [
   {
     step: 1,
@@ -31,11 +35,50 @@ const STEPS = [
   },
 ];
 
+function StepCard({ step, index }: { step: typeof STEPS[0]; index: number }) {
+  const { ref, inView } = useInView({ threshold: 0.2 });
+
+  return (
+    <div
+      ref={ref}
+      className={`flex-1 relative transition-all duration-700 ${
+        inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      }`}
+      style={{ transitionDelay: `${index * 200}ms` }}
+    >
+      <div className="flex flex-col items-center text-center px-6">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-mint-500/10 text-mint-400 mb-5 group-hover:scale-110 transition-transform">
+          {step.icon}
+        </div>
+        <div className="flex items-center justify-center h-7 w-7 rounded-full bg-mint-500 text-ink-950 text-xs font-bold mb-3">
+          {step.step}
+        </div>
+        <h3 className="text-lg font-semibold text-paper-100 mb-2">{step.title}</h3>
+        <p className="text-sm text-paper-300 leading-relaxed max-w-xs">{step.desc}</p>
+      </div>
+      {index < STEPS.length - 1 && (
+        <div
+          className={`hidden md:block absolute top-8 left-[calc(50%+3rem)] w-[calc(100%-6rem)] h-px bg-gradient-to-r from-mint-500/40 to-transparent transition-opacity duration-1000 ${
+            inView ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      )}
+    </div>
+  );
+}
+
 export default function HowItWorksSection() {
+  const { ref, inView } = useInView({ threshold: 0.1 });
+
   return (
     <section id="how-it-works" className="py-24 bg-ink-900/50">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="text-center mb-16">
+        <div
+          ref={ref}
+          className={`text-center mb-16 transition-all duration-700 ${
+            inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+          }`}
+        >
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-paper-100">
             Nasıl Çalışır?
           </h2>
@@ -46,21 +89,7 @@ export default function HowItWorksSection() {
 
         <div className="flex flex-col md:flex-row items-start gap-8 md:gap-0">
           {STEPS.map((s, i) => (
-            <div key={s.step} className="flex-1 relative">
-              <div className="flex flex-col items-center text-center px-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-mint-500/10 text-mint-400 mb-5">
-                  {s.icon}
-                </div>
-                <div className="flex items-center justify-center h-7 w-7 rounded-full bg-mint-500 text-ink-950 text-xs font-bold mb-3">
-                  {s.step}
-                </div>
-                <h3 className="text-lg font-semibold text-paper-100 mb-2">{s.title}</h3>
-                <p className="text-sm text-paper-300 leading-relaxed max-w-xs">{s.desc}</p>
-              </div>
-              {i < STEPS.length - 1 && (
-                <div className="hidden md:block absolute top-8 left-[calc(50%+3rem)] w-[calc(100%-6rem)] h-px bg-gradient-to-r from-mint-500/40 to-transparent" />
-              )}
-            </div>
+            <StepCard key={s.step} step={s} index={i} />
           ))}
         </div>
       </div>

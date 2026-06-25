@@ -1,11 +1,24 @@
+"use client";
+
 import Link from "next/link";
+import { useInView } from "@/lib/useInView";
 
 export default function CTASection() {
+  const { ref, inView } = useInView({ threshold: 0.2 });
+
   return (
     <section className="py-24">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="relative overflow-hidden rounded-2xl border border-mint-500/20 bg-gradient-to-br from-mint-500/5 to-ink-900/80 px-8 py-16 text-center">
+        <div
+          ref={ref}
+          className={`relative overflow-hidden rounded-2xl border border-mint-500/20 bg-gradient-to-br from-mint-500/5 to-ink-900/80 px-8 py-16 text-center transition-all duration-700 ${
+            inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          }`}
+        >
           <div className="absolute inset-0 bg-grid-fade pointer-events-none" />
+
+          {/* Animated glow on hover */}
+          <div className="absolute -inset-32 bg-mint-500/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
 
           <div className="relative z-10">
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-paper-100 mb-3">
@@ -18,9 +31,9 @@ export default function CTASection() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/register"
-                className="rounded-lg bg-mint-500 px-8 py-3.5 text-sm font-semibold text-ink-950 hover:bg-mint-400 transition hover:scale-105 active:scale-100"
+                className="group relative rounded-lg bg-mint-500 px-8 py-3.5 text-sm font-semibold text-ink-950 hover:bg-mint-400 transition-all duration-300 hover:scale-105 active:scale-100 shadow-lg shadow-mint-500/25 hover:shadow-mint-500/40"
               >
-                Ücretsiz Kaydol
+                <span className="relative z-10">Ücretsiz Kaydol</span>
               </Link>
               <Link
                 href="/login"

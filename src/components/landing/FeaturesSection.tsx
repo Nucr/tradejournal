@@ -1,3 +1,7 @@
+"use client";
+
+import { useInView } from "@/lib/useInView";
+
 const FEATURES = [
   {
     icon: (
@@ -55,11 +59,40 @@ const FEATURES = [
   },
 ];
 
+function FeatureCard({ feature, index }: { feature: typeof FEATURES[0]; index: number }) {
+  const { ref, inView } = useInView({ threshold: 0.1 });
+
+  return (
+    <div
+      ref={ref}
+      className={`group rounded-xl border border-ink-800 bg-ink-900/50 p-6 hover:border-mint-500/30 hover:bg-ink-850 hover:-translate-y-1 transition-all duration-500 ${
+        inView
+          ? "opacity-100 translate-y-0"
+          : "opacity-0 translate-y-6"
+      }`}
+      style={{ transitionDelay: `${index * 80}ms` }}
+    >
+      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-mint-500/10 text-mint-400 group-hover:bg-mint-500/20 group-hover:scale-110 transition-all duration-300">
+        {feature.icon}
+      </div>
+      <h3 className="text-base font-semibold text-paper-100 mb-2">{feature.title}</h3>
+      <p className="text-sm text-paper-300 leading-relaxed">{feature.desc}</p>
+    </div>
+  );
+}
+
 export default function FeaturesSection() {
+  const { ref, inView } = useInView({ threshold: 0.1 });
+
   return (
     <section id="features" className="py-24">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="text-center mb-16">
+        <div
+          ref={ref}
+          className={`text-center mb-16 transition-all duration-700 ${
+            inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+          }`}
+        >
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-paper-100">
             Neler Yapabilirsin?
           </h2>
@@ -71,16 +104,7 @@ export default function FeaturesSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {FEATURES.map((f, i) => (
-            <div
-              key={f.title}
-              className={`group rounded-xl border border-ink-800 bg-ink-900/50 p-6 hover:border-mint-500/30 hover:bg-ink-850 transition-all duration-300 animate-fade-in-up stagger-${i + 1}`}
-            >
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-mint-500/10 text-mint-400 group-hover:bg-mint-500/20 transition-colors">
-                {f.icon}
-              </div>
-              <h3 className="text-base font-semibold text-paper-100 mb-2">{f.title}</h3>
-              <p className="text-sm text-paper-300 leading-relaxed">{f.desc}</p>
-            </div>
+            <FeatureCard key={f.title} feature={f} index={i} />
           ))}
         </div>
       </div>
