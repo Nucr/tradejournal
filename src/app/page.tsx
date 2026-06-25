@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { I18nProvider } from "@/lib/i18n/context";
 import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
@@ -35,6 +36,7 @@ export default function Home() {
   if (user) return null;
 
   return (
+    <I18nProvider>
     <main className="bg-ink-950">
       <Navbar />
       <HeroSection />
@@ -45,5 +47,6 @@ export default function Home() {
       <CTASection />
       <Footer />
     </main>
+    </I18nProvider>
   );
 }

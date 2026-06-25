@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n/context";
 
 export default function HeroSection() {
+  const { t } = useI18n();
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -30,14 +32,12 @@ export default function HeroSection() {
     <section className="relative min-h-screen flex items-center overflow-hidden">
       <div className="absolute inset-0 bg-grid-fade pointer-events-none" />
 
-      {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -left-40 h-80 w-80 rounded-full bg-mint-500/5 blur-3xl animate-drift" />
         <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-mint-500/5 blur-3xl animate-float-delayed" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-mint-500/3 blur-3xl animate-float" />
       </div>
 
-      {/* Floating badge elements */}
       <div className="absolute top-1/4 right-[10%] hidden lg:block animate-float">
         <div className="rounded-lg border border-mint-500/20 bg-ink-900/80 backdrop-blur-sm px-3 py-2 text-xs font-mono text-mint-400 shadow-lg">
           +$12,430 this month
@@ -56,20 +56,19 @@ export default function HeroSection() {
         <div className="flex-1 text-center lg:text-left animate-fade-in-up">
           <div className="inline-flex items-center gap-2 rounded-full border border-mint-500/20 bg-mint-500/5 px-4 py-1.5 text-xs font-mono text-mint-400 mb-6">
             <span className="h-1.5 w-1.5 rounded-full bg-mint-500 animate-pulse-soft" />
-            10.000+ işlem kaydedildi
+            {t("hero.badge")}
           </div>
 
           <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
-            <span className="text-paper-100">İşlemlerini Kaydet,</span>
+            <span className="text-paper-100">{t("hero.title1")}</span>
             <br />
             <span className="bg-gradient-to-r from-mint-400 via-mint-500 to-amber-400 bg-clip-text text-transparent animate-gradient-shift">
-              Performansını Analiz Et
+              {t("hero.title2")}
             </span>
           </h1>
 
           <p className="mt-4 text-base sm:text-lg text-paper-300 max-w-lg mx-auto lg:mx-0 leading-relaxed">
-            Ekran görüntüsü, strateji ve RR ile her işlemini tek bir deftere kaydet.
-            Günlük, haftalık, aylık performansını interaktif grafiklerle takip et.
+            {t("hero.desc")}
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
@@ -77,13 +76,13 @@ export default function HeroSection() {
               href="/register"
               className="rounded-lg bg-mint-500 px-6 py-3 text-sm font-semibold text-ink-950 hover:bg-mint-400 transition hover:scale-105 active:scale-100 shadow-lg shadow-mint-500/25 hover:shadow-mint-500/40"
             >
-              Ücretsiz Başla
+              {t("hero.cta")}
             </Link>
             <Link
               href="/login"
               className="rounded-lg border border-ink-700 px-6 py-3 text-sm font-medium text-paper-300 hover:bg-ink-800 hover:text-paper-100 transition"
             >
-              Giriş Yap
+              {t("hero.login")}
             </Link>
           </div>
         </div>

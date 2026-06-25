@@ -3,9 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n } from "@/lib/i18n/context";
+import LanguageToggle from "./LanguageToggle";
 
 export default function Navbar() {
   const { user, loading } = useAuth();
+  const { t } = useI18n();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -42,19 +45,19 @@ export default function Navbar() {
             onClick={() => scrollTo("features")}
             className="text-sm text-paper-300 hover:text-paper-100 transition"
           >
-            Özellikler
+            {t("nav.features")}
           </button>
           <button
             onClick={() => scrollTo("how-it-works")}
             className="text-sm text-paper-300 hover:text-paper-100 transition"
           >
-            Nasıl Çalışır
+            {t("nav.howItWorks")}
           </button>
           <button
             onClick={() => scrollTo("testimonials")}
             className="text-sm text-paper-300 hover:text-paper-100 transition"
           >
-            Yorumlar
+            {t("nav.testimonials")}
           </button>
         </div>
 
@@ -66,21 +69,22 @@ export default function Navbar() {
               href="/dashboard"
               className="rounded-lg bg-mint-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-mint-400 transition"
             >
-              Panoya Git
+              {t("nav.dashboard")}
             </Link>
           ) : (
             <>
+              <LanguageToggle />
               <Link
                 href="/login"
                 className="text-sm text-paper-300 hover:text-paper-100 transition"
               >
-                Giriş Yap
+                {t("nav.login")}
               </Link>
               <Link
                 href="/register"
                 className="rounded-lg bg-mint-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-mint-400 transition"
               >
-                Ücretsiz Başla
+                {t("nav.register")}
               </Link>
             </>
           )}

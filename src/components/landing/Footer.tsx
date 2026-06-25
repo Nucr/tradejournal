@@ -1,20 +1,21 @@
-import Link from "next/link";
+"use client";
+
+import { useI18n } from "@/lib/i18n/context";
 
 export default function Footer() {
+  const { t } = useI18n();
+
   return (
     <footer className="border-t border-ink-800 py-12">
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div>
             <span className="font-display text-lg font-bold text-paper-100">Ledger</span>
-            <p className="mt-2 text-sm text-paper-500 max-w-xs">
-              Trade journal &amp; performans defteri. İşlemlerini kaydet,
-              performansını analiz et, toplulukla rekabet et.
-            </p>
+            <p className="mt-2 text-sm text-paper-500 max-w-xs">{t("footer.tagline")}</p>
           </div>
           <div>
             <h4 className="text-xs font-mono uppercase tracking-wider text-paper-500 mb-4">
-              Ürün
+              {t("footer.product")}
             </h4>
             <ul className="space-y-2">
               <li>
@@ -24,7 +25,7 @@ export default function Footer() {
                   }
                   className="text-sm text-paper-300 hover:text-mint-400 transition"
                 >
-                  Özellikler
+                  {t("footer.features")}
                 </button>
               </li>
               <li>
@@ -34,36 +35,38 @@ export default function Footer() {
                   }
                   className="text-sm text-paper-300 hover:text-mint-400 transition"
                 >
-                  Yorumlar
+                  {t("footer.testimonials")}
                 </button>
               </li>
               <li>
-                <Link href="/register" className="text-sm text-paper-300 hover:text-mint-400 transition">
-                  Kayıt Ol
-                </Link>
+                <span className="text-sm text-paper-300 hover:text-mint-400 transition cursor-pointer"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                >
+                  {t("footer.register")}
+                </span>
               </li>
             </ul>
           </div>
           <div>
             <h4 className="text-xs font-mono uppercase tracking-wider text-paper-500 mb-4">
-              Şirket
+              {t("footer.company")}
             </h4>
             <ul className="space-y-2">
               <li>
-                <span className="text-sm text-paper-300">Hakkında</span>
+                <span className="text-sm text-paper-300">{t("footer.about")}</span>
               </li>
               <li>
-                <span className="text-sm text-paper-300">İletişim</span>
+                <span className="text-sm text-paper-300">{t("footer.contact")}</span>
               </li>
               <li>
-                <span className="text-sm text-paper-300">Gizlilik</span>
+                <span className="text-sm text-paper-300">{t("footer.privacy")}</span>
               </li>
             </ul>
           </div>
         </div>
         <div className="mt-10 pt-6 border-t border-ink-800/50 text-center">
           <p className="text-xs text-paper-500 font-mono">
-            &copy; 2025 Ledger. Tüm hakları saklıdır.
+            &copy; 2025 Ledger. {t("footer.copyright")}
           </p>
         </div>
       </div>
