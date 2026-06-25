@@ -243,6 +243,7 @@ export default function ReportsPage() {
                           fontFamily: "var(--font-mono)",
                         }}
                         labelStyle={{ color: "#A8B0BC" }}
+                        itemStyle={{ color: "#E8ECF0" }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -305,6 +306,7 @@ export default function ReportsPage() {
                           fontFamily: "var(--font-mono)",
                         }}
                         labelStyle={{ color: "#A8B0BC" }}
+                        itemStyle={{ color: "#E8ECF0" }}
                       />
                       <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={28}>
                         {directionData.map((d) => (
