@@ -23,9 +23,9 @@ const config: Config = {
           400: "#9ca3af",
         },
         mint: {
-          400: "#52E3B7",
-          500: "#2ED9A4",
-          600: "#1FB388",
+          400: "var(--color-accent)",
+          500: "var(--color-accent)",
+          600: "var(--color-accent)",
         },
         coral: {
           400: "#FF8080",
