@@ -41,14 +41,14 @@ export default function DailySummaryWidget({ trades }: Props) {
       <div className="flex items-center justify-between text-sm">
         <span className="text-paper-400">Kazanç / Kayıp</span>
         <span className="font-mono">
-          <span className="text-mint-400 font-semibold">{wins}K</span>
+          <span className="text-accent font-semibold">{wins}K</span>
           <span className="text-paper-500 mx-1">/</span>
           <span className="text-coral-400 font-semibold">{losses}Z</span>
         </span>
       </div>
       <div className="pt-2 border-t border-ink-800 flex items-center justify-between text-sm">
         <span className="text-paper-300 font-medium">Günlük P&L</span>
-        <span className={`font-mono font-bold text-base ${totalPnl >= 0 ? "text-mint-400" : "text-coral-400"}`}>
+        <span className={`font-mono font-bold text-base ${totalPnl >= 0 ? "text-accent" : "text-coral-400"}`}>
           {totalPnl >= 0 ? "+" : ""}${totalPnl.toFixed(2)}
         </span>
       </div>
@@ -56,9 +56,9 @@ export default function DailySummaryWidget({ trades }: Props) {
       {(best || worst) && (
         <div className="grid grid-cols-2 gap-2 pt-1">
           {best && (
-            <div className="rounded-lg bg-mint-500/5 border border-mint-500/20 p-2">
-              <p className="text-[10px] font-mono text-mint-400/70 uppercase tracking-wide">En iyi</p>
-              <p className="text-sm font-semibold text-mint-400">+{best.result}%</p>
+            <div className="rounded-lg bg-accent/5 border border-accent/20 p-2">
+              <p className="text-[10px] font-mono text-accent/70 uppercase tracking-wide">En iyi</p>
+              <p className="text-sm font-semibold text-accent">+{best.result}%</p>
               <p className="text-[10px] font-mono text-paper-500">{best.pair}</p>
             </div>
           )}

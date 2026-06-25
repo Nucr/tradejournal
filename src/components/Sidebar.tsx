@@ -189,8 +189,8 @@ export default function Sidebar() {
 
         {/* Logo */}
         <div className={`flex items-center py-5 ${open ? "px-6 gap-3" : "px-4 justify-center"}`}>
-          <div className="w-8 h-8 rounded-lg bg-mint-500/15 border border-mint-500/30 flex items-center justify-center shrink-0">
-            <svg className="w-4 h-4 text-mint-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-8 h-8 rounded-lg bg-accent/[.15] border border-accent/30 flex items-center justify-center shrink-0">
+            <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
           </div>
@@ -212,7 +212,7 @@ export default function Sidebar() {
                 href={link.href}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition whitespace-nowrap ${
                   active
-                    ? "bg-mint-500/10 text-mint-400 border border-mint-500/20"
+                    ? "bg-accent/10 text-accent border border-accent/20"
                     : "text-paper-300 hover:bg-ink-800 hover:text-paper-100"
                 } ${open ? "" : "justify-center px-0"}`}
                 title={open ? undefined : link.label}

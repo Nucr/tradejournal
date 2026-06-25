@@ -34,7 +34,7 @@ export default function MonthlyProgressWidget({ trades }: Props) {
         </div>
         <div className="h-2 rounded-full bg-ink-800 overflow-hidden">
           <div
-            className="h-full rounded-full bg-mint-500 transition-all"
+            className="h-full rounded-full bg-accent transition-all"
             style={{ width: `${monthProgress}%` }}
           />
         </div>
@@ -46,7 +46,7 @@ export default function MonthlyProgressWidget({ trades }: Props) {
           <p className="text-[11px] font-mono text-paper-500 uppercase tracking-wide">İşlem</p>
         </div>
         <div className="rounded-lg bg-ink-950/50 p-3 text-center">
-          <p className={`text-2xl font-mono font-bold ${winRate >= 50 ? "text-mint-400" : "text-coral-400"}`}>
+          <p className={`text-2xl font-mono font-bold ${winRate >= 50 ? "text-accent" : "text-coral-400"}`}>
             {winRate.toFixed(0)}%
           </p>
           <p className="text-[11px] font-mono text-paper-500 uppercase tracking-wide">Win Rate</p>
@@ -55,7 +55,7 @@ export default function MonthlyProgressWidget({ trades }: Props) {
 
       <div className="flex items-center justify-between text-sm">
         <span className="text-paper-400">Kazanç</span>
-        <span className="font-mono text-mint-400 font-semibold">{wins}</span>
+        <span className="font-mono text-accent font-semibold">{wins}</span>
       </div>
       <div className="flex items-center justify-between text-sm -mt-2">
         <span className="text-paper-400">Kayıp</span>
@@ -63,7 +63,7 @@ export default function MonthlyProgressWidget({ trades }: Props) {
       </div>
       <div className="pt-2 border-t border-ink-800 flex items-center justify-between text-sm">
         <span className="text-paper-300 font-medium">Net P&L</span>
-        <span className={`font-mono font-bold ${totalPnl >= 0 ? "text-mint-400" : "text-coral-400"}`}>
+        <span className={`font-mono font-bold ${totalPnl >= 0 ? "text-accent" : "text-coral-400"}`}>
           {totalPnl >= 0 ? "+" : ""}${totalPnl.toFixed(2)}
         </span>
       </div>

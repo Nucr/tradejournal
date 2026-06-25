@@ -41,6 +41,7 @@ const config: Config = {
           300: "#A8B0BC",
           500: "#6B7480",
         },
+        accent: "var(--color-accent)",
       },
       fontFamily: {
         display: ["var(--font-display)", "sans-serif"],

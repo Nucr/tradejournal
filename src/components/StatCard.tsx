@@ -11,14 +11,14 @@ interface Props {
 export default function StatCard({ label, value, sub, tone, hint }: Props) {
   const toneClass =
     tone === "mint"
-      ? "text-mint-400"
+      ? "text-accent"
       : tone === "coral"
       ? "text-coral-400"
       : tone === "amber"
       ? "text-amber-400"
       : "text-paper-100";
 
-  const subTone = sub?.startsWith("+") ? "text-mint-400/70" : sub?.startsWith("-") ? "text-coral-400/70" : "text-paper-500";
+  const subTone = sub?.startsWith("+") ? "text-accent/70" : sub?.startsWith("-") ? "text-coral-400/70" : "text-paper-500";
 
   return (
     <div className="rounded-xl border border-ink-800 bg-ink-900 p-4 hover:border-ink-700 transition">

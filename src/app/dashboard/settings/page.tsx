@@ -26,7 +26,7 @@ import AchievementsGrid from "@/components/AchievementsGrid";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
-  const { accentColor, setAccent, accentColors } = useTheme();
+  const { accentColor, setAccent, accentColors, previewAccent, setPreviewAccent, confirmAccent, cancelAccent } = useTheme();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isPublic, setIsPublic] = useState(true);
@@ -384,7 +384,7 @@ export default function SettingsPage() {
 
       {/* Theme accent color */}
       <section className="rounded-xl border border-ink-800 bg-ink-900 p-6 mb-6 relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-mint-500/40 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${accentColor}66, transparent)` }} />
         <h2 className="font-display text-base font-semibold mb-4">Tema Rengi</h2>
         <p className="text-sm text-paper-500 mb-4">
           Dashboard&apos;da kullanılacak vurgu rengini seç.
@@ -393,9 +393,9 @@ export default function SettingsPage() {
           {accentColors.map((c) => (
             <button
               key={c.value}
-              onClick={() => setAccent(c.value)}
+              onClick={() => setPreviewAccent(c.value)}
               className={`w-10 h-10 rounded-xl border-2 transition-all ${
-                accentColor === c.value
+                (previewAccent ?? accentColor) === c.value
                   ? "border-paper-100 scale-110 shadow-lg shadow-black/30"
                   : "border-transparent hover:scale-105"
               }`}
@@ -404,6 +404,23 @@ export default function SettingsPage() {
             />
           ))}
         </div>
+        {previewAccent && (
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={confirmAccent}
+              className="rounded-lg font-semibold px-5 py-2 text-sm transition"
+              style={{ backgroundColor: accentColor, color: "#060D11" }}
+            >
+              Onayla
+            </button>
+            <button
+              onClick={cancelAccent}
+              className="rounded-lg border border-ink-700 text-paper-300 px-5 py-2 text-sm hover:bg-ink-800 transition"
+            >
+              İptal
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Delete account */}

@@ -65,9 +65,9 @@ export default function GoalsWidget() {
 
   const progressColor = (current: number, target: number) => {
     const pct = target > 0 ? (current / target) * 100 : 0;
-    if (pct >= 100) return "bg-mint-500";
+    if (pct >= 100) return "bg-accent";
     if (pct >= 50) return "bg-amber-400";
-    return "bg-mint-500/60";
+    return "bg-accent/60";
   };
 
   return (
@@ -121,7 +121,7 @@ export default function GoalsWidget() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Hedef adı"
-              className="w-full rounded-lg border border-ink-700 bg-ink-950 px-3 py-2 text-sm focus:border-mint-500"
+              className="w-full rounded-lg border border-ink-700 bg-ink-950 px-3 py-2 text-sm focus:border-accent"
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -150,13 +150,13 @@ export default function GoalsWidget() {
               value={targetValue}
               onChange={(e) => setTargetValue(e.target.value)}
               placeholder="Hedef değer"
-              className="w-full rounded-lg border border-ink-700 bg-ink-950 px-3 py-2 text-sm focus:border-mint-500"
+              className="w-full rounded-lg border border-ink-700 bg-ink-950 px-3 py-2 text-sm focus:border-accent"
             />
           </div>
           <div className="flex gap-2">
             <button
               type="submit"
-              className="rounded-lg bg-mint-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-mint-400 transition"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink-950 hover:brightness-110 transition"
             >
               Ekle
             </button>
