@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { subscribeToProfile } from "@/lib/profile";
 import { UserProfile } from "@/lib/types";
 import ThemeToggle from "./ThemeToggle";
+import { usePlan } from "@/lib/features";
 
 const LINKS = [
   {
@@ -119,6 +120,9 @@ export default function Sidebar() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [open, setOpen] = useState(true);
+  const { hasFeature } = usePlan();
+  const canCalendar = hasFeature("calendar");
+  const canMessaging = hasFeature("messaging");
 
   useEffect(() => {
     if (!user) return;
@@ -204,7 +208,11 @@ export default function Sidebar() {
 
         {/* Nav links */}
         <nav className="flex flex-col gap-1 px-2 py-2 flex-1 overflow-y-auto">
-          {LINKS.map((link) => {
+          {LINKS.filter((link) => {
+            if (link.href === "/dashboard/calendar") return canCalendar;
+            if (link.href === "/dashboard/messages") return canMessaging;
+            return true;
+          }).map((link) => {
             const active = pathname === link.href;
             return (
               <Link

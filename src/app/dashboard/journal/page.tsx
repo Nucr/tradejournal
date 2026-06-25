@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePlan } from "@/lib/features";
 import { useAuth } from "@/lib/auth-context";
 import { addTrade, deleteTrade, subscribeToTrades, updateTrade, restoreTrade } from "@/lib/trades";
 import { DirectionFilter, RangeKey, ResultFilter, Trade, TradeInput } from "@/lib/types";
@@ -24,6 +25,8 @@ export default function JournalPage() {
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [formError, setFormError] = useState("");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const { plan, exceedsLimit } = usePlan();
+  const tradeLimitReached = exceedsLimit("trades", trades.length);
 
   // Stacked undo toasts
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -75,6 +78,10 @@ export default function JournalPage() {
 
   async function handleSubmit(input: TradeInput) {
     if (!user) return;
+    if (!editingTrade && exceedsLimit("trades", trades.length)) {
+      setFormError(`Ücretsiz planda maksimum ${plan === "free" ? 100 : 1.000} işlem. Daha fazla eklemek için yükselt.`);
+      return;
+    }
     setFormError("");
     try {
       if (editingTrade) {
@@ -222,6 +229,17 @@ export default function JournalPage() {
           En Eski
         </button>
       </div>
+
+      {tradeLimitReached && (
+        <div className="rounded-lg border border-amber-400/20 bg-amber-400/5 p-3 flex items-center justify-between">
+          <p className="text-xs text-amber-300">
+            İşlem limitine ulaştın. {plan === "free" ? "Pro veya Premium" : "Premium"} pakete yükselterek sınırsız işlem ekleyebilirsin.
+          </p>
+          <Link href="/pricing" className="text-xs font-semibold text-mint-400 hover:underline shrink-0 ml-4">
+            Yükselt
+          </Link>
+        </div>
+      )}
 
       <div className="space-y-3">
         {filtered.length === 0 && (

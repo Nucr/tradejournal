@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { usePlan } from "@/lib/features";
+import FeatureGate from "@/components/FeatureGate";
 import {
   subscribeToConversations,
   sendMessage,
@@ -32,6 +34,7 @@ export default function MessagesPage() {
 
 function MessagesContent() {
   const { user } = useAuth();
+  const { hasFeature } = usePlan();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -144,6 +147,7 @@ function MessagesContent() {
   if (!user) return null;
 
   return (
+    <FeatureGate feature="messaging">
     <div className="flex flex-col h-[calc(100vh-8rem)] animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
@@ -334,5 +338,6 @@ function MessagesContent() {
         />
       )}
     </div>
+    </FeatureGate>
   );
 }

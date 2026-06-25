@@ -17,11 +17,14 @@ import {
   CartesianGrid,
 } from "recharts";
 import StatCard from "@/components/StatCard";
+import { usePlan } from "@/lib/features";
+import FeatureGate from "@/components/FeatureGate";
 
 type BarMode = "daily" | "weekly";
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
+  const { hasFeature } = usePlan();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [barMode, setBarMode] = useState<BarMode>("daily");
 
@@ -96,6 +99,7 @@ export default function AnalyticsPage() {
   }, [trades, barMode]);
 
   return (
+    <FeatureGate feature="advanced_charts">
     <div className="space-y-8">
       <div className="animate-fade-in-up">
         <h1 className="font-display text-2xl font-semibold">Analitik</h1>
@@ -260,5 +264,6 @@ export default function AnalyticsPage() {
         )}
       </div>
     </div>
+    </FeatureGate>
   );
 }

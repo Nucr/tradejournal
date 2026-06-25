@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState, useMemo } from "react";
+import { usePlan } from "@/lib/features";
+import FeatureGate from "@/components/FeatureGate";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { addDoc, collection, doc, serverTimestamp, writeBatch } from "firebase/firestore";
@@ -119,6 +121,7 @@ export default function ImportPage() {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ ok: number; err: number; errors: { row: number; msg: string }[] } | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const { plan, exceedsLimit } = usePlan();
 
   function handleFile(file: File) {
     if (!file.name.endsWith(".csv")) { alert("Sadece CSV dosyaları kabul edilir"); return; }
@@ -297,7 +300,8 @@ export default function ImportPage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-4xl">
+    <FeatureGate feature="csv_import">
+      <div className="max-w-4xl">
       <div className="flex items-center gap-3 mb-1">
         <Link
           href="/dashboard/journal"
@@ -517,6 +521,7 @@ export default function ImportPage() {
           )}
         </div>
       )}
-    </div>
+      </div>
+    </FeatureGate>
   );
 }

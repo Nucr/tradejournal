@@ -19,6 +19,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import StatCard from "@/components/StatCard";
+import { usePlan } from "@/lib/features";
 
 const RANGE_PRESETS: { key: RangeKey; label: string }[] = [
   { key: "week", label: "Bu Hafta" },
@@ -42,6 +43,8 @@ export default function ReportsPage() {
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const { hasFeature } = usePlan();
+  const canExport = hasFeature("csv_export");
 
   useEffect(() => {
     if (!user) return;
@@ -321,39 +324,63 @@ export default function ReportsPage() {
           </div>
 
           <div className="flex justify-center gap-3 animate-fade-in-up stagger-4">
-            <button
-              onClick={handleCopy}
-              className={`rounded-lg border px-5 py-2.5 text-sm font-medium transition flex items-center gap-2 ${
-                copyFeedback
-                  ? "bg-mint-500/10 text-mint-400 border-mint-500/30"
-                  : "bg-ink-900 text-paper-300 border-ink-800 hover:text-paper-100 hover:border-ink-700"
-              }`}
-            >
-              {copyFeedback ? (
-                <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Kopyalandı
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  Raporu Kopyala
-                </>
-              )}
-            </button>
-            <button
-              onClick={() => window.print()}
-              className="rounded-lg border border-ink-800 bg-ink-900 px-5 py-2.5 text-sm font-medium text-paper-300 hover:text-paper-100 hover:border-ink-700 transition flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
-              PDF Yazdır
-            </button>
+            {canExport ? (
+              <button
+                onClick={handleCopy}
+                className={`rounded-lg border px-5 py-2.5 text-sm font-medium transition flex items-center gap-2 ${
+                  copyFeedback
+                    ? "bg-mint-500/10 text-mint-400 border-mint-500/30"
+                    : "bg-ink-900 text-paper-300 border-ink-800 hover:text-paper-100 hover:border-ink-700"
+                }`}
+              >
+                {copyFeedback ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Kopyalandı
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Raporu Kopyala
+                  </>
+                )}
+              </button>
+            ) : (
+              <a
+                href="/pricing"
+                className="rounded-lg border border-ink-800 bg-ink-900 px-5 py-2.5 text-sm font-medium text-paper-500 hover:text-mint-400 hover:border-mint-500/30 transition flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Premium'a Yükselt
+              </a>
+            )}
+            {canExport ? (
+              <button
+                onClick={() => window.print()}
+                className="rounded-lg border border-ink-800 bg-ink-900 px-5 py-2.5 text-sm font-medium text-paper-300 hover:text-paper-100 hover:border-ink-700 transition flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                PDF Yazdır
+              </button>
+            ) : (
+              <a
+                href="/pricing"
+                className="rounded-lg border border-ink-800 bg-ink-900 px-5 py-2.5 text-sm font-medium text-paper-500 hover:text-mint-400 hover:border-mint-500/30 transition flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Premium'a Yükselt
+              </a>
+            )}
           </div>
         </>
       )}

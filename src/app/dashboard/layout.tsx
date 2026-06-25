@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { useAuthGuard } from "@/lib/authGuard";
 import { ToastProvider } from "@/lib/toast-context";
+import { PlanProvider } from "@/lib/features";
 import Sidebar from "@/components/Sidebar";
 import ToastContainer from "@/components/ToastContainer";
 import AchievementToast from "@/components/AchievementToast";
@@ -19,6 +20,7 @@ export default function DashboardLayout({
   const [showOnboarding, setShowOnboarding] = useState(true);
 
   return (
+    <PlanProvider>
     <ToastProvider>
       <div className="min-h-screen flex flex-col lg:flex-row bg-ink-950">
         <Sidebar />
@@ -30,5 +32,6 @@ export default function DashboardLayout({
       <ToastContainer />
       {showOnboarding && <OnboardingTour />}
     </ToastProvider>
+    </PlanProvider>
   );
 }

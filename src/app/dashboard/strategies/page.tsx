@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { usePlan } from "@/lib/features";
 import { addStrategy, deleteStrategy, getStrategies, setStrategyImages, updateStrategy } from "@/lib/strategies";
 import { uploadStrategyImage, deleteStrategyImage } from "@/lib/storage";
 import { subscribeToTrades } from "@/lib/trades";
 import { getUser } from "@/lib/users";
+import FeatureGate, { LimitBadge } from "@/components/FeatureGate";
 import { Strategy, Trade } from "@/lib/types";
 
 interface StrategyStats {
@@ -22,6 +24,7 @@ const MAX_IMAGES = 5;
 
 export default function StrategiesPage() {
   const { user } = useAuth();
+  const { plan, exceedsLimit, getLimit, hasFeature } = usePlan();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -112,6 +115,10 @@ export default function StrategiesPage() {
 
   async function handleCreate() {
     if (!user || !newName.trim()) return;
+    if (exceedsLimit("strategies", strategies.length)) {
+      alert("Strateji limitine ulaştın. Yükseltme yaparak daha fazla strateji ekleyebilirsin.");
+      return;
+    }
     setSaving(true);
     try {
       const id = await addStrategy(newName.trim(), user.uid, newIsPublic, newNote.trim() || undefined);
@@ -250,10 +257,13 @@ export default function StrategiesPage() {
           <p className="text-sm text-paper-300 mt-1">
             Strateji yönetimi ve performans analizi.
           </p>
+          <LimitBadge current={strategies.length} limitKey="strategies" label="Strateji" />
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="rounded-lg bg-mint-500 px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-mint-400 transition flex items-center gap-2"
+          disabled={exceedsLimit("strategies", strategies.length)}
+          title={exceedsLimit("strategies", strategies.length) ? "Strateji limitine ulaştın. Yükseltme yaparak daha fazla strateji ekleyebilirsin." : undefined}
+          className="rounded-lg bg-mint-500 px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-mint-400 transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -307,59 +317,61 @@ export default function StrategiesPage() {
               />
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-mono uppercase tracking-wide text-paper-500">
-                  Görseller ({newImageFiles.length}/{MAX_IMAGES})
-                </label>
-                {newImageFiles.length < MAX_IMAGES && (
-                  <div>
-                    <input
-                      ref={createFileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleCreateSelectImage}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => createFileInputRef.current?.click()}
-                      className="rounded-lg bg-mint-500 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-mint-400 transition flex items-center gap-1.5"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      Görsel Ekle
-                    </button>
-                  </div>
-                )}
-              </div>
-              {newImagePreviews.length > 0 ? (
-                <div className="grid grid-cols-3 gap-2">
-                  {newImagePreviews.map((preview, i) => (
-                    <div key={i} className="relative group aspect-video rounded-lg overflow-hidden border border-ink-700 bg-ink-950">
-                      <img
-                        src={preview}
-                        alt={`Önizleme ${i + 1}`}
-                        className="w-full h-full object-cover"
+            <FeatureGate feature="strategy_images">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-mono uppercase tracking-wide text-paper-500">
+                    Görseller ({newImageFiles.length}/{MAX_IMAGES})
+                  </label>
+                  {newImageFiles.length < MAX_IMAGES && (
+                    <div>
+                      <input
+                        ref={createFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleCreateSelectImage}
                       />
                       <button
                         type="button"
-                        onClick={() => handleCreateRemoveImage(i)}
-                        className="absolute top-1 right-1 p-1 rounded bg-ink-950/80 text-coral-400 opacity-0 group-hover:opacity-100 hover:bg-coral-500 hover:text-white transition"
-                        title="Kaldır"
+                        onClick={() => createFileInputRef.current?.click()}
+                        className="rounded-lg bg-mint-500 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-mint-400 transition flex items-center gap-1.5"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                         </svg>
+                        Görsel Ekle
                       </button>
                     </div>
-                  ))}
+                  )}
                 </div>
-              ) : (
-                <p className="text-xs text-paper-500">Henüz görsel seçilmedi.</p>
-              )}
-            </div>
+                {newImagePreviews.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {newImagePreviews.map((preview, i) => (
+                      <div key={i} className="relative group aspect-video rounded-lg overflow-hidden border border-ink-700 bg-ink-950">
+                        <img
+                          src={preview}
+                          alt={`Önizleme ${i + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleCreateRemoveImage(i)}
+                          className="absolute top-1 right-1 p-1 rounded bg-ink-950/80 text-coral-400 opacity-0 group-hover:opacity-100 hover:bg-coral-500 hover:text-white transition"
+                          title="Kaldır"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-paper-500">Henüz görsel seçilmedi.</p>
+                )}
+              </div>
+            </FeatureGate>
 
             <div className="flex gap-3 pt-2">
               <button
@@ -532,68 +544,70 @@ export default function StrategiesPage() {
             </div>
 
             {/* Images */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-mono uppercase tracking-wide text-paper-500">
-                  Görseller ({detailImages.length}/{MAX_IMAGES})
-                </h3>
-                {isOwner(detailStrategy) && detailImages.length < MAX_IMAGES && (
-                  <div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleDetailSelectImage}
-                    />
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      className="rounded-lg bg-mint-500 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-mint-400 transition disabled:opacity-60 flex items-center gap-1.5"
-                    >
-                      {uploading ? (
-                        "Yükleniyor…"
-                      ) : (
-                        <>
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          Görsel Ekle
-                        </>
-                      )}
-                    </button>
+            <FeatureGate feature="strategy_images">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-mono uppercase tracking-wide text-paper-500">
+                    Görseller ({detailImages.length}/{MAX_IMAGES})
+                  </h3>
+                  {isOwner(detailStrategy) && detailImages.length < MAX_IMAGES && (
+                    <div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleDetailSelectImage}
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        className="rounded-lg bg-mint-500 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-mint-400 transition disabled:opacity-60 flex items-center gap-1.5"
+                      >
+                        {uploading ? (
+                          "Yükleniyor…"
+                        ) : (
+                          <>
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            Görsel Ekle
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {detailImages.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {detailImages.map((url, i) => (
+                      <div key={i} className="relative group aspect-video rounded-lg overflow-hidden border border-ink-700 bg-ink-950">
+                        <img
+                          src={url}
+                          alt={`Görsel ${i + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        {isOwner(detailStrategy) && (
+                          <button
+                            onClick={() => handleDeleteImage(url)}
+                            className="absolute top-1 right-1 p-1 rounded bg-ink-950/80 text-coral-400 opacity-0 group-hover:opacity-100 hover:bg-coral-500 hover:text-white transition"
+                            title="Sil"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-ink-700 p-8 text-center">
+                    <p className="text-sm text-paper-500">Henüz görsel eklenmemiş.</p>
                   </div>
                 )}
               </div>
-              {detailImages.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {detailImages.map((url, i) => (
-                    <div key={i} className="relative group aspect-video rounded-lg overflow-hidden border border-ink-700 bg-ink-950">
-                      <img
-                        src={url}
-                        alt={`Görsel ${i + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      {isOwner(detailStrategy) && (
-                        <button
-                          onClick={() => handleDeleteImage(url)}
-                          className="absolute top-1 right-1 p-1 rounded bg-ink-950/80 text-coral-400 opacity-0 group-hover:opacity-100 hover:bg-coral-500 hover:text-white transition"
-                          title="Sil"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-lg border border-dashed border-ink-700 p-8 text-center">
-                  <p className="text-sm text-paper-500">Henüz görsel eklenmemiş.</p>
-                </div>
-              )}
-            </div>
+            </FeatureGate>
 
             {/* Note */}
             <div>

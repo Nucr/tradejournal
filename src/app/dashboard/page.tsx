@@ -18,6 +18,8 @@ import TradeFrequencyWidget from "@/components/dashboard/TradeFrequencyWidget";
 import DailySummaryWidget from "@/components/dashboard/DailySummaryWidget";
 import GoalsWidget from "@/components/dashboard/GoalsWidget";
 import PeriodComparisonWidget from "@/components/dashboard/PeriodComparisonWidget";
+import { usePlan } from "@/lib/features";
+import FeatureGate from "@/components/FeatureGate";
 import { format, parseISO } from "date-fns";
 
 export default function DashboardPage() {
@@ -28,6 +30,7 @@ export default function DashboardPage() {
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [loading, setLoading] = useState(true);
+  const { hasFeature } = usePlan();
 
   useEffect(() => {
     if (!user) return;
@@ -156,10 +159,14 @@ export default function DashboardPage() {
           <MonthlyProgressWidget trades={trades} />
         </WidgetCard>
         <WidgetCard title="Dönem Karşılaştırma">
-          <PeriodComparisonWidget trades={trades} />
+          <FeatureGate feature="advanced_charts">
+            <PeriodComparisonWidget trades={trades} />
+          </FeatureGate>
         </WidgetCard>
         <WidgetCard title="Hedefler">
-          <GoalsWidget />
+          <FeatureGate feature="unlimited_goals" showUpgrade={false}>
+            <GoalsWidget />
+          </FeatureGate>
         </WidgetCard>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in-up stagger-7">
@@ -167,7 +174,9 @@ export default function DashboardPage() {
           <RecentTradesWidget trades={trades} />
         </WidgetCard>
         <WidgetCard title="Trade Sıklığı">
-          <TradeFrequencyWidget trades={trades} />
+          <FeatureGate feature="advanced_charts">
+            <TradeFrequencyWidget trades={trades} />
+          </FeatureGate>
         </WidgetCard>
       </div>
     </div>

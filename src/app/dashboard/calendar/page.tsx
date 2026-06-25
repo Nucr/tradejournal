@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { usePlan } from "@/lib/features";
+import FeatureGate from "@/components/FeatureGate";
 import { subscribeToTrades } from "@/lib/trades";
 import { Trade } from "@/lib/types";
 import {
@@ -25,6 +27,7 @@ const DAY_HEADERS = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
 
 export default function CalendarPage() {
   const { user } = useAuth();
+  const { hasFeature } = usePlan();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -195,7 +198,8 @@ export default function CalendarPage() {
   }, [growthData]);
 
   return (
-    <div className="space-y-8">
+    <FeatureGate feature="calendar">
+      <div className="space-y-8">
       {/* ── Header ── */}
       <div className="animate-fade-in-up">
         <h1 className="font-display text-2xl font-semibold">İşlem Takvimi</h1>
@@ -529,7 +533,8 @@ export default function CalendarPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </FeatureGate>
   );
 }
 

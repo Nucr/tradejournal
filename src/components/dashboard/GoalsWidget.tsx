@@ -5,6 +5,8 @@ import { useAuth } from "@/lib/auth-context";
 import { subscribeToGoals, addGoal, deleteGoal, updateGoal } from "@/lib/goals";
 import { Goal, GoalInput } from "@/lib/types";
 import { useToast } from "@/lib/toast-context";
+import { usePlan } from "@/lib/features";
+import Link from "next/link";
 
 const METRIC_LABELS: Record<Goal["metric"], string> = {
   totalTrades: "İşlem Sayısı",
@@ -29,6 +31,7 @@ export default function GoalsWidget() {
   const [targetValue, setTargetValue] = useState("");
   const [metric, setMetric] = useState<Goal["metric"]>("totalTrades");
   const [period, setPeriod] = useState<Goal["period"]>("monthly");
+  const { exceedsLimit, plan } = usePlan();
 
   useEffect(() => {
     if (!user) return;
@@ -169,6 +172,15 @@ export default function GoalsWidget() {
             </button>
           </div>
         </form>
+      ) : exceedsLimit("goals", goals.length) ? (
+        <div className="text-center py-3">
+          <p className="text-xs text-paper-500 mb-2">
+            {plan === "free" ? "Ücretsiz planda en fazla 3 hedef ekleyebilirsin." : "Hedef limitine ulaştın."}
+          </p>
+          <Link href="/pricing" className="text-xs font-medium text-mint-400 hover:underline">
+            Yükselt
+          </Link>
+        </div>
       ) : (
         <button
           onClick={() => setShowForm(true)}

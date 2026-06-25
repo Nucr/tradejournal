@@ -23,10 +23,14 @@ import { uploadAvatar, deleteAvatar } from "@/lib/storage";
 import { useTheme } from "@/lib/theme-context";
 import Avatar from "@/components/Avatar";
 import AchievementsGrid from "@/components/AchievementsGrid";
+import { usePlan } from "@/lib/features";
+import Link from "next/link";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
   const { accentColor, setAccent, accentColors, previewAccent, setPreviewAccent, confirmAccent, cancelAccent } = useTheme();
+  const { hasFeature } = usePlan();
+  const canCustomizeTheme = hasFeature("theme_customization");
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isPublic, setIsPublic] = useState(true);
@@ -385,40 +389,56 @@ export default function SettingsPage() {
       {/* Theme accent color */}
       <section className="rounded-xl border border-ink-800 bg-ink-900 p-6 mb-6 relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${accentColor}66, transparent)` }} />
-        <h2 className="font-display text-base font-semibold mb-4">Tema Rengi</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-base font-semibold">Tema Rengi</h2>
+          {!canCustomizeTheme && (
+            <Link href="/pricing" className="text-xs font-medium text-mint-400 hover:underline">
+              Pro özellik
+            </Link>
+          )}
+        </div>
         <p className="text-sm text-paper-500 mb-4">
           Dashboard&apos;da kullanılacak vurgu rengini seç.
         </p>
-        <div className="flex flex-wrap gap-3">
-          {accentColors.map((c) => (
-            <button
-              key={c.value}
-              onClick={() => setPreviewAccent(c.value)}
-              className={`w-10 h-10 rounded-xl border-2 transition-all ${
-                (previewAccent ?? accentColor) === c.value
-                  ? "border-paper-100 scale-110 shadow-lg shadow-black/30"
-                  : "border-transparent hover:scale-105"
-              }`}
-              style={{ backgroundColor: c.value }}
-              title={c.name}
-            />
-          ))}
-        </div>
-        {previewAccent && (
-          <div className="flex gap-3 mt-4">
-            <button
-              onClick={confirmAccent}
-              className="rounded-lg font-semibold px-5 py-2 text-sm transition"
-              style={{ backgroundColor: accentColor, color: "#060D11" }}
-            >
-              Onayla
-            </button>
-            <button
-              onClick={cancelAccent}
-              className="rounded-lg border border-ink-700 text-paper-300 px-5 py-2 text-sm hover:bg-ink-800 transition"
-            >
-              İptal
-            </button>
+        {canCustomizeTheme ? (
+          <>
+            <div className="flex flex-wrap gap-3">
+              {accentColors.map((c) => (
+                <button
+                  key={c.value}
+                  onClick={() => setPreviewAccent(c.value)}
+                  className={`w-10 h-10 rounded-xl border-2 transition-all ${
+                    (previewAccent ?? accentColor) === c.value
+                      ? "border-paper-100 scale-110 shadow-lg shadow-black/30"
+                      : "border-transparent hover:scale-105"
+                  }`}
+                  style={{ backgroundColor: c.value }}
+                  title={c.name}
+                />
+              ))}
+            </div>
+            {previewAccent && (
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={confirmAccent}
+                  className="rounded-lg font-semibold px-5 py-2 text-sm transition"
+                  style={{ backgroundColor: accentColor, color: "#060D11" }}
+                >
+                  Onayla
+                </button>
+                <button
+                  onClick={cancelAccent}
+                  className="rounded-lg border border-ink-700 text-paper-300 px-5 py-2 text-sm hover:bg-ink-800 transition"
+                >
+                  İptal
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl border-2 border-ink-700" style={{ backgroundColor: accentColor }} />
+            <span className="text-xs text-paper-500">Tema rengini özelleştirmek için Pro pakete geç.</span>
           </div>
         )}
       </section>
