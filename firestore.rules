@@ -91,8 +91,13 @@ service cloud.firestore {
         request.resource.data.inviterId == request.auth.uid &&
         request.resource.data.inviteeId != request.auth.uid;
       allow update: if request.auth != null && (
-        resource.data.inviteeId == request.auth.uid ||
-        resource.data.inviterId == request.auth.uid
+        (resource.data.inviteeId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['status', 'respondedAt'])) ||
+        (resource.data.inviterId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['status']) &&
+         resource.data.status == 'pending')
       );
       allow delete: if request.auth != null && (
         resource.data.inviterId == request.auth.uid ||
