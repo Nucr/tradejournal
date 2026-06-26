@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { usePlan } from "@/lib/features";
 import { PLAN_LIMITS } from "@/lib/features";
+import { I18nProvider } from "@/lib/i18n/context";
 import PricingSection from "@/components/landing/PricingSection";
 
 export default function PricingPage() {
@@ -11,6 +12,7 @@ export default function PricingPage() {
   const { plan } = usePlan();
 
   return (
+    <I18nProvider>
     <div className="min-h-screen bg-ink-950">
       {/* Navbar */}
       <nav className="border-b border-ink-800">
@@ -43,5 +45,6 @@ export default function PricingPage() {
 
       <PricingSection />
     </div>
+    </I18nProvider>
   );
 }
