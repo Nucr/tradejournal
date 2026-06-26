@@ -122,30 +122,26 @@ export async function savePublicProfile(uid: string, data: Partial<UserProfile>)
 }
 
 export async function syncPublicProfile(uid: string) {
-  const [userSnap, publicSnap] = await Promise.all([
-    getDoc(userDoc(uid)),
-    getDoc(publicProfileDoc(uid)),
-  ]);
-  if (userSnap.exists() && !publicSnap.exists()) {
-    const data = userSnap.data() as Record<string, unknown>;
-    await setDoc(publicProfileDoc(uid), {
-      displayName: data.displayName,
-      displayName_lower: (data.displayName as string)?.toLowerCase(),
-      avatarUrl: data.avatarUrl,
-      avatarColor: data.avatarColor,
-      isPublic: data.isPublic ?? true,
-      level: data.level ?? 1,
-      rank: data.rank ?? "Çaylak",
-      score: data.score ?? 0,
-      showStrategy: data.showStrategy ?? true,
-      showLeaderboard: data.showLeaderboard ?? true,
-      showLevel: data.showLevel ?? true,
-      showTrades: data.showTrades ?? true,
-      showAchievements: data.showAchievements ?? true,
-      showStats: data.showStats ?? true,
-      leaderboardOptIn: data.leaderboardOptIn ?? false,
-    }, { merge: true });
-  }
+  const userSnap = await getDoc(userDoc(uid));
+  if (!userSnap.exists()) return;
+  const data = userSnap.data() as Record<string, unknown>;
+  await setDoc(publicProfileDoc(uid), {
+    displayName: data.displayName,
+    displayName_lower: (data.displayName as string)?.toLowerCase(),
+    avatarUrl: data.avatarUrl,
+    avatarColor: data.avatarColor,
+    isPublic: data.isPublic ?? true,
+    level: data.level ?? 1,
+    rank: data.rank ?? "Çaylak",
+    score: data.score ?? 0,
+    showStrategy: data.showStrategy ?? true,
+    showLeaderboard: data.showLeaderboard ?? true,
+    showLevel: data.showLevel ?? true,
+    showTrades: data.showTrades ?? true,
+    showAchievements: data.showAchievements ?? true,
+    showStats: data.showStats ?? true,
+    leaderboardOptIn: data.leaderboardOptIn ?? false,
+  }, { merge: true });
 }
 
 export async function getPublicDisplayMap(uids: string[]): Promise<Record<string, UserDisplayInfo>> {

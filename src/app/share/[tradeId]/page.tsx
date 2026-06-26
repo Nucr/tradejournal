@@ -24,7 +24,6 @@ interface ShareData {
   user: {
     displayName: string;
     avatarColor: string;
-    isPublic: boolean;
   };
 }
 
@@ -39,6 +38,7 @@ async function fetchShareData(tradeId: string): Promise<ShareData | null> {
   const uid = tradeDoc.ref.path.split("/")[1];
   const tradeRaw = tradeDoc.data() as Record<string, unknown>;
   if (!tradeRaw.isShared) return null;
+  if ((tradeRaw.visibility as string) === "private") return null;
 
   const trade = tradeRaw as unknown as ShareData["trade"];
 
@@ -46,7 +46,6 @@ async function fetchShareData(tradeId: string): Promise<ShareData | null> {
   if (!userSnap.exists) return null;
 
   const user = userSnap.data() as ShareData["user"];
-  if (!user.isPublic) return null;
 
   return { trade, user };
 }

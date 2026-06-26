@@ -191,6 +191,23 @@ export interface FriendRequest {
   createdAt: Date;
 }
 
+// --- Notifications ---
+
+export type NotificationType = "new_message" | "friend_request" | "friend_accepted";
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  fromUid: string;
+  fromDisplayName: string;
+  fromAvatarUrl?: string;
+  fromAvatarColor: string;
+  toUid: string;
+  data?: Record<string, unknown>;
+  read: boolean;
+  createdAt: Date;
+}
+
 // --- User search result ---
 
 export interface UserSearchResult {

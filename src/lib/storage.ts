@@ -3,10 +3,10 @@ import { db } from "./firebase";
 
 function compressImage(
   file: File,
-  maxWidth = 800,
-  maxHeight = 800,
-  quality = 0.85,
-  maxSize = 120 * 1024
+  maxWidth = 400,
+  maxHeight = 400,
+  quality = 0.7,
+  maxSize = 40 * 1024
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -33,7 +33,7 @@ function compressImage(
             if (blob && blob.size <= maxSize) {
               resolve(blob);
             } else if (blob && q > 0.1) {
-              tryCompress(q - 0.1);
+              tryCompress(Math.round((q - 0.15) * 100) / 100);
             } else if (blob) {
               resolve(blob);
             } else {

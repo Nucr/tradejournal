@@ -8,6 +8,7 @@ import { ToastProvider } from "@/lib/toast-context";
 import { PlanProvider } from "@/lib/features";
 import Sidebar from "@/components/Sidebar";
 import ToastContainer from "@/components/ToastContainer";
+import NotificationToast from "@/components/NotificationToast";
 import AchievementToast from "@/components/AchievementToast";
 import OnboardingTour from "@/components/dashboard/OnboardingTour";
 
@@ -28,6 +29,7 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+      <NotificationToast />
       <AchievementToast />
       <ToastContainer />
       {showOnboarding && <OnboardingTour />}

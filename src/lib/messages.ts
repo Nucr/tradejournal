@@ -25,6 +25,7 @@ import {
   GroupType,
   Message,
 } from "./types";
+import { createNotification } from "./notifications";
 
 // ─── Conversations ───
 
@@ -143,7 +144,9 @@ export async function sendMessage(
   conversationId: string,
   senderId: string,
   senderName: string,
-  text: string
+  text: string,
+  senderAvatarColor?: string,
+  senderAvatarUrl?: string
 ) {
   const msgData = {
     senderId,
@@ -162,6 +165,29 @@ export async function sendMessage(
     updatedAt: serverTimestamp(),
     [`lastReadTimestamps.${senderId}`]: serverTimestamp(),
   });
+
+  // Fire notification to other participants
+  try {
+    const convSnap = await getDoc(conversationDoc(conversationId));
+    if (convSnap.exists()) {
+      const convData = convSnap.data();
+      const participants: string[] = convData.participants ?? [];
+      for (const uid of participants) {
+        if (uid === senderId) continue;
+        createNotification({
+          type: "new_message",
+          fromUid: senderId,
+          fromDisplayName: senderName,
+          fromAvatarColor: senderAvatarColor ?? "#2ED9A4",
+          fromAvatarUrl: senderAvatarUrl,
+          toUid: uid,
+          data: { conversationId, text },
+        }).catch(() => {});
+      }
+    }
+  } catch {
+    // Notification is best-effort
+  }
 }
 
 export async function createConversation(

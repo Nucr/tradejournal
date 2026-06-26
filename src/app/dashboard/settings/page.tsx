@@ -219,7 +219,7 @@ export default function SettingsPage() {
             />
           )}
 
-              <p className="text-xs text-paper-500">Otomatik sıkıştırılır, JPEG/PNG/WebP</p>
+              <p className="text-xs text-paper-500">5MB'a kadar otomatik sıkıştırılır, JPEG/PNG/WebP</p>
 
               {avatarUploading && (
                 <div className="w-full max-w-xs">
@@ -243,7 +243,13 @@ export default function SettingsPage() {
                 disabled={avatarUploading}
                 onChange={(e) => {
                   const f = e.target.files?.[0];
-                  if (f) handleAvatarUpload(f);
+                  if (!f) return;
+                  if (f.size > 5 * 1024 * 1024) {
+                    setAvatarToast("Dosya boyutu 5MB'dan büyük olamaz");
+                    e.target.value = "";
+                    return;
+                  }
+                  handleAvatarUpload(f);
                   e.target.value = "";
                 }}
               />

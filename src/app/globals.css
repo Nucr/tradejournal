@@ -594,6 +594,28 @@ html.light .bg-mint-500\/10 { background-color: rgba(46,217,164,0.08); }
 /* File input / placeholder backgrounds */
 html.light .bg-ink-950\/50 { background-color: rgba(248,250,252,0.5); }
 
+/* Opacity variants of bg-ink-900 (cards, panels, dropdowns) */
+html.light .bg-ink-900\/50 { background-color: rgba(248,250,252,0.5); }
+html.light .bg-ink-900\/80 { background-color: rgba(248,250,252,0.8); }
+html.light .bg-ink-900\/95 { background-color: rgba(248,250,252,0.95); }
+
+/* Opacity variants of bg-ink-800 */
+html.light .bg-ink-800\/30 { background-color: rgba(241,245,249,0.3); }
+html.light .bg-ink-800\/50 { background-color: rgba(241,245,249,0.5); }
+
+/* Hover states for opacity variant backgrounds */
+html.light .hover\:bg-ink-900\/50:hover { background-color: rgba(248,250,252,0.7); }
+html.light .hover\:bg-ink-800\/50:hover { background-color: rgba(241,245,249,0.7); }
+
+/* Missing border colors */
+html.light .border-ink-900 { border-color: #E2E8F0; }
+html.light .border-ink-700\/60 { border-color: rgba(203,213,225,0.6); }
+
+/* Global gradient fix for all sections not just pricing */
+html.light [class*="to-ink-900\/80"] {
+  --tw-gradient-to: #ffffff !important;
+}
+
 /* ── Print styles ── */
 
 @media print {

@@ -18,6 +18,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { FriendRequest } from "./types";
+import { createNotification } from "./notifications";
 
 function friendRequestsRef() {
   return collection(db, "friendRequests");
@@ -78,6 +79,17 @@ export async function sendFriendRequest(
     status: "pending",
     createdAt: serverTimestamp(),
   });
+
+  // Bildirim oluştur
+  createNotification({
+    type: "friend_request",
+    fromUid,
+    fromDisplayName,
+    fromAvatarColor,
+    fromAvatarUrl,
+    toUid,
+  }).catch(() => {});
+
   return docRef.id;
 }
 
@@ -96,6 +108,20 @@ export async function acceptFriendRequest(requestId: string, fromUid: string, to
     })
   );
   await Promise.all(batch);
+
+  // Bildirim: isteği gönderene "kabul edildi" bildirimi
+  getDoc(doc(db, "users", toUid)).then((toSnap) => {
+    if (!toSnap.exists()) return;
+    const toData = toSnap.data();
+    createNotification({
+      type: "friend_accepted",
+      fromUid: toUid,
+      fromDisplayName: (toData.displayName as string) ?? toUid.slice(0, 8),
+      fromAvatarColor: (toData.avatarColor as string) ?? "#2ED9A4",
+      fromAvatarUrl: toData.avatarUrl as string | undefined,
+      toUid: fromUid,
+    }).catch(() => {});
+  }).catch(() => {});
 }
 
 export async function rejectFriendRequest(requestId: string) {
