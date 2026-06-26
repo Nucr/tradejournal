@@ -329,6 +329,17 @@ html.light .rounded-xl.border.border-ink-800.bg-ink-900:hover {
   box-shadow: 0 4px 12px rgba(15,23,42,0.06);
 }
 
+/* Pricing cards */
+html.light section#pricing .rounded-xl.border.border-ink-800.bg-ink-900\/50,
+html.light section#pricing .rounded-xl.border.border-ink-800 {
+  background-color: #ffffff !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 1px 3px rgba(15,23,42,0.04), 0 1px 2px rgba(15,23,42,0.02);
+}
+html.light section#pricing [class*="to-ink-900/80"] {
+  --tw-gradient-to: #ffffff !important;
+}
+
 /* Nav items */
 html.light .bg-ink-900 {
   background-color: #ffffff;
