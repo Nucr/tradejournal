@@ -110,8 +110,8 @@ export async function restoreTrade(uid: string, id: string) {
   await syncUserScore(uid);
 }
 
-export async function shareTrade(uid: string, id: string) {
-  await updateDoc(tradeDoc(uid, id), { isShared: true });
+export async function shareTrade(uid: string, id: string, visibility?: "public" | "friends" | "private") {
+  await updateDoc(tradeDoc(uid, id), { isShared: true, visibility: visibility ?? "public" });
 }
 
 export async function cleanupOldDeletedTrades(uid: string) {

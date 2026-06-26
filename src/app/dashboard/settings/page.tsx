@@ -41,6 +41,7 @@ export default function SettingsPage() {
   const [showLevel, setShowLevel] = useState(true);
   const [showStats, setShowStats] = useState(true);
   const [leaderboardOptIn, setLeaderboardOptIn] = useState(false);
+  const [messagingPrivacy, setMessagingPrivacy] = useState<"everyone" | "friends" | "nobody">("everyone");
   const [saving, setSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -68,6 +69,7 @@ export default function SettingsPage() {
         setShowLevel(p.showLevel ?? true);
         setShowStats(p.showStats ?? true);
         setLeaderboardOptIn(p.leaderboardOptIn ?? false);
+        setMessagingPrivacy(p.messagingPrivacy ?? "everyone");
       }
     });
     const ninetyDaysAgo = new Date();
@@ -89,8 +91,8 @@ export default function SettingsPage() {
   async function handleSavePrivacy() {
     if (!user) return;
     setSaving(true);
-    await saveProfile(user.uid, { isPublic, showStrategy, showLeaderboard, showLevel, showTrades, showAchievements, showStats, leaderboardOptIn });
-    setProfile((prev) => (prev ? { ...prev, isPublic, showStrategy, showLeaderboard, showLevel, showTrades, showAchievements, showStats, leaderboardOptIn } : prev));
+    await saveProfile(user.uid, { isPublic, showStrategy, showLeaderboard, showLevel, showTrades, showAchievements, showStats, leaderboardOptIn, messagingPrivacy });
+    setProfile((prev) => (prev ? { ...prev, isPublic, showStrategy, showLeaderboard, showLevel, showTrades, showAchievements, showStats, leaderboardOptIn, messagingPrivacy } : prev));
     setSaving(false);
   }
 
@@ -217,7 +219,7 @@ export default function SettingsPage() {
             />
           )}
 
-              <p className="text-xs text-paper-500">Maksimum 200KB, JPEG/PNG/WebP</p>
+              <p className="text-xs text-paper-500">Otomatik sıkıştırılır, JPEG/PNG/WebP</p>
 
               {avatarUploading && (
                 <div className="w-full max-w-xs">
@@ -331,6 +333,27 @@ export default function SettingsPage() {
               className={`relative w-11 h-6 rounded-full transition cursor-pointer shrink-0 ml-4 ${leaderboardOptIn ? "bg-mint-500" : "bg-ink-700"}`}
             >
               <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition ${leaderboardOptIn ? "translate-x-5" : ""}`} />
+            </div>
+          </label>
+        </div>
+
+        <div className="border-t border-ink-700 pt-4 mt-4">
+          <label className="block">
+            <p className="text-sm font-medium text-paper-100 mb-2">Kimler bana mesaj atabilir?</p>
+            <div className="flex gap-2">
+              {(["everyone", "friends", "nobody"] as const).map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => setMessagingPrivacy(opt)}
+                  className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                    messagingPrivacy === opt
+                      ? "bg-mint-500 text-ink-950"
+                      : "border border-ink-700 text-paper-300 hover:bg-ink-800"
+                  }`}
+                >
+                  {opt === "everyone" ? "Herkes" : opt === "friends" ? "Sadece Arkadaşlar" : "Kimse"}
+                </button>
+              ))}
             </div>
           </label>
         </div>

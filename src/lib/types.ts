@@ -1,5 +1,7 @@
 export type TradeDirection = "long" | "short" | "be";
 
+export type TradeVisibility = "public" | "friends" | "private";
+
 export interface Trade {
   id: string;
   pair: string;
@@ -15,6 +17,7 @@ export interface Trade {
   createdAt: string;
   deletedAt?: string | null;
   isShared?: boolean;
+  visibility?: TradeVisibility;
 }
 
 export type TradeInput = Omit<Trade, "id" | "createdAt">;
@@ -47,6 +50,8 @@ export interface UserStats {
   consistency: number;
 }
 
+export type MessagingPrivacy = "everyone" | "friends" | "nobody";
+
 export interface UserProfile {
   displayName: string;
   avatarUrl?: string;
@@ -62,6 +67,8 @@ export interface UserProfile {
   showAchievements: boolean;
   showStats: boolean;
   leaderboardOptIn?: boolean;
+  messagingPrivacy?: MessagingPrivacy;
+  friends?: string[];
   stats: UserStats;
   achievements?: string[];
   role?: "user" | "admin";
@@ -169,6 +176,19 @@ export interface Message {
 export interface UnreadCount {
   conversationId: string;
   count: number;
+}
+
+// --- Friends ---
+
+export interface FriendRequest {
+  id: string;
+  fromUid: string;
+  toUid: string;
+  fromDisplayName: string;
+  fromAvatarColor: string;
+  fromAvatarUrl?: string;
+  status: "pending" | "accepted" | "rejected";
+  createdAt: Date;
 }
 
 // --- User search result ---

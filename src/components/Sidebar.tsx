@@ -5,7 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect, useState } from "react";
 import { subscribeToProfile } from "@/lib/profile";
-import { UserProfile } from "@/lib/types";
+import { subscribeToConversations, getUnreadCounts } from "@/lib/messages";
+import { Conversation, UserProfile } from "@/lib/types";
 import ThemeToggle from "./ThemeToggle";
 import { usePlan } from "@/lib/features";
 
@@ -45,7 +46,15 @@ const LINKS = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
       </svg>
     ),
-    badge: true,
+  },
+  {
+    href: "/dashboard/friends",
+    label: "Arkadaşlar",
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    ),
   },
   {
     href: "/dashboard/users",
@@ -120,6 +129,8 @@ export default function Sidebar() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [open, setOpen] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [friendRequests, setFriendRequests] = useState(0);
   const { hasFeature } = usePlan();
   const canCalendar = hasFeature("calendar");
   const canMessaging = hasFeature("messaging");
@@ -127,6 +138,18 @@ export default function Sidebar() {
   useEffect(() => {
     if (!user) return;
     const unsub = subscribeToProfile(user.uid, setProfile);
+    return unsub;
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsub = subscribeToConversations(user.uid, (list) => {
+      getUnreadCounts(user.uid, list).then((counts) => {
+        let total = 0;
+        counts.forEach((c) => { total += c; });
+        setUnreadCount(total);
+      }).catch(() => {});
+    });
     return unsub;
   }, [user]);
 
@@ -214,6 +237,7 @@ export default function Sidebar() {
             return true;
           }).map((link) => {
             const active = pathname === link.href;
+            const showBadge = link.href === "/dashboard/messages" && unreadCount > 0;
             return (
               <Link
                 key={link.href}
@@ -226,7 +250,14 @@ export default function Sidebar() {
                 title={open ? undefined : link.label}
                 onClick={() => { if (window.innerWidth < 1024) setOpen(false) }}
               >
-                {link.icon}
+                <div className="relative">
+                  {link.icon}
+                  {showBadge && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-coral-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 leading-none">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </div>
                 {open && link.label}
               </Link>
             );

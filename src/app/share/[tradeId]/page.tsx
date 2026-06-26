@@ -37,7 +37,10 @@ async function fetchShareData(tradeId: string): Promise<ShareData | null> {
   if (tradesSnap.empty) return null;
   const tradeDoc = tradesSnap.docs[0];
   const uid = tradeDoc.ref.path.split("/")[1];
-  const trade = tradeDoc.data() as ShareData["trade"];
+  const tradeRaw = tradeDoc.data() as Record<string, unknown>;
+  if (!tradeRaw.isShared) return null;
+
+  const trade = tradeRaw as unknown as ShareData["trade"];
 
   const userSnap = await adminDb.collection("users").doc(uid).get();
   if (!userSnap.exists) return null;

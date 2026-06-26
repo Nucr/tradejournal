@@ -502,6 +502,87 @@ html.light .bg-gradient-to-br.from-mint-500\/5 {
   border-color: rgba(46,217,164,0.2) !important;
 }
 
+/* ===== ADDITIONAL LIGHT MODE FIXES ===== */
+
+/* Missing text colors */
+html.light .text-paper-400 { color: #64748B; }
+html.light .text-paper-600 { color: #94A3B8; }
+
+/* Generic hover states */
+html.light .hover\:bg-ink-800:hover { background-color: #F1F5F9 !important; }
+html.light .hover\:text-paper-100:hover { color: #0F172A !important; }
+html.light .hover\:text-paper-200:hover { color: #334155 !important; }
+html.light .hover\:border-ink-700:hover { border-color: #CBD5E1 !important; }
+html.light .hover\:border-ink-600:hover { border-color: #94A3B8 !important; }
+
+/* Sidebar dividers & bottom section */
+html.light .border-t.border-ink-800 { border-color: #E2E8F0 !important; }
+html.light .divide-ink-800 > * + * { border-color: #E2E8F0 !important; }
+html.light .border-b.border-ink-800 { border-color: #E2E8F0 !important; }
+
+/* Conversation / message list */
+html.light aside + div .rounded-xl\.border\.border-ink-800\.bg-ink-900 {
+  background-color: #ffffff !important;
+  border-color: #E2E8F0 !important;
+}
+html.light div[class*="overflow-y-auto"] .rounded-lg {
+  background-color: #ffffff;
+}
+
+/* Settings sections - ensure all match */
+html.light section.rounded-xl.border {
+  background-color: #ffffff !important;
+  border-color: #E2E8F0 !important;
+}
+
+/* Settings toggles */
+html.light .bg-ink-700[role="checkbox"] {
+  background-color: #CBD5E1 !important;
+}
+
+/* Dropdown / select menus */
+html.light select option { background-color: #ffffff; color: #0F172A; }
+
+/* Strategy dropdown items */
+html.light div.absolute.z-20 button:hover {
+  background-color: #F1F5F9;
+}
+
+/* Badges and tags */
+html.light .bg-ink-700.text-paper-300 { background-color: #E2E8F0; color: #475569; }
+html.light .bg-ink-700.text-paper-100 { background-color: #E2E8F0; color: #0F172A; }
+
+/* Tab bar active states */
+html.light .bg-ink-800.text-paper-100 { background-color: #E2E8F0; color: #0F172A; }
+
+/* Trade filters bar */
+html.light .rounded-lg.bg-ink-900 { background-color: #ffffff; }
+
+/* User search dropdown */
+html.light .bg-ink-950 { background-color: #F8FAFC; }
+html.light .border-ink-800 { border-color: #E2E8F0 !important; }
+
+/* Calendar grid items */
+html.light .bg-ink-850 { background-color: #F1F5F9; }
+html.light .bg-ink-600 { background-color: #CBD5E1; }
+
+/* Modal content - nested elements */
+html.light .fixed.inset-0.z-50 .rounded-xl {
+  background-color: #ffffff !important;
+  border-color: #E2E8F0 !important;
+}
+
+/* Hover cards - general pattern */
+html.light .hover\:bg-ink-850:hover { background-color: #F1F5F9 !important; }
+
+/* Notification / toast backgrounds */
+html.light .bg-coral-500\/5 { background-color: rgba(239,68,68,0.05); }
+html.light .bg-amber-500\/5 { background-color: rgba(245,158,11,0.05); }
+html.light .bg-mint-500\/10 { background-color: rgba(46,217,164,0.08); }
+
+/* File input / placeholder backgrounds */
+html.light .bg-ink-950\/50 { background-color: rgba(248,250,252,0.5); }
+
 /* ── Print styles ── */
 
 @media print {

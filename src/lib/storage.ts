@@ -1,6 +1,59 @@
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "./firebase";
 
+function compressImage(
+  file: File,
+  maxWidth = 800,
+  maxHeight = 800,
+  quality = 0.85,
+  maxSize = 120 * 1024
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let w = img.width;
+      let h = img.height;
+      if (w > maxWidth || h > maxHeight) {
+        const ratio = Math.min(maxWidth / w, maxHeight / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, w, h);
+
+      let currentQuality = quality;
+      function tryCompress(q: number) {
+        canvas.toBlob(
+          (blob) => {
+            if (blob && blob.size <= maxSize) {
+              resolve(blob);
+            } else if (blob && q > 0.1) {
+              tryCompress(q - 0.1);
+            } else if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error("Resim sıkıştırılamadı"));
+            }
+          },
+          "image/jpeg",
+          q
+        );
+      }
+      tryCompress(currentQuality);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Resim yüklenemedi"));
+    };
+    img.src = url;
+  });
+}
+
 export async function uploadAvatar(
   uid: string,
   file: File,
@@ -9,9 +62,8 @@ export async function uploadAvatar(
   if (!file.type.startsWith("image/")) {
     throw new Error("Sadece resim dosyaları kabul edilir");
   }
-  if (file.size > 200 * 1024) {
-    throw new Error("Dosya boyutu 200KB'dan büyük olamaz");
-  }
+
+  const compressedBlob = await compressImage(file);
 
   const reader = new FileReader();
 
@@ -36,7 +88,7 @@ export async function uploadAvatar(
       reject(new Error("Dosya okunamadı"));
     };
 
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(compressedBlob);
   });
 }
 

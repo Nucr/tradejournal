@@ -192,6 +192,21 @@ export async function createDirectConversation(
   uid1: string,
   uid2: string
 ): Promise<string | null> {
+  // Check recipient's messaging privacy
+  const recipientSnap = await getDoc(doc(db, "users", uid2));
+  if (recipientSnap.exists()) {
+    const privacy = recipientSnap.data()?.messagingPrivacy as string | undefined;
+    if (privacy === "nobody") {
+      throw new Error("Bu kullanıcı mesaj almıyor.");
+    }
+    if (privacy === "friends") {
+      const senderFriends: string[] = recipientSnap.data()?.friends ?? [];
+      if (!senderFriends.includes(uid1)) {
+        throw new Error("Bu kullanıcı sadece arkadaşlarının mesaj alıyor.");
+      }
+    }
+  }
+
   const q = query(
     conversationsRef(),
     where("participants", "array-contains", uid1),

@@ -7,8 +7,14 @@ import { useAuth } from "@/lib/auth-context";
 import AuthBrandPanel from "@/components/AuthBrandPanel";
 
 export default function LoginPage() {
-  const { login, signInWithGoogle } = useAuth();
+  const { user, loading, login, signInWithGoogle } = useAuth();
   const router = useRouter();
+
+  if (loading) return null;
+  if (user) {
+    router.replace("/dashboard");
+    return null;
+  }
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");

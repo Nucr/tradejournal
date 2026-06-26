@@ -3,21 +3,39 @@
 import { useEffect, useState } from "react";
 import {
   collection,
+  doc,
   query,
   where,
   orderBy,
   onSnapshot,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Trade } from "@/lib/types";
 
 interface SharedTradeListProps {
   uid: string;
+  currentUid?: string;
 }
 
-export default function SharedTradeList({ uid }: SharedTradeListProps) {
+export default function SharedTradeList({ uid, currentUid }: SharedTradeListProps) {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFriend, setIsFriend] = useState(false);
+  const isOwner = currentUid === uid;
+
+  useEffect(() => {
+    if (!currentUid || currentUid === uid) {
+      setIsFriend(false);
+      return;
+    }
+    getDoc(doc(db, "users", currentUid)).then((snap) => {
+      if (snap.exists()) {
+        const friends: string[] = snap.data()?.friends ?? [];
+        setIsFriend(friends.includes(uid));
+      }
+    });
+  }, [currentUid, uid]);
 
   useEffect(() => {
     const q = query(
@@ -44,9 +62,17 @@ export default function SharedTradeList({ uid }: SharedTradeListProps) {
             (data.createdAt as { toDate?: () => Date })?.toDate?.().toISOString?.() ??
             data.entryDate,
           isShared: true,
+          visibility: (data.visibility as Trade["visibility"]) ?? "public",
         } as Trade;
       });
-      setTrades(list);
+      // Filter by visibility
+      const filtered = list.filter((t) => {
+        if (isOwner) return true;
+        if (t.visibility === "private") return false;
+        if (t.visibility === "friends" && !isFriend) return false;
+        return true;
+      });
+      setTrades(filtered);
       setLoading(false);
     });
     return unsub;

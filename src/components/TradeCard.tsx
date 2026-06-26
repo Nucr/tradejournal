@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Trade } from "@/lib/types";
+import { Trade, TradeVisibility } from "@/lib/types";
 import { shareTrade } from "@/lib/trades";
 import { format, parseISO } from "date-fns";
 
@@ -21,13 +21,17 @@ const DIRECTION_LABEL: Record<Trade["direction"], string> = {
 
 export default function TradeCard({ trade, uid, onEdit, onDelete, index = 0 }: Props) {
   const [copied, setCopied] = useState(false);
+  const [showVis, setShowVis] = useState(false);
+  const [visibility, setVisibility] = useState<TradeVisibility>(trade.visibility ?? "public");
   const copyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  async function handleShare() {
+  async function handleShare(vis?: TradeVisibility) {
+    const v = vis ?? visibility;
     try {
-      await shareTrade(uid, trade.id);
+      await shareTrade(uid, trade.id, v);
       const url = `${window.location.origin}/share/${trade.id}`;
       await navigator.clipboard.writeText(url);
+      setVisibility(v);
       setCopied(true);
       if (copyTimer.current) clearTimeout(copyTimer.current);
       copyTimer.current = setTimeout(() => {
@@ -145,21 +149,53 @@ export default function TradeCard({ trade, uid, onEdit, onDelete, index = 0 }: P
             </svg>
             sil
           </button>
-          <button
-            onClick={handleShare}
-            className="text-xs font-mono text-paper-400 hover:text-sky-400 transition flex items-center gap-1 ml-auto"
-          >
-            {copied ? (
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
+          <div className="relative ml-auto">
+            <button
+              onClick={() => setShowVis((v) => !v)}
+              className="text-xs font-mono text-paper-400 hover:text-sky-400 transition flex items-center gap-1"
+            >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
               </svg>
+              {copied ? "Link kopyalandı!" : visibility === "public" ? "paylaş" : visibility === "friends" ? "arkadaşlar" : "gizli"}
+            </button>
+            {showVis && (
+              <div className="absolute bottom-full right-0 mb-1 rounded-lg border border-ink-700 bg-ink-900 shadow-xl py-1 min-w-[140px] z-10">
+                {(["public", "friends", "private"] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => {
+                      setVisibility(v);
+                      handleShare(v);
+                      setShowVis(false);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-xs font-mono transition flex items-center gap-2 ${
+                      visibility === v
+                        ? "text-mint-400 bg-mint-500/10"
+                        : "text-paper-300 hover:bg-ink-800"
+                    }`}
+                  >
+                    {v === "public" && (
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )}
+                    {v === "friends" && (
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    )}
+                    {v === "private" && (
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    )}
+                    {v === "public" ? "Herkese Açık" : v === "friends" ? "Arkadaşlar" : "Sadece Ben"}
+                  </button>
+                ))}
+              </div>
             )}
-            {copied ? "Link kopyalandı!" : "paylaş"}
-          </button>
+          </div>
         </div>
       </div>
     </div>
