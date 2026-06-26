@@ -79,7 +79,7 @@ export default function OnboardingPage() {
     if (val.length < 3) return true;
     setNameChecking(true);
     try {
-      const q = query(collection(db, "publicProfiles"), where("displayName", "==", val));
+      const q = query(collection(db, "publicProfiles"), where("displayName_lower", "==", val.toLowerCase()));
       const snap = await getDocs(q);
       return snap.empty;
     } finally {
