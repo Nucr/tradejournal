@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/dashboard/", "/login", "/register", "/onboarding", "/share/"],
       },
     ],
-    sitemap: "https://ledger.app/sitemap.xml",
+    sitemap: "https://verifter.com/sitemap.xml",
   };
 }

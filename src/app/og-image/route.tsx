@@ -30,7 +30,7 @@ export async function GET() {
             <path d="M20 44V32l12 8 12-8v12" stroke="#060D11" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
             <path d="M20 28V20l12 8 12-8v8" stroke="#060D11" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
           </svg>
-          <span style={{ fontSize: 72, fontWeight: 700, color: "#E8ECF0", letterSpacing: -2 }}>Ledger</span>
+          <span style={{ fontSize: 72, fontWeight: 700, color: "#E8ECF0", letterSpacing: -2 }}>Verifter</span>
         </div>
         <span style={{ fontSize: 28, color: "#97A6B2", marginTop: 8 }}>
           Trade Journal &bull; Performans Defteri

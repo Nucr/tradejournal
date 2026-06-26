@@ -16,7 +16,7 @@ export default function PricingPage() {
       <nav className="border-b border-ink-800">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/" className="font-display text-lg font-bold text-paper-100">
-            Ledger
+            Verifter
           </Link>
           <div className="flex items-center gap-4">
             <span className="text-xs text-paper-500 font-mono">

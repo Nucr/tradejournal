@@ -22,7 +22,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     /* Features */
     "features.title": "Neler Yapabilirsin?",
     "features.desc":
-      "Ledger ile işlemlerini kaydetmekten performans analizine, toplulukla iletişimden oyunlaştırılmış başarılara kadar her şey tek bir yerde.",
+      "Verifter ile işlemlerini kaydetmekten performans analizine, toplulukla iletişimden oyunlaştırılmış başarılara kadar her şey tek bir yerde.",
     "features.1.title": "İşlem Günlüğü",
     "features.1.desc":
       "Ekran görüntüsü, giriş/çıkış, RR ve stratejiyle her işlemini eksiksiz kaydet.",
@@ -63,9 +63,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     /* Testimonials */
     "testimonials.title": "Traderlar Ne Diyor?",
     "testimonials.desc":
-      "Binlerce trader işlemlerini Ledger ile kaydediyor ve performansını analiz ediyor.",
+      "Binlerce trader işlemlerini Verifter ile kaydediyor ve performansını analiz ediyor.",
     "testimonials.1.quote":
-      "Ledger sayesinde hangi stratejimin kârlı olduğunu net görebiliyorum. Performans grafikleri sayesinde zayıf yönlerimi keşfettim.",
+      "Verifter sayesinde hangi stratejimin kârlı olduğunu net görebiliyorum. Performans grafikleri sayesinde zayıf yönlerimi keşfettim.",
     "testimonials.1.name": "Ali",
     "testimonials.1.role": "Kripto Trader",
     "testimonials.2.quote":
@@ -99,8 +99,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     /* FAQ */
     "faq.title": "Sık Sorulan Sorular",
     "faq.desc": "Merak ettiklerin için cevaplar burada.",
-    "faq.1.q": "Ledger ücretsiz mi?",
-    "faq.1.a": "Evet! Ledger temel özellikleriyle tamamen ücretsizdir. İstersen daha gelişmiş özellikler için Premium plana geçebilirsin.",
+    "faq.1.q": "Verifter ücretsiz mi?",
+    "faq.1.a": "Evet! Verifter temel özellikleriyle tamamen ücretsizdir. İstersen daha gelişmiş özellikler için Premium plana geçebilirsin.",
     "faq.2.q": "Verilerim güvende mi?",
     "faq.2.a": "Tüm verilerin Firebase altyapısında 256-bit AES şifreleme ile korunur. Google Cloud sunucularında saklanır ve yalnızca sana açıktır.",
     "faq.3.q": "Hangi piyasaları destekliyor?",
@@ -230,9 +230,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     /* Testimonials */
     "testimonials.title": "What Traders Say",
     "testimonials.desc":
-      "Thousands of traders log their trades with Ledger and analyze their performance.",
+      "Thousands of traders log their trades with Verifter and analyze their performance.",
     "testimonials.1.quote":
-      "Thanks to Ledger, I can clearly see which of my strategies are profitable. Performance charts helped me discover my weaknesses.",
+      "Thanks to Verifter, I can clearly see which of my strategies are profitable. Performance charts helped me discover my weaknesses.",
     "testimonials.1.name": "Ali",
     "testimonials.1.role": "Crypto Trader",
     "testimonials.2.quote":
@@ -266,8 +266,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     /* FAQ */
     "faq.title": "Frequently Asked Questions",
     "faq.desc": "Answers to your questions are here.",
-    "faq.1.q": "Is Ledger free?",
-    "faq.1.a": "Yes! Ledger is completely free with its core features. You can upgrade to Premium for more advanced features.",
+    "faq.1.q": "Is Verifter free?",
+    "faq.1.a": "Yes! Verifter is completely free with its core features. You can upgrade to Premium for more advanced features.",
     "faq.2.q": "Is my data safe?",
     "faq.2.a": "All your data is protected with 256-bit AES encryption on Firebase infrastructure. Stored on Google Cloud servers and accessible only to you.",
     "faq.3.q": "Which markets do you support?",

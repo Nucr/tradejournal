@@ -10,7 +10,7 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div>
-            <span className="font-display text-lg font-bold text-paper-100">Ledger</span>
+            <span className="font-display text-lg font-bold text-paper-100">Verifter</span>
             <p className="mt-2 text-sm text-paper-500 max-w-xs">{t("footer.tagline")}</p>
           </div>
           <div>
@@ -66,7 +66,7 @@ export default function Footer() {
         </div>
         <div className="mt-10 pt-6 border-t border-ink-800/50 text-center">
           <p className="text-xs text-paper-500 font-mono">
-            &copy; 2025 Ledger. {t("footer.copyright")}
+            &copy; 2025 Verifter. {t("footer.copyright")}
           </p>
         </div>
       </div>

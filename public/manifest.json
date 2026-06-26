@@ -1,6 +1,6 @@
 {
-  "name": "Ledger — Trade Journal",
-  "short_name": "Ledger",
+  "name": "Verifter — Trade Journal",
+  "short_name": "Verifter",
   "description": "Kişisel trade günlüğü ve performans takibi",
   "start_url": "/dashboard",
   "display": "standalone",

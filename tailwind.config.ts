@@ -53,7 +53,7 @@ const config: Config = {
           "linear-gradient(180deg, rgba(46,217,164,0.08) 0%, rgba(10,13,18,0) 60%)",
       },
       boxShadow: {
-        ledger: "0 1px 0 0 rgba(255,255,255,0.04) inset",
+        verifter: "0 1px 0 0 rgba(255,255,255,0.04) inset",
         card: "0 2px 8px rgba(0,0,0,0.3)",
         "card-light": "0 2px 8px rgba(0,0,0,0.08)",
       },

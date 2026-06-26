@@ -1,4 +1,4 @@
-const CACHE = "ledger-v1";
+const CACHE = "verifter-v1";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

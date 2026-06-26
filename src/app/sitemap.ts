@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://ledger.app";
+  const base = "https://verifter.com";
 
   return [
     {

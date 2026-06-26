@@ -15,7 +15,7 @@ export default function AuthBrandPanel() {
 
       <div className="relative z-10">
         <span className="font-display text-2xl font-bold tracking-tight">
-          Ledger
+          Verifter
         </span>
         <p className="mt-1 text-sm text-paper-300 font-mono">
           trade journal &amp; performans defteri

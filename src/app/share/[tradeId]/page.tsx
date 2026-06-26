@@ -66,7 +66,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description: `${trade.pair} • ${sign}${trade.result}% • RR ${trade.rr}${trade.strategy ? ` • ${trade.strategy}` : ""}`,
       type: "article",
-      siteName: "Ledger Trade Journal",
+      siteName: "Verifter Trade Journal",
     },
     twitter: {
       card: "summary_large_image",
@@ -195,14 +195,14 @@ export default async function SharePage({ params }: Props) {
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                Ledger'da Görüntüle
+                Verifter'da Görüntüle
               </Link>
             </div>
           </div>
         </div>
 
         <p className="text-center text-xs text-paper-600 mt-4">
-          Powered by Ledger Trade Journal
+          Powered by Verifter Trade Journal
         </p>
       </div>
     </div>

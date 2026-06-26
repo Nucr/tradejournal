@@ -20,10 +20,10 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ledger.app"),
+  metadataBase: new URL("https://verifter.com"),
   title: {
-    default: "Ledger — Trade Journal & Performans Defteri",
-    template: "%s | Ledger",
+    default: "Verifter — Trade Journal & Performans Defteri",
+    template: "%s | Verifter",
   },
   description:
     "İşlemlerini kaydet, performansını analiz et. Ekran görüntüsü, strateji ve RR ile her işlemini tek bir deftere kaydet.",
@@ -46,11 +46,11 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   openGraph: {
-    title: "Ledger — Trade Journal & Performans Defteri",
+    title: "Verifter — Trade Journal & Performans Defteri",
     description:
       "İşlemlerini kaydet, performansını analiz et. Ekran görüntüsü, strateji ve RR ile her işlemini tek bir deftere kaydet.",
-    url: "https://ledger.app",
-    siteName: "Ledger",
+    url: "https://verifter.com",
+    siteName: "Verifter",
     locale: "tr_TR",
     alternateLocale: "en_US",
     type: "website",
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ledger — Trade Journal",
+    title: "Verifter — Trade Journal",
     description:
       "İşlemlerini kaydet, performansını analiz et.",
     images: ["/icons/icon-512.png"],
@@ -90,7 +90,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "SoftwareApplication",
-              name: "Ledger",
+              name: "Verifter",
               applicationCategory: "BusinessApplication",
               operatingSystem: "Web",
               description: "Trade journal & performans defteri",

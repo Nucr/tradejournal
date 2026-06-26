@@ -37,7 +37,7 @@ export default function Navbar() {
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="font-display text-xl font-bold tracking-tight text-paper-100 hover:text-mint-400 transition"
         >
-          Ledger
+          Verifter
         </button>
 
         <div className="hidden md:flex items-center gap-8">

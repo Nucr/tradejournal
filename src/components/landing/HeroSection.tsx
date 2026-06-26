@@ -99,7 +99,7 @@ export default function HeroSection() {
                 <div className="h-3 w-3 rounded-full bg-coral-500" />
                 <div className="h-3 w-3 rounded-full bg-amber-400" />
                 <div className="h-3 w-3 rounded-full bg-mint-500" />
-                <span className="ml-2 text-xs font-mono text-paper-500">Ledger — Pano</span>
+                <span className="ml-2 text-xs font-mono text-paper-500">Verifter — Pano</span>
               </div>
 
               <div className="space-y-3">

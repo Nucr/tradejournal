@@ -1,4 +1,4 @@
-# Ledger — Trade Journal
+# Verifter — Trade Journal
 
 Firebase Auth + Firestore ile çalışan, Vercel'e deploy edilmeye hazır kişisel trade
 günlüğü. Kayıt/giriş, dashboard (gün/hafta/ay/yıl/özel tarih filtreleri), kümülatif
