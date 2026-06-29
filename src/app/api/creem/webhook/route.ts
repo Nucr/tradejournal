@@ -2,10 +2,34 @@ import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
+import crypto from "crypto";
+
+const WEBHOOK_SECRET = process.env.CREEM_WEBHOOK_SECRET ?? "";
+const SKIP_VERIFICATION = !WEBHOOK_SECRET || process.env.NEXT_PUBLIC_CREEM_TEST_MODE === "true";
+
+function planFromProductId(pid: string) {
+  if (pid === process.env.CREEM_PRODUCT_PRO_YEARLY || pid === process.env.CREEM_PRODUCT_PRO_MONTHLY) return "pro";
+  if (pid === process.env.CREEM_PRODUCT_PREMIUM_YEARLY || pid === process.env.CREEM_PRODUCT_PREMIUM_MONTHLY) return "premium";
+  return "free";
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const rawBody = await request.text();
+
+    if (!SKIP_VERIFICATION) {
+      const signature = request.headers.get("creem-signature") ?? "";
+      const expected = crypto
+        .createHmac("sha256", WEBHOOK_SECRET)
+        .update(rawBody)
+        .digest("hex");
+
+      if (signature !== expected) {
+        return NextResponse.json({ error: "Geçersiz imza" }, { status: 401 });
+      }
+    }
+
+    const body = JSON.parse(rawBody);
     const event = body?.event ?? body?.type ?? "";
     const data = body?.data ?? body ?? {};
 
@@ -19,14 +43,7 @@ export async function POST(request: NextRequest) {
 
         if (!uid) break;
 
-        function planFromProductId(pid: string) {
-          if (pid === process.env.CREEM_PRODUCT_PRO_YEARLY || pid === process.env.CREEM_PRODUCT_PRO_MONTHLY) return "pro";
-          if (pid === process.env.CREEM_PRODUCT_PREMIUM_YEARLY || pid === process.env.CREEM_PRODUCT_PREMIUM_MONTHLY) return "premium";
-          return "free";
-        }
-
         const plan = planFromProductId(productId);
-
         const currentPeriodEnd = data.subscription?.current_period_end
           ? new Date(data.subscription.current_period_end * 1000)
           : null;
@@ -51,14 +68,7 @@ export async function POST(request: NextRequest) {
         const custId = data.customer_id ?? data.customer?.id ?? "";
         const prodId = data.product_id ?? data.product?.id ?? "";
 
-        function planFromProductId(pid: string) {
-          if (pid === process.env.CREEM_PRODUCT_PRO_YEARLY || pid === process.env.CREEM_PRODUCT_PRO_MONTHLY) return "pro";
-          if (pid === process.env.CREEM_PRODUCT_PREMIUM_YEARLY || pid === process.env.CREEM_PRODUCT_PREMIUM_MONTHLY) return "premium";
-          return "free";
-        }
-
         const plan = planFromProductId(prodId);
-
         const currentPeriodEnd = data.current_period_end
           ? new Date(data.current_period_end * 1000)
           : null;
