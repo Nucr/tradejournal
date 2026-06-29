@@ -63,17 +63,18 @@ export default function PaymentSuccessPage() {
         const fbUser = auth.currentUser;
         const displayName = fbUser?.displayName ?? fbUser?.email?.split("@")[0] ?? "Trader";
         const email = fbUser?.email ?? "";
+        const customerId = searchParams.get("customer_id") || meta?.customerId || "";
+        const checkoutId = searchParams.get("checkout_id") || "";
+        const subscription = {
+          plan: detectedPlan,
+          status: "active" as const,
+          updatedAt: new Date(),
+        } as Record<string, unknown>;
+        if (customerId) subscription.creemCustomerId = customerId;
+        if (checkoutId) subscription.creemCheckoutId = checkoutId;
         await setDoc(
           doc(db, "users", userId),
-          {
-            displayName,
-            email,
-            subscription: {
-              plan: detectedPlan,
-              status: "active",
-              updatedAt: new Date(),
-            },
-          },
+          { displayName, email, subscription },
           { merge: true },
         );
         sessionStorage.removeItem("creem_checkout");
