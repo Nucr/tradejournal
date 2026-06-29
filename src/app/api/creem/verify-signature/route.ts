@@ -36,9 +36,14 @@ export async function POST(request: NextRequest) {
 
     const uid = request_id;
     if (uid) {
-      const plan = (product_id === process.env.CREEM_PRODUCT_PRO_YEARLY || product_id === process.env.CREEM_PRODUCT_PRO_MONTHLY)
+      const PRO_MONTHLY = process.env.CREEM_PRODUCT_PRO_MONTHLY ?? "prod_5iBKvm5SgnGv8nWAWZvs8f";
+      const PRO_YEARLY = process.env.CREEM_PRODUCT_PRO_YEARLY ?? "prod_6meCVYl8rbl2vpmjYaY3yH";
+      const PREMIUM_MONTHLY = process.env.CREEM_PRODUCT_PREMIUM_MONTHLY ?? "prod_2JPWBSIV1nydapmQPDZ9O";
+      const PREMIUM_YEARLY = process.env.CREEM_PRODUCT_PREMIUM_YEARLY ?? "prod_18KSUDy1S3sP1exT283nuQ";
+
+      const plan = (product_id === PRO_YEARLY || product_id === PRO_MONTHLY)
         ? "pro"
-        : (product_id === process.env.CREEM_PRODUCT_PREMIUM_YEARLY || product_id === process.env.CREEM_PRODUCT_PREMIUM_MONTHLY)
+        : (product_id === PREMIUM_YEARLY || product_id === PREMIUM_MONTHLY)
           ? "premium"
           : "free";
 

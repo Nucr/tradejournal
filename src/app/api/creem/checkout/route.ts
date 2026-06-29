@@ -10,12 +10,12 @@ type BillingPeriod = "monthly" | "yearly";
 const PRODUCT_IDS: Record<Plan, Record<BillingPeriod, string>> = {
   free: { monthly: "", yearly: "" },
   pro: {
-    monthly: process.env.CREEM_PRODUCT_PRO_MONTHLY ?? "",
-    yearly: process.env.CREEM_PRODUCT_PRO_YEARLY ?? "",
+    monthly: process.env.CREEM_PRODUCT_PRO_MONTHLY ?? "prod_5iBKvm5SgnGv8nWAWZvs8f",
+    yearly: process.env.CREEM_PRODUCT_PRO_YEARLY ?? "prod_6meCVYl8rbl2vpmjYaY3yH",
   },
   premium: {
-    monthly: process.env.CREEM_PRODUCT_PREMIUM_MONTHLY ?? "",
-    yearly: process.env.CREEM_PRODUCT_PREMIUM_YEARLY ?? "",
+    monthly: process.env.CREEM_PRODUCT_PREMIUM_MONTHLY ?? "prod_2JPWBSIV1nydapmQPDZ9O",
+    yearly: process.env.CREEM_PRODUCT_PREMIUM_YEARLY ?? "prod_18KSUDy1S3sP1exT283nuQ",
   },
 };
 

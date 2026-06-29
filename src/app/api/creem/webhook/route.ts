@@ -7,9 +7,14 @@ import crypto from "crypto";
 const WEBHOOK_SECRET = process.env.CREEM_WEBHOOK_SECRET ?? "";
 const SKIP_VERIFICATION = !WEBHOOK_SECRET || process.env.NEXT_PUBLIC_CREEM_TEST_MODE === "true";
 
+const PRO_MONTHLY = process.env.CREEM_PRODUCT_PRO_MONTHLY ?? "prod_5iBKvm5SgnGv8nWAWZvs8f";
+const PRO_YEARLY = process.env.CREEM_PRODUCT_PRO_YEARLY ?? "prod_6meCVYl8rbl2vpmjYaY3yH";
+const PREMIUM_MONTHLY = process.env.CREEM_PRODUCT_PREMIUM_MONTHLY ?? "prod_2JPWBSIV1nydapmQPDZ9O";
+const PREMIUM_YEARLY = process.env.CREEM_PRODUCT_PREMIUM_YEARLY ?? "prod_18KSUDy1S3sP1exT283nuQ";
+
 function planFromProductId(pid: string) {
-  if (pid === process.env.CREEM_PRODUCT_PRO_YEARLY || pid === process.env.CREEM_PRODUCT_PRO_MONTHLY) return "pro";
-  if (pid === process.env.CREEM_PRODUCT_PREMIUM_YEARLY || pid === process.env.CREEM_PRODUCT_PREMIUM_MONTHLY) return "premium";
+  if (pid === PRO_YEARLY || pid === PRO_MONTHLY) return "pro";
+  if (pid === PREMIUM_YEARLY || pid === PREMIUM_MONTHLY) return "premium";
   return "free";
 }
 
