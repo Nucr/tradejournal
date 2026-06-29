@@ -65,6 +65,8 @@ export default function PaymentSuccessPage() {
         const email = fbUser?.email ?? "";
         let customerId = searchParams.get("customer_id") || searchParams.get("customerId") || meta?.customerId || "";
         let checkoutId = searchParams.get("checkout_id") || meta?.checkoutId || "";
+        if (customerId.startsWith("{") && customerId.endsWith("}")) customerId = "";
+        if (checkoutId.startsWith("{") && checkoutId.endsWith("}")) checkoutId = "";
         if (!customerId && checkoutId) {
           try {
             const lookupRes = await fetch("/api/creem/lookup-checkout", {
