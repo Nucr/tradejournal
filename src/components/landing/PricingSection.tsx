@@ -64,6 +64,7 @@ function PricingCard({
       });
       const data = await res.json();
       if (data.checkoutUrl) {
+        sessionStorage.setItem("creem_checkout", JSON.stringify({ plan, uid: user.uid }));
         window.location.href = data.checkoutUrl;
       } else {
         alert(data.error || "Bir hata oluştu");
