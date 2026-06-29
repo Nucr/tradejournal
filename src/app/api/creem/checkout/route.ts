@@ -1,0 +1,69 @@
+import "server-only";
+
+import { NextRequest, NextResponse } from "next/server";
+import { creem } from "@/lib/creem";
+import { adminDb } from "@/lib/firebaseAdmin";
+import type { Plan } from "@/lib/features";
+
+type BillingPeriod = "monthly" | "yearly";
+
+const PRODUCT_IDS: Record<Plan, Record<BillingPeriod, string>> = {
+  free: { monthly: "", yearly: "" },
+  pro: {
+    monthly: process.env.CREEM_PRODUCT_PRO_MONTHLY ?? "",
+    yearly: process.env.CREEM_PRODUCT_PRO_YEARLY ?? "",
+  },
+  premium: {
+    monthly: process.env.CREEM_PRODUCT_PREMIUM_MONTHLY ?? "",
+    yearly: process.env.CREEM_PRODUCT_PREMIUM_YEARLY ?? "",
+  },
+};
+
+export async function POST(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Yetkilendirme gerekli" }, { status: 401 });
+    }
+
+    const uid = authHeader.slice(7);
+    if (!uid) {
+      return NextResponse.json({ error: "Geçersiz token" }, { status: 401 });
+    }
+
+    const userSnap = await adminDb.collection("users").doc(uid).get();
+    if (!userSnap.exists) {
+      return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
+    }
+
+    const userData = userSnap.data()!;
+    const email = userData.email ?? "";
+
+    const body = await request.json();
+    const { plan, billing } = body as { plan: Plan; billing: BillingPeriod };
+
+    if (!plan || !["pro", "premium"].includes(plan)) {
+      return NextResponse.json({ error: "Geçersiz plan" }, { status: 400 });
+    }
+
+    const period: BillingPeriod = billing === "monthly" ? "monthly" : "yearly";
+    const productId = PRODUCT_IDS[plan][period];
+
+    if (!productId) {
+      return NextResponse.json({ error: "Ürün yapılandırılmamış" }, { status: 500 });
+    }
+
+    const checkout = await creem.checkouts.create({
+      productId,
+      requestId: uid,
+      successUrl: `${request.nextUrl.origin}/payment/success?plan=${plan}&billing=${period}`,
+      customer: { email },
+      metadata: { uid, plan, billing: period },
+    });
+
+    return NextResponse.json({ checkoutUrl: checkout.checkoutUrl });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Bilinmeyen hata";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
