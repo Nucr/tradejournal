@@ -15,7 +15,7 @@ export default function PaymentCancelPage() {
         <p className="text-sm text-paper-400 mb-6">Herhangi bir ödeme yapılmadı. İstediğin zaman tekrar deneyebilirsin.</p>
         <div className="flex gap-3 justify-center">
           <Link
-            href="/pricing"
+            href="/#pricing"
             className="rounded-lg bg-mint-500 text-ink-950 font-semibold px-6 py-2.5 text-sm hover:bg-mint-400 transition"
           >
             Planlara Göz At

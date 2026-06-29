@@ -5,7 +5,7 @@ import { adminDb } from "@/lib/firebaseAdmin";
 import crypto from "crypto";
 
 const WEBHOOK_SECRET = process.env.CREEM_WEBHOOK_SECRET ?? "whsec_4mA0NRNUurCmXjkCexBbmE";
-const SKIP_VERIFICATION = process.env.NEXT_PUBLIC_CREEM_TEST_MODE === "true";
+const SKIP_VERIFICATION = process.env.NEXT_PUBLIC_CREEM_TEST_MODE !== "false";
 
 const PRO_MONTHLY = process.env.CREEM_PRODUCT_PRO_MONTHLY ?? "prod_5iBKvm5SgnGv8nWAWZvs8f";
 const PRO_YEARLY = process.env.CREEM_PRODUCT_PRO_YEARLY ?? "prod_6meCVYl8rbl2vpmjYaY3yH";

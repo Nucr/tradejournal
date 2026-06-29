@@ -1,12 +1,12 @@
 "use client";
 
 import { useAuth } from "@/lib/auth-context";
-import { usePlan, PLAN_LIMITS } from "@/lib/features";
+import { usePlan, PLAN_LIMITS, PLAN_ORDER } from "@/lib/features";
 import type { Plan } from "@/lib/features";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-
-const PLAN_RANK: Record<Plan, number> = { free: 0, pro: 1, premium: 2 };
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const PLAN_INFO: Record<Plan, { label: string; price: Record<string, string>; color: string; badge: string }> = {
   free: { label: "Free", price: { monthly: "$0", yearly: "$0" }, color: "text-paper-400", badge: "bg-ink-700 text-paper-300" },
@@ -20,6 +20,16 @@ export default function BillingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
+  const [creemCustomerId, setCreemCustomerId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    getDoc(doc(db, "users", user.uid)).then((snap) => {
+      if (snap.exists()) {
+        setCreemCustomerId(snap.data()?.subscription?.creemCustomerId ?? null);
+      }
+    });
+  }, [user]);
 
   const currentPlan = PLAN_INFO[plan];
 
@@ -34,11 +44,12 @@ export default function BillingPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${user?.uid}`,
         },
-        body: JSON.stringify({ plan: targetPlan, billing }),
+        body: JSON.stringify({ plan: targetPlan, billing, email: user?.email }),
       });
 
       const data = await res.json();
       if (data.checkoutUrl) {
+        sessionStorage.setItem("creem_checkout", JSON.stringify({ plan: targetPlan, uid: user?.uid }));
         window.location.href = data.checkoutUrl;
       } else {
         alert(data.error || "Bir hata oluştu");
@@ -59,6 +70,7 @@ export default function BillingPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${user?.uid}`,
         },
+        body: JSON.stringify({ creemCustomerId }),
       });
 
       const data = await res.json();
@@ -171,7 +183,7 @@ export default function BillingPage() {
                       </span>
                     )}
                   </div>
-                  {!isCurrent && p !== "free" && PLAN_RANK[p] > PLAN_RANK[plan] && (
+                  {!isCurrent && p !== "free" && PLAN_ORDER[p] > PLAN_ORDER[plan] && (
                     <button
                       onClick={() => handleUpgrade(p)}
                       disabled={loading !== null}
@@ -184,7 +196,7 @@ export default function BillingPage() {
                       {loading === p ? "Yönlendiriliyor..." : `Yükselt`}
                     </button>
                   )}
-                  {!isCurrent && p !== "free" && PLAN_RANK[p] < PLAN_RANK[plan] && (
+                  {!isCurrent && p !== "free" && PLAN_ORDER[p] < PLAN_ORDER[plan] && (
                     <span className="text-xs text-paper-500">Mevcut planın</span>
                   )}
                   {!isCurrent && p === "free" && plan !== "free" && (

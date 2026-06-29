@@ -2,7 +2,6 @@ import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
 import { createCustomerPortal } from "@/lib/creem";
-import { adminDb } from "@/lib/firebaseAdmin";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,13 +15,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Geçersiz token" }, { status: 401 });
     }
 
-    const userSnap = await adminDb.collection("users").doc(uid).get();
-    if (!userSnap.exists) {
-      return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
-    }
-
-    const userData = userSnap.data()!;
-    const creemCustomerId = userData.subscription?.creemCustomerId;
+    const body = await request.json();
+    const { creemCustomerId } = body as { creemCustomerId?: string };
 
     if (!creemCustomerId) {
       return NextResponse.json({ error: "Aktif abonelik bulunamadı" }, { status: 400 });
