@@ -63,8 +63,18 @@ export default function PaymentSuccessPage() {
         const fbUser = auth.currentUser;
         const displayName = fbUser?.displayName ?? fbUser?.email?.split("@")[0] ?? "Trader";
         const email = fbUser?.email ?? "";
-        const customerId = searchParams.get("customer_id") || searchParams.get("customerId") || meta?.customerId || "";
-        const checkoutId = searchParams.get("checkout_id") || "";
+        let customerId = searchParams.get("customer_id") || searchParams.get("customerId") || meta?.customerId || "";
+        let checkoutId = searchParams.get("checkout_id") || meta?.checkoutId || "";
+        if (!customerId && checkoutId) {
+          try {
+            const lookupRes = await fetch("/api/creem/lookup-checkout", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ checkoutId }),
+            });
+            const lookupData = await lookupRes.json();
+            if (lookupData.customerId) customerId = lookupData.customerId;
+          } catch {}
+        }
         const subscription = {
           plan: detectedPlan,
           status: "active" as const,

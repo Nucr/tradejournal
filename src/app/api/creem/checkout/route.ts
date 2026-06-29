@@ -47,11 +47,11 @@ export async function POST(request: NextRequest) {
     const checkout = await createCheckout(
       productId,
       uid,
-      `${request.nextUrl.origin}/payment/success?plan=${plan}&billing=${period}`,
+      `${request.nextUrl.origin}/payment/success?checkout_id={checkout_id}&customer_id={customer_id}&plan=${plan}&billing=${period}`,
       email ?? undefined,
     );
 
-    return NextResponse.json({ checkoutUrl: checkout.checkout_url });
+    return NextResponse.json({ checkoutUrl: checkout.checkout_url, checkoutId: checkout.id });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Bilinmeyen hata";
     return NextResponse.json({ error: message }, { status: 500 });

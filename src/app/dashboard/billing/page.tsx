@@ -64,7 +64,7 @@ export default function BillingPage() {
 
       const data = await res.json();
       if (data.checkoutUrl) {
-        sessionStorage.setItem("creem_checkout", JSON.stringify({ plan: targetPlan, uid: user?.uid }));
+        sessionStorage.setItem("creem_checkout", JSON.stringify({ plan: targetPlan, uid: user?.uid, checkoutId: data.checkoutId }));
         window.location.href = data.checkoutUrl;
       } else {
         alert(data.error || "Bir hata oluştu");
