@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     const checkout = await getCheckout(checkoutId);
-    const customerId = checkout.customer?.id ?? null;
+    const customerId = checkout?.customer?.id ?? null;
 
     return NextResponse.json({ customerId });
   } catch (err: unknown) {
