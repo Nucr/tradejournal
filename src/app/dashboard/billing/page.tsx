@@ -230,7 +230,13 @@ export default function BillingPage() {
                     </button>
                   )}
                   {!isCurrent && p !== "free" && PLAN_ORDER[p] < PLAN_ORDER[plan] && (
-                    <span className="text-xs text-paper-500">Mevcut planın</span>
+                    <button
+                      onClick={() => handleUpgrade(p)}
+                      disabled={loading !== null}
+                      className="rounded-lg border border-ink-700 text-paper-300 px-4 py-1.5 text-sm hover:bg-ink-800 transition disabled:opacity-40"
+                    >
+                      {loading === p ? "Yönlendiriliyor..." : "Düşür"}
+                    </button>
                   )}
                   {!isCurrent && p === "free" && plan !== "free" && (
                     <span className="text-xs text-paper-500">Mevcut planın ücretsizden yüksek</span>
@@ -258,7 +264,7 @@ export default function BillingPage() {
           </div>
           <div>
             <p className="font-medium text-paper-200 mb-1">Plan değiştirebilir miyim?</p>
-            <p>Herhangi bir zamanda Pro veya Premium plana yükseltebilirsin. Fark otomatik olarak hesaplanır.</p>
+            <p>İstediğin zaman Pro veya Premium plana yükseltebilir ya da daha düşük bir plana geçebilirsin. Fark otomatik olarak hesaplanır.</p>
           </div>
           <div>
             <p className="font-medium text-paper-200 mb-1">İade politikası nedir?</p>
