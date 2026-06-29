@@ -1,7 +1,7 @@
 import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
-import { createCustomerPortal } from "@/lib/creem";
+import { createCustomerPortal, getCheckout } from "@/lib/creem";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,10 +16,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { creemCustomerId } = body as { creemCustomerId?: string };
+    let { creemCustomerId, checkoutId } = body as { creemCustomerId?: string; checkoutId?: string };
+
+    if (!creemCustomerId && checkoutId) {
+      const checkout = await getCheckout(checkoutId);
+      if (checkout?.customer?.id) {
+        creemCustomerId = checkout.customer.id;
+      }
+    }
 
     if (!creemCustomerId) {
-      return NextResponse.json({ error: "Aktif abonelik bulunamadı" }, { status: 400 });
+      return NextResponse.json({ error: "Aktif abonelik bulunamadı. Abonelik sayfasını yenileyip tekrar deneyin." }, { status: 400 });
     }
 
     const data = await createCustomerPortal(creemCustomerId, `${request.nextUrl.origin}/dashboard/billing`);

@@ -103,7 +103,7 @@ export default function BillingPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${user?.uid}`,
         },
-        body: JSON.stringify({ creemCustomerId: cid }),
+        body: JSON.stringify({ creemCustomerId: cid, checkoutId: creemCheckoutId }),
       });
 
       const data = await res.json();

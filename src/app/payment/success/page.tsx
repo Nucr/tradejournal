@@ -41,8 +41,8 @@ export default function PaymentSuccessPage() {
   const router = useRouter();
   const [status, setStatus] = useState<"updating" | "success" | "error">("updating");
   const [plan, setPlan] = useState<string>("");
+  const [countdown, setCountdown] = useState(4);
   const doneRef = useRef(false);
-  const redirectRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     if (doneRef.current) return;
@@ -109,12 +109,20 @@ export default function PaymentSuccessPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (status === "success") {
-      redirectRef.current = setTimeout(() => {
-        router.push("/dashboard");
-      }, 4000);
-      return () => clearTimeout(redirectRef.current);
-    }
+    if (status !== "success") return;
+
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          router.push("/dashboard");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, [status, router]);
 
   if (status === "updating") {
@@ -189,7 +197,17 @@ export default function PaymentSuccessPage() {
         )}
 
         <div className="text-center">
-          <p className="text-xs text-paper-500 mb-5">4 saniye içinde Dashboard'a yönlendirileceksin...</p>
+          <p className="text-xs text-paper-500 mb-5">
+            {countdown > 0 ? `${countdown} saniye içinde Dashboard'a yönlendirileceksin...` : "Yönlendiriliyor..."}
+          </p>
+          {countdown > 0 && (
+            <div className="mx-auto mb-5 w-48 h-1 bg-ink-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-mint-500 rounded-full transition-all duration-1000 ease-linear"
+                style={{ width: `${(countdown / 4) * 100}%` }}
+              />
+            </div>
+          )}
           <div className="flex gap-3 justify-center">
             <Link
               href="/dashboard/billing"

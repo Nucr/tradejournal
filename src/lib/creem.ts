@@ -53,8 +53,16 @@ export interface CreemCheckoutDetails {
   subscription_id?: string;
 }
 
-export async function getCheckout(checkoutId: string) {
-  return request<CreemCheckoutDetails>("GET", `/checkouts?id=${checkoutId}`);
+export async function getCheckout(checkoutId: string): Promise<CreemCheckoutDetails | null> {
+  try {
+    return await request<CreemCheckoutDetails>("GET", `/checkouts/${checkoutId}`);
+  } catch {
+    try {
+      return await request<CreemCheckoutDetails>("GET", `/checkouts?id=${checkoutId}`);
+    } catch {
+      return null;
+    }
+  }
 }
 
 export async function createCustomerPortal(customerId: string, returnUrl: string) {
