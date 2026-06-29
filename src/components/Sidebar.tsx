@@ -206,11 +206,11 @@ export default function Sidebar() {
           ${open ? "w-64" : "w-16"}
         `}
       >
-        {/* Desktop toggle button */}
+        {/* Desktop toggle button — integrated into header row */}
         <button
           onClick={() => setOpen((v) => !v)}
-          className={`hidden lg:absolute lg:flex top-4 z-50 rounded-lg border border-ink-700 bg-ink-900 p-2 text-paper-300 hover:text-paper-100 transition items-center justify-center ${
-            open ? "right-3" : "left-1/2 -translate-x-1/2"
+          className={`hidden lg:flex items-center justify-center rounded-lg border border-ink-700 bg-ink-900 p-2 text-paper-300 hover:text-paper-100 transition absolute z-50 ${
+            open ? "right-3 top-4" : "left-1/2 -translate-x-1/2 top-14"
           }`}
           aria-label="Menüyü aç/kapa"
         >
