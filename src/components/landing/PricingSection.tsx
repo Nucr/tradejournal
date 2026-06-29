@@ -33,13 +33,11 @@ function PricingCard({
   features,
   badge,
   billing,
-  onBillingChange,
 }: {
   plan: "free" | "pro" | "premium";
   features: number[];
   badge?: string;
   billing: "monthly" | "yearly";
-  onBillingChange?: (v: "monthly" | "yearly") => void;
 }) {
   const { t } = useI18n();
   const { user } = useAuth();
@@ -95,22 +93,7 @@ function PricingCard({
         </div>
       )}
 
-      {/* Billing toggle for paid plans */}
-      {prices && onBillingChange && (
-        <div className="flex items-center justify-center gap-1 mb-5 bg-ink-800/50 rounded-lg p-0.5 w-fit mx-auto">
-          {(["monthly", "yearly"] as const).map((b) => (
-            <button
-              key={b}
-              onClick={() => onBillingChange(b)}
-              className={`text-xs font-medium px-3 py-1.5 rounded-md transition ${
-                billing === b ? "bg-ink-700 text-paper-100" : "text-paper-500 hover:text-paper-300"
-              }`}
-            >
-              {b === "monthly" ? "Aylık" : "Yıllık"}
-            </button>
-          ))}
-        </div>
-      )}
+
 
       <div className="text-center mb-6">
         <h3 className="text-lg font-semibold text-paper-100">
@@ -187,24 +170,30 @@ export default function PricingSection() {
           <p className="mt-3 text-paper-300">{t("pricing.desc")}</p>
 
           {/* Global billing toggle */}
-          <div className="flex items-center justify-center gap-2 mt-8">
-            <span className={`text-xs font-medium ${billing === "monthly" ? "text-paper-100" : "text-paper-500"}`}>
-              Aylık
-            </span>
+          <div className="flex items-center justify-center gap-4 mt-8">
             <button
-              onClick={() => setBilling((v) => v === "monthly" ? "yearly" : "monthly")}
-              className={`relative w-12 h-6 rounded-full transition cursor-pointer ${
-                billing === "yearly" ? "bg-mint-500" : "bg-ink-700"
+              onClick={() => setBilling("monthly")}
+              className={`relative px-5 py-2 text-sm font-semibold rounded-full transition ${
+                billing === "monthly"
+                  ? "bg-mint-500 text-ink-950 shadow-lg shadow-mint-500/25"
+                  : "bg-ink-800 text-paper-400 hover:text-paper-200"
               }`}
             >
-              <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition ${
-                billing === "yearly" ? "left-6.5" : "left-0.5"
-              }`} />
+              Aylık
             </button>
-            <span className={`text-xs font-medium ${billing === "yearly" ? "text-paper-100" : "text-paper-500"}`}>
+            <button
+              onClick={() => setBilling("yearly")}
+              className={`relative px-5 py-2 text-sm font-semibold rounded-full transition ${
+                billing === "yearly"
+                  ? "bg-mint-500 text-ink-950 shadow-lg shadow-mint-500/25"
+                  : "bg-ink-800 text-paper-400 hover:text-paper-200"
+              }`}
+            >
               Yıllık
-            </span>
-            <span className="text-[10px] text-mint-400 font-semibold ml-1">2 ay ücretsiz</span>
+              <span className="absolute -top-2 -right-2 bg-amber-400 text-ink-950 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                2 Ay Ücretsiz
+              </span>
+            </button>
           </div>
         </div>
 
@@ -216,7 +205,6 @@ export default function PricingSection() {
               features={FEATURES_MAP[plan]}
               badge={plan !== "free" ? (billing === "yearly" ? t(`pricing.${plan}.badge`) : undefined) : undefined}
               billing={billing}
-              onBillingChange={plan !== "free" ? setBilling : undefined}
             />
           ))}
         </div>
