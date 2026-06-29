@@ -1,17 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { UserProfile } from "@/lib/types";
+import type { Rank, UserProfile } from "@/lib/types";
 import Avatar from "@/components/Avatar";
 import RankBadge from "@/components/RankBadge";
+
+const RANKS: Rank[] = [
+  "Çaylak", "Acemi", "Gelişen", "Deneyimli", "Uzman",
+  "İleri", "Usta", "Elit", "Efsane", "Efsanevi",
+];
 
 export default function UsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<(UserProfile & { uid: string })[]>([]);
   const [search, setSearch] = useState("");
+  const [rankFilter, setRankFilter] = useState<Rank | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,11 +34,17 @@ export default function UsersPage() {
     }).catch(() => setLoading(false));
   }, []);
 
-  const filtered = search.trim()
-    ? users.filter((u) =>
-        u.displayName?.toLowerCase().includes(search.toLowerCase())
-      )
-    : users;
+  const filtered = useMemo(() => {
+    let list = users;
+    if (rankFilter) {
+      list = list.filter((u) => u.rank === rankFilter);
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((u) => u.displayName?.toLowerCase().includes(q));
+    }
+    return list;
+  }, [users, search, rankFilter]);
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -43,17 +55,44 @@ export default function UsersPage() {
         </p>
       </div>
 
-      {/* Search */}
-      <div className="relative w-full sm:w-72">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-paper-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Kullanıcı ara…"
-          className="w-full rounded-xl border border-ink-800 bg-ink-900 pl-9 pr-3 py-2 text-sm text-paper-100 placeholder:text-paper-500 focus:outline-none focus:border-mint-500/50 focus:ring-1 focus:ring-mint-500/20 transition"
-        />
+      {/* Search + Rank filter */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="relative w-full sm:w-64">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-paper-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Kullanıcı ara…"
+            className="w-full rounded-xl border border-ink-800 bg-ink-900 pl-9 pr-3 py-2 text-sm text-paper-100 placeholder:text-paper-500 focus:outline-none focus:border-mint-500/50 focus:ring-1 focus:ring-mint-500/20 transition"
+          />
+        </div>
+        <div className="flex gap-1 rounded-xl border border-ink-800 bg-ink-900 p-1 w-fit flex-wrap">
+          <button
+            onClick={() => setRankFilter(null)}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+              !rankFilter
+                ? "bg-mint-500/15 text-mint-400 border border-mint-500/20"
+                : "text-paper-400 hover:text-paper-200"
+            }`}
+          >
+            Tümü
+          </button>
+          {RANKS.map((r) => (
+            <button
+              key={r}
+              onClick={() => setRankFilter(rankFilter === r ? null : r)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                rankFilter === r
+                  ? "bg-mint-500/15 text-mint-400 border border-mint-500/20"
+                  : "text-paper-400 hover:text-paper-200"
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Loading */}
@@ -119,10 +158,10 @@ export default function UsersPage() {
       {!loading && filtered.length === 0 && (
         <div className="rounded-xl border border-ink-800 bg-ink-900 p-12 text-center text-paper-500">
           <p className="text-lg font-display">
-            {search ? "Aramanla eşleşen kullanıcı bulunamadı." : "Henüz kayıtlı kullanıcı yok."}
+            {search || rankFilter ? "Aramanla eşleşen kullanıcı bulunamadı." : "Henüz kayıtlı kullanıcı yok."}
           </p>
           <p className="text-sm mt-1">
-            {search ? "Farklı bir isim dene." : ""}
+            {search || rankFilter ? "Farklı bir isim dene veya filtreyi temizle." : ""}
           </p>
         </div>
       )}
