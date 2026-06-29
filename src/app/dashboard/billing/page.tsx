@@ -164,8 +164,8 @@ export default function BillingPage() {
             </svg>
           </div>
           <div>
-            <h1 className="font-display text-2xl font-bold text-paper-100">Abonelik</h1>
-            <p className="text-sm text-paper-500">Planını görüntüle, yükselt veya yönet.</p>
+            <h1 className="font-display text-2xl font-bold text-ink-950 dark:text-paper-100">Abonelik</h1>
+            <p className="text-sm text-ink-500 dark:text-paper-500">Planını görüntüle, yükselt veya yönet.</p>
           </div>
         </div>
       </div>
@@ -173,7 +173,7 @@ export default function BillingPage() {
       {/* Current Plan Card */}
       <section style={fadeIn(1)} className="relative mb-8 group">
         <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-br from-mint-500/30 via-transparent to-amber-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-        <div className="relative rounded-2xl border border-ink-700 bg-gradient-to-br from-ink-900 via-ink-950 to-ink-900 p-6 overflow-hidden">
+        <div className="relative rounded-2xl border border-surface-200 dark:border-ink-700 bg-gradient-to-br from-surface-50 via-white to-surface-50 dark:from-ink-900 dark:via-ink-950 dark:to-ink-900 p-6 overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-mint-500/60 via-amber-500/40 to-transparent" />
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-mint-500/5 to-transparent rounded-full blur-3xl" />
 
@@ -186,12 +186,12 @@ export default function BillingPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-xs text-paper-500 font-mono uppercase tracking-wider mb-0.5">Mevcut Plan</p>
+                  <p className="text-xs text-ink-500 dark:text-paper-500 font-mono uppercase tracking-wider mb-0.5">Mevcut Plan</p>
                   <div className="flex items-center gap-3">
                     <h2 className={`font-display text-2xl font-bold ${currentPlan.color}`}>
                       {currentPlan.label}
                     </h2>
-                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${plan === "free" ? "bg-ink-700 text-paper-300" : plan === "pro" ? "bg-mint-500/20 text-mint-400 border border-mint-500/30" : "bg-amber-400/20 text-amber-400 border border-amber-400/30"}`}>
+                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${plan === "free" ? "bg-surface-200 text-ink-700 dark:bg-ink-700 dark:text-paper-300" : plan === "pro" ? "bg-mint-500/20 text-mint-400 border border-mint-500/30" : "bg-amber-400/20 text-amber-400 border border-amber-400/30"}`}>
                       {currentPlan.price[billing]}
                     </span>
                   </div>
@@ -236,17 +236,17 @@ export default function BillingPage() {
               ].map((stat, i) => (
                 <div
                   key={stat.label}
-                  className="group/stat relative rounded-xl border border-ink-700 bg-ink-800/50 p-4 hover:border-ink-600 transition-all duration-300 hover:scale-[1.02]"
+                  className="group/stat relative rounded-xl border border-surface-200 dark:border-ink-700 bg-surface-100/50 dark:bg-ink-800/50 p-4 hover:border-surface-100 dark:hover:border-ink-600 transition-all duration-300 hover:scale-[1.02]"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${i === 0 ? stat.color : i === 1 ? stat.color2 : stat.color2} border ${i === 0 ? stat.border : i === 1 ? stat.border2 : stat.border2} flex items-center justify-center`}>
-                      <svg className={`w-4 h-4 ${i === 0 ? "text-mint-400" : i === 1 ? "text-amber-400" : "text-paper-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className={`w-4 h-4 ${i === 0 ? "text-mint-400" : i === 1 ? "text-amber-400" : "text-ink-600 dark:text-paper-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={stat.icon} />
                       </svg>
                     </div>
                     <div>
-                      <p className="text-[11px] text-paper-500 font-mono uppercase tracking-wider">{stat.label}</p>
-                      <p className="text-lg font-bold text-paper-100">{stat.value}</p>
+                      <p className="text-[11px] text-ink-500 dark:text-paper-500 font-mono uppercase tracking-wider">{stat.label}</p>
+                      <p className="text-lg font-bold text-ink-950 dark:text-paper-100">{stat.value}</p>
                     </div>
                   </div>
                 </div>
@@ -265,21 +265,21 @@ export default function BillingPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <h2 className="font-display text-lg font-bold text-paper-100">Plan Karşılaştırması</h2>
+            <h2 className="font-display text-lg font-bold text-ink-950 dark:text-paper-100">Plan Karşılaştırması</h2>
           </div>
-          <div className="flex items-center gap-1 bg-ink-800 rounded-xl p-1 border border-ink-700">
+          <div className="flex items-center gap-1 bg-surface-100 dark:bg-ink-800 rounded-xl p-1 border border-surface-200 dark:border-ink-700">
             {(["monthly", "yearly"] as const).map((b) => (
               <button
                 key={b}
                 onClick={() => setBilling(b)}
                 className={`relative text-xs font-medium px-4 py-2 rounded-lg transition-all duration-300 ${
                   billing === b
-                    ? "bg-ink-700 text-paper-100 shadow-lg"
-                    : "text-paper-500 hover:text-paper-300"
+                    ? "bg-surface-200 text-ink-950 dark:bg-ink-700 dark:text-paper-100 shadow-lg"
+                    : "text-ink-500 dark:text-paper-500 hover:text-ink-700 dark:hover:text-paper-300"
                 }`}
               >
                 {billing === b && (
-                  <span className="absolute inset-0 rounded-lg bg-gradient-to-b from-ink-600 to-ink-700 animate-pulse" style={{ opacity: 0.1 }} />
+                  <span className="absolute inset-0 rounded-lg bg-gradient-to-b from-surface-300 to-surface-200 dark:from-ink-600 dark:to-ink-700 animate-pulse" style={{ opacity: 0.1 }} />
                 )}
                 <span className="relative">{b === "monthly" ? "Aylık" : "Yıllık"}</span>
               </button>
@@ -299,8 +299,8 @@ export default function BillingPage() {
                 key={p}
                 className={`group relative rounded-2xl border transition-all duration-500 ${
                   isCurrent
-                    ? "border-mint-500/40 bg-gradient-to-br from-mint-500/[0.08] to-ink-900"
-                    : "border-ink-700 bg-ink-900/50 hover:border-ink-600"
+                    ? "border-mint-500/40 bg-gradient-to-br from-mint-500/[0.08] to-surface-50 dark:to-ink-900"
+                    : "border-surface-200 dark:border-ink-700 bg-surface-50/50 dark:bg-ink-900/50 hover:border-surface-100 dark:hover:border-ink-600"
                 }`}
                 style={{
                   transitionDelay: `${idx * 0.05}s`,
@@ -320,7 +320,7 @@ export default function BillingPage() {
                       <div>
                         <div className="flex items-center gap-2.5">
                           <h3 className={`font-bold text-base ${info.color}`}>{info.label}</h3>
-                          <span className="text-sm text-paper-400 font-medium">{info.price[billing]}</span>
+                          <span className="text-sm text-ink-600 dark:text-paper-400 font-medium">{info.price[billing]}</span>
                           {isCurrent && (
                             <span className="text-[10px] font-bold uppercase tracking-wider bg-mint-500/20 text-mint-400 px-2 py-0.5 rounded-full border border-mint-500/30">
                               Aktif
@@ -366,8 +366,8 @@ export default function BillingPage() {
                         disabled={loading !== null}
                         className="group/btn relative px-5 py-2 rounded-xl text-sm font-semibold overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:hover:scale-100"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-r from-ink-600 to-ink-700 opacity-90 group-hover/btn:opacity-100 transition-opacity" />
-                        <span className="relative text-paper-200 flex items-center gap-1.5">
+                        <div className="absolute inset-0 bg-gradient-to-r from-surface-400 to-surface-300 dark:from-ink-600 dark:to-ink-700 opacity-90 group-hover/btn:opacity-100 transition-opacity" />
+                        <span className="relative text-ink-800 dark:text-paper-200 flex items-center gap-1.5">
                           {loading === p ? (
                             <>
                               <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -389,7 +389,7 @@ export default function BillingPage() {
                     )}
 
                     {!isCurrent && p === "free" && plan !== "free" && (
-                      <span className="text-xs text-paper-500 flex items-center gap-1.5">
+                      <span className="text-xs text-ink-500 dark:text-paper-500 flex items-center gap-1.5">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -400,7 +400,7 @@ export default function BillingPage() {
 
                   <div className="flex flex-wrap gap-1.5 mt-3">
                     {features.map((f) => (
-                      <span key={f} className="text-[11px] text-paper-500 bg-ink-800/50 px-2 py-1 rounded-md border border-ink-700/50">
+                      <span key={f} className="text-[11px] text-ink-500 dark:text-paper-500 bg-surface-100/50 dark:bg-ink-800/50 px-2 py-1 rounded-md border border-surface-200/50 dark:border-ink-700/50">
                         {f}
                       </span>
                     ))}
@@ -413,35 +413,35 @@ export default function BillingPage() {
       </section>
 
       {/* FAQ */}
-      <section style={fadeIn(3)} className="relative rounded-2xl border border-ink-700 bg-ink-900/50 p-6 overflow-hidden group">
+      <section style={fadeIn(3)} className="relative rounded-2xl border border-surface-200 dark:border-ink-700 bg-surface-50/50 dark:bg-ink-900/50 p-6 overflow-hidden group">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-paper-500/30 via-mint-500/20 to-transparent" />
         <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-bl from-paper-500/5 to-transparent rounded-full blur-3xl" />
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-paper-500/10 to-mint-500/10 border border-paper-500/20 flex items-center justify-center">
-              <svg className="w-4 h-4 text-paper-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-ink-600 dark:text-paper-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
             </div>
-            <h2 className="font-display text-base font-bold text-paper-100">Sık Sorulan Sorular</h2>
+            <h2 className="font-display text-base font-bold text-ink-950 dark:text-paper-100">Sık Sorulan Sorular</h2>
           </div>
 
           <div className="space-y-3">
             {[
               { q: "Nasıl iptal ederim?", a: "Aboneliğini dilediğin zaman \"Aboneliği Yönet\" butonundan iptal edebilirsin. İptal sonrası mevcut dönemin sonuna kadar hizmet almaya devam edersin." },
               { q: "Plan değiştirebilir miyim?", a: "İstediğin zaman Pro veya Premium plana yükseltebilir ya da daha düşük bir plana geçebilirsin. Fark otomatik olarak hesaplanır." },
-              { q: "İade politikası nedir?", a: <>Tüm ödemeler <span className="text-paper-300 font-medium">Creem</span> tarafından işlenir. İade ve iptal taleplerin için <Link href="https://creem.io" target="_blank" rel="noopener noreferrer" className="text-mint-400 hover:text-mint-300 underline underline-offset-2 transition-colors">Creem</Link> destek ekibiyle iletişime geçebilirsin.</> },
+              { q: "İade politikası nedir?", a: <>Tüm ödemeler <span className="text-ink-700 dark:text-paper-300 font-medium">Creem</span> tarafından işlenir. İade ve iptal taleplerin için <Link href="https://creem.io" target="_blank" rel="noopener noreferrer" className="text-mint-400 hover:text-mint-300 underline underline-offset-2 transition-colors">Creem</Link> destek ekibiyle iletişime geçebilirsin.</> },
             ].map((faq, i) => (
               <div
                 key={i}
-                className="group/faq rounded-xl border border-ink-700/50 bg-ink-800/30 p-4 hover:border-ink-600/50 transition-all duration-300"
+                className="group/faq rounded-xl border border-surface-200/50 dark:border-ink-700/50 bg-surface-100/30 dark:bg-ink-800/30 p-4 hover:border-surface-100/50 dark:hover:border-ink-600/50 transition-all duration-300"
               >
-                <p className="font-medium text-paper-200 text-sm mb-1.5 flex items-center gap-2">
+                <p className="font-medium text-ink-800 dark:text-paper-200 text-sm mb-1.5 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-mint-500/60 group-hover/faq:bg-mint-400 transition-colors" />
                   {faq.q}
                 </p>
-                <p className="text-sm text-paper-500 leading-relaxed pl-[14px]">{faq.a}</p>
+                <p className="text-sm text-ink-500 dark:text-paper-500 leading-relaxed pl-[14px]">{faq.a}</p>
               </div>
             ))}
           </div>
