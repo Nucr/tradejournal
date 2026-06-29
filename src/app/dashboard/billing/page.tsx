@@ -6,6 +6,8 @@ import type { Plan } from "@/lib/features";
 import { useState } from "react";
 import Link from "next/link";
 
+const PLAN_RANK: Record<Plan, number> = { free: 0, pro: 1, premium: 2 };
+
 const PLAN_INFO: Record<Plan, { label: string; price: Record<string, string>; color: string; badge: string }> = {
   free: { label: "Free", price: { monthly: "$0", yearly: "$0" }, color: "text-paper-400", badge: "bg-ink-700 text-paper-300" },
   pro: { label: "Pro", price: { monthly: "$9/ay", yearly: "$7/ay" }, color: "text-mint-400", badge: "bg-mint-500/20 text-mint-400 border border-mint-500/30" },
@@ -169,7 +171,7 @@ export default function BillingPage() {
                       </span>
                     )}
                   </div>
-                  {!isCurrent && p !== "free" && (
+                  {!isCurrent && p !== "free" && PLAN_RANK[p] > PLAN_RANK[plan] && (
                     <button
                       onClick={() => handleUpgrade(p)}
                       disabled={loading !== null}
@@ -181,6 +183,9 @@ export default function BillingPage() {
                     >
                       {loading === p ? "Yönlendiriliyor..." : `Yükselt`}
                     </button>
+                  )}
+                  {!isCurrent && p !== "free" && PLAN_RANK[p] < PLAN_RANK[plan] && (
+                    <span className="text-xs text-paper-500">Mevcut planın</span>
                   )}
                   {!isCurrent && p === "free" && plan !== "free" && (
                     <span className="text-xs text-paper-500">Mevcut planın ücretsizden yüksek</span>
