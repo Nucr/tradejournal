@@ -1,7 +1,7 @@
 import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
-import { creem } from "@/lib/creem";
+import { createCheckout } from "@/lib/creem";
 import { adminDb } from "@/lib/firebaseAdmin";
 import type { Plan } from "@/lib/features";
 
@@ -53,15 +53,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Ürün yapılandırılmamış" }, { status: 500 });
     }
 
-    const checkout = await creem.checkouts.create({
+    const checkout = await createCheckout(
       productId,
-      requestId: uid,
-      successUrl: `${request.nextUrl.origin}/payment/success?plan=${plan}&billing=${period}`,
-      customer: { email },
-      metadata: { uid, plan, billing: period },
-    });
+      uid,
+      `${request.nextUrl.origin}/payment/success?plan=${plan}&billing=${period}`,
+      email,
+    );
 
-    return NextResponse.json({ checkoutUrl: checkout.checkoutUrl });
+    return NextResponse.json({ checkoutUrl: checkout.checkout_url });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Bilinmeyen hata";
     return NextResponse.json({ error: message }, { status: 500 });

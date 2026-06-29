@@ -1,11 +1,63 @@
-import { Creem } from "creem";
+const API_KEY = process.env.CREEM_API_KEY ?? "";
+const TEST_MODE = process.env.NEXT_PUBLIC_CREEM_TEST_MODE === "true";
+const BASE_URL = TEST_MODE ? "https://test-api.creem.io/v1" : "https://api.creem.io/v1";
 
-function getServer() {
-  if (process.env.NEXT_PUBLIC_CREEM_TEST_MODE === "true") return "test" as const;
-  return "prod" as const;
+export interface CreemCheckout {
+  id: string;
+  checkout_url: string;
+  status: string;
 }
 
-export const creem = new Creem({
-  apiKey: process.env.CREEM_API_KEY ?? "",
-  server: getServer(),
-});
+export interface CreemProduct {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const url = `${BASE_URL}${path}`;
+  const res = await fetch(url, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": API_KEY,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Creem API error (${res.status}): ${text}`);
+  }
+
+  return res.json() as Promise<T>;
+}
+
+export async function createCheckout(productId: string, requestId: string, successUrl: string, email?: string) {
+  return request<CreemCheckout>("POST", "/checkouts", {
+    product_id: productId,
+    request_id: requestId,
+    success_url: successUrl,
+    customer: email ? { email } : undefined,
+  });
+}
+
+export async function createCustomerPortal(customerId: string, returnUrl: string) {
+  return request<{ portal_url: string }>("POST", "/customer-portal", {
+    customer_id: customerId,
+    return_url: returnUrl,
+  });
+}
+
+export async function createProduct(name: string, description: string, price: number) {
+  return request<CreemProduct>("POST", "/products", {
+    name,
+    description,
+    price,
+    currency: "USD",
+    billing_type: "recurring",
+    billing_period: "every-year",
+    tax_mode: "inclusive",
+  });
+}
