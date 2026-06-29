@@ -108,7 +108,9 @@ export default function BillingPage() {
 
       const data = await res.json();
       if (data.portalUrl) {
-        window.location.href = data.portalUrl;
+        window.open(data.portalUrl, "_blank", "noopener,noreferrer");
+        setPortalLoading(false);
+        return;
       } else {
         alert("Abonelik yönetim sayfası açılamadı. Lütfen Creem.io dashboard üzerinden yönetin veya destek ile iletişime geçin.");
       }
