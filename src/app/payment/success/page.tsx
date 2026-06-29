@@ -1,8 +1,78 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { auth, db } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 
 export default function PaymentSuccessPage() {
+  const searchParams = useSearchParams();
+  const [status, setStatus] = useState<"updating" | "success" | "error">("updating");
+
+  useEffect(() => {
+    const plan = searchParams.get("plan");
+
+    const unsub = auth.onAuthStateChanged(async (user) => {
+      if (!user || !plan) {
+        setStatus("success");
+        return;
+      }
+
+      try {
+        await setDoc(
+          doc(db, "users", user.uid),
+          {
+            subscription: {
+              plan,
+              status: "active",
+              updatedAt: new Date(),
+            },
+          },
+          { merge: true },
+        );
+        setStatus("success");
+      } catch {
+        setStatus("error");
+      }
+    });
+
+    return () => unsub();
+  }, [searchParams]);
+
+  if (status === "updating") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-ink-950">
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-mint-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-paper-400 text-sm">Plan aktifleştiriliyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-ink-950">
+        <div className="text-center max-w-sm">
+          <div className="w-14 h-14 rounded-full bg-coral-500/20 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-7 h-7 text-coral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <h1 className="font-display text-2xl font-bold text-paper-100 mb-2">Plan Güncellenemedi</h1>
+          <p className="text-sm text-paper-400 mb-6">Ödemen alındı ancak planın güncellenirken hata oluştu. Sayfayı yenile veya destek ile iletişime geç.</p>
+          <Link
+            href="/dashboard/billing"
+            className="inline-block rounded-lg bg-mint-500 text-ink-950 font-semibold px-6 py-2.5 text-sm hover:bg-mint-400 transition"
+          >
+            Abonelik Sayfasına Dön
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-ink-950">
       <div className="text-center max-w-sm">
