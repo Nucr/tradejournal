@@ -2,7 +2,6 @@ import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
 import { createCheckout } from "@/lib/creem";
-import { adminDb } from "@/lib/firebaseAdmin";
 import type { Plan } from "@/lib/features";
 
 type BillingPeriod = "monthly" | "yearly";
@@ -31,16 +30,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Geçersiz token" }, { status: 401 });
     }
 
-    const userSnap = await adminDb.collection("users").doc(uid).get();
-    if (!userSnap.exists) {
-      return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
-    }
-
-    const userData = userSnap.data()!;
-    const email = userData.email ?? "";
-
     const body = await request.json();
-    const { plan, billing } = body as { plan: Plan; billing: BillingPeriod };
+    const { plan, billing, email } = body as { plan: Plan; billing: BillingPeriod; email?: string };
 
     if (!plan || !["pro", "premium"].includes(plan)) {
       return NextResponse.json({ error: "Geçersiz plan" }, { status: 400 });
@@ -57,7 +48,7 @@ export async function POST(request: NextRequest) {
       productId,
       uid,
       `${request.nextUrl.origin}/payment/success?plan=${plan}&billing=${period}`,
-      email,
+      email ?? undefined,
     );
 
     return NextResponse.json({ checkoutUrl: checkout.checkout_url });

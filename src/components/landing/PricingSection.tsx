@@ -60,7 +60,7 @@ function PricingCard({
           "Content-Type": "application/json",
           Authorization: `Bearer ${user.uid}`,
         },
-        body: JSON.stringify({ plan, billing }),
+        body: JSON.stringify({ plan, billing, email: user.email }),
       });
       const data = await res.json();
       if (data.checkoutUrl) {

@@ -34,7 +34,7 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const SKIP_ROUTES = ["/login", "/register", "/onboarding"];
+const SKIP_ROUTES = ["/login", "/register", "/onboarding", "/payment/success", "/payment/cancel"];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
