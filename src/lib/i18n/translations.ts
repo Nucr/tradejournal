@@ -7,6 +7,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "nav.howItWorks": "Nasıl Çalışır",
     "nav.testimonials": "Yorumlar",
     "nav.dashboard": "Panoya Git",
+    "nav.subscription": "Abonelik",
     "nav.login": "Giriş Yap",
     "nav.register": "Ücretsiz Başla",
 
@@ -174,6 +175,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "nav.howItWorks": "How It Works",
     "nav.testimonials": "Testimonials",
     "nav.dashboard": "Go to Dashboard",
+    "nav.subscription": "Subscription",
     "nav.login": "Log In",
     "nav.register": "Get Started Free",
 

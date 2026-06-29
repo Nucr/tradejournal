@@ -65,12 +65,20 @@ export default function Navbar() {
           {loading ? (
             <div className="h-5 w-5 rounded-full border-2 border-mint-500 border-t-transparent animate-spin" />
           ) : user ? (
-            <Link
-              href="/dashboard"
-              className="rounded-lg bg-mint-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-mint-400 transition"
-            >
-              {t("nav.dashboard")}
-            </Link>
+            <>
+              <Link
+                href="/dashboard/billing"
+                className="text-sm text-paper-300 hover:text-paper-100 transition"
+              >
+                {t("nav.subscription")}
+              </Link>
+              <Link
+                href="/dashboard"
+                className="rounded-lg bg-mint-500 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-mint-400 transition"
+              >
+                {t("nav.dashboard")}
+              </Link>
+            </>
           ) : (
             <>
               <LanguageToggle />
