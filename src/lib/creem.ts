@@ -1,6 +1,8 @@
-const API_KEY = process.env.CREEM_API_KEY ?? "creem_test_3YZDFbpxRUgNnOp6vFxGhj";
-const TEST_MODE = process.env.NEXT_PUBLIC_CREEM_TEST_MODE === "true";
-const BASE_URL = TEST_MODE ? "https://test-api.creem.io/v1" : "https://api.creem.io/v1";
+const API_KEY = process.env.CREEM_API_KEY || "creem_test_3YZDFbpxRUgNnOp6vFxGhj";
+const TEST_MODE = process.env.NEXT_PUBLIC_CREEM_TEST_MODE !== "false";
+const BASE_URL = TEST_MODE
+  ? "https://test-api.creem.io/v1"
+  : "https://api.creem.io/v1";
 
 export interface CreemCheckout {
   id: string;
