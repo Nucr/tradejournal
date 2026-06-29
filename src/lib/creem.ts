@@ -19,6 +19,7 @@ export interface CreemProduct {
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const url = `${BASE_URL}${path}`;
+  console.error(`Creem request: ${method} ${url}`, body ? JSON.stringify(body) : "");
   const res = await fetch(url, {
     method,
     headers: {
@@ -30,10 +31,13 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
   if (!res.ok) {
     const text = await res.text();
+    console.error(`Creem API error (${res.status}): ${text}`);
     throw new Error(`Creem API error (${res.status}): ${text}`);
   }
 
-  return res.json() as Promise<T>;
+  const json = await res.json();
+  console.error(`Creem response: ${JSON.stringify(json).slice(0, 200)}`);
+  return json as Promise<T>;
 }
 
 export async function createCheckout(productId: string, requestId: string, successUrl: string, email?: string) {
