@@ -65,10 +65,9 @@ export async function getCheckout(checkoutId: string): Promise<CreemCheckoutDeta
   }
 }
 
-export async function createCustomerPortal(customerId: string, returnUrl: string) {
-  return request<{ portal_url: string }>("POST", "/customer-portal", {
+export async function createCustomerPortal(customerId: string) {
+  return request<{ customer_portal_link: string }>("POST", "/customers/billing", {
     customer_id: customerId,
-    return_url: returnUrl,
   });
 }
 
