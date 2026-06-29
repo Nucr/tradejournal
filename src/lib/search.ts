@@ -27,9 +27,7 @@ export async function searchUsers(
     );
 
     const snap = await getDocs(q);
-    return snap.docs
-      .filter((d) => d.data().isPublic !== false)
-      .map((d) => {
+    return snap.docs.map((d) => {
         const data = d.data();
         return {
           uid: d.id,
