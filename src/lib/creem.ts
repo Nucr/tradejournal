@@ -45,6 +45,18 @@ export async function createCheckout(productId: string, requestId: string, succe
   });
 }
 
+export interface CreemCheckoutDetails {
+  id: string;
+  customer?: { id: string; email?: string; name?: string };
+  status: string;
+  product_id?: string;
+  subscription_id?: string;
+}
+
+export async function getCheckout(checkoutId: string) {
+  return request<CreemCheckoutDetails>("GET", `/checkouts?id=${checkoutId}`);
+}
+
 export async function createCustomerPortal(customerId: string, returnUrl: string) {
   return request<{ portal_url: string }>("POST", "/customer-portal", {
     customer_id: customerId,

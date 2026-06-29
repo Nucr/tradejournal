@@ -63,7 +63,7 @@ export default function PaymentSuccessPage() {
         const fbUser = auth.currentUser;
         const displayName = fbUser?.displayName ?? fbUser?.email?.split("@")[0] ?? "Trader";
         const email = fbUser?.email ?? "";
-        const customerId = searchParams.get("customer_id") || meta?.customerId || "";
+        const customerId = searchParams.get("customer_id") || searchParams.get("customerId") || meta?.customerId || "";
         const checkoutId = searchParams.get("checkout_id") || "";
         const subscription = {
           plan: detectedPlan,

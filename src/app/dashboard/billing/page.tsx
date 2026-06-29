@@ -21,15 +21,30 @@ export default function BillingPage() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
   const [creemCustomerId, setCreemCustomerId] = useState<string | null>(null);
+  const [creemCheckoutId, setCreemCheckoutId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     getDoc(doc(db, "users", user.uid)).then((snap) => {
       if (snap.exists()) {
-        setCreemCustomerId(snap.data()?.subscription?.creemCustomerId ?? null);
+        const sub = snap.data()?.subscription ?? {};
+        setCreemCustomerId(sub.creemCustomerId ?? null);
+        setCreemCheckoutId(sub.creemCheckoutId ?? null);
       }
     });
   }, [user]);
+
+  useEffect(() => {
+    if (!creemCustomerId) {
+      try {
+        const raw = sessionStorage.getItem("creem_checkout");
+        if (raw) {
+          const meta = JSON.parse(raw);
+          if (meta?.customerId) setCreemCustomerId(meta.customerId);
+        }
+      } catch {}
+    }
+  }, [creemCustomerId]);
 
   const currentPlan = PLAN_INFO[plan];
 
@@ -64,23 +79,41 @@ export default function BillingPage() {
   async function handleManageBilling() {
     setPortalLoading(true);
     try {
+      let cid = creemCustomerId;
+      if (!cid && creemCheckoutId) {
+        const lookupRes = await fetch("/api/creem/lookup-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ checkoutId: creemCheckoutId }),
+        });
+        const lookupData = await lookupRes.json();
+        cid = lookupData.customerId || null;
+        if (cid) {
+          const { doc: fDoc, setDoc: fSetDoc } = await import("firebase/firestore");
+          const { db: fDb } = await import("@/lib/firebase");
+          await fSetDoc(fDoc(fDb, "users", user!.uid), {
+            subscription: { creemCustomerId: cid },
+          }, { merge: true });
+          setCreemCustomerId(cid);
+        }
+      }
       const res = await fetch("/api/creem/portal", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${user?.uid}`,
         },
-        body: JSON.stringify({ creemCustomerId }),
+        body: JSON.stringify({ creemCustomerId: cid }),
       });
 
       const data = await res.json();
       if (data.portalUrl) {
         window.location.href = data.portalUrl;
       } else {
-        alert(data.error || "Portal açılamadı");
+        alert("Abonelik yönetim sayfası açılamadı. Lütfen Creem.io dashboard üzerinden yönetin veya destek ile iletişime geçin.");
       }
     } catch {
-      alert("Portal açılırken bir hata oluştu");
+      alert("Portal açılırken bir hata oluştu. Lütfen sayfayı yenileyip tekrar deneyin.");
     } finally {
       setPortalLoading(false);
     }
