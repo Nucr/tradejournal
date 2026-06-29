@@ -206,37 +206,46 @@ export default function Sidebar() {
           ${open ? "w-64" : "w-16"}
         `}
       >
-        {/* Desktop toggle button — integrated into header row */}
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className={`hidden lg:flex items-center justify-center rounded-lg border border-ink-700 bg-ink-900 p-2 text-paper-300 hover:text-paper-100 transition absolute z-50 ${
-            open ? "right-3 top-4" : "left-1/2 -translate-x-1/2 top-14"
-          }`}
-          aria-label="Menüyü aç/kapa"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            {open ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-            )}
-          </svg>
-        </button>
-
-        {/* Logo */}
-        <div className={`flex items-center py-5 ${open ? "px-6 gap-3" : "px-4 justify-center"}`}>
-          <div className="w-8 h-8 rounded-lg bg-accent/[.15] border border-accent/30 flex items-center justify-center shrink-0">
-            <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          </div>
-          {open && (
-            <div className="whitespace-nowrap">
+        {/* Logo + desktop toggle integrated */}
+        {open ? (
+          <div className="flex items-center py-5 px-6 gap-3">
+            <div className="w-8 h-8 rounded-lg bg-accent/[.15] border border-accent/30 flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <div className="flex-1 whitespace-nowrap">
               <span className="font-display text-base font-bold tracking-tight">Trade Journal</span>
               <p className="text-[10px] text-paper-500 font-mono">{'\u0130'}şlem Günlüğü</p>
             </div>
-          )}
-        </div>
+            <button
+              onClick={() => setOpen(false)}
+              className="rounded-lg border border-ink-700 bg-ink-900 p-2 text-paper-300 hover:text-paper-100 transition hidden lg:flex"
+              aria-label="Menüyü daralt"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center py-4 gap-2">
+            <div className="w-8 h-8 rounded-lg bg-accent/[.15] border border-accent/30 flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <button
+              onClick={() => setOpen(true)}
+              className="rounded-lg border border-ink-700 bg-ink-900 p-2 text-paper-300 hover:text-paper-100 transition hidden lg:flex"
+              aria-label="Menüyü genişlet"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        )}
 
         {/* Nav links */}
         <nav className="flex flex-col gap-1 px-2 py-2 flex-1 overflow-y-auto">
