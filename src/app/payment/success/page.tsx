@@ -25,10 +25,8 @@ export default function PaymentSuccessPage() {
     if (doneRef.current) return;
 
     const planParam = searchParams.get("plan");
-    const requestId = searchParams.get("request_id");
     const meta = getCheckoutMeta();
     const plan = planParam || meta?.plan || "";
-    const uid = requestId || meta?.uid || "";
 
     if (!plan) {
       setStatus("success");
@@ -38,9 +36,14 @@ export default function PaymentSuccessPage() {
     async function writePlan(userId: string) {
       doneRef.current = true;
       try {
+        const fbUser = auth.currentUser;
+        const displayName = fbUser?.displayName ?? fbUser?.email?.split("@")[0] ?? "Trader";
+        const email = fbUser?.email ?? "";
         await setDoc(
           doc(db, "users", userId),
           {
+            displayName,
+            email,
             subscription: {
               plan,
               status: "active",
@@ -71,12 +74,8 @@ export default function PaymentSuccessPage() {
 
     const timer = setTimeout(() => {
       unsub();
-      if (uid && uid.length > 0) {
-        writePlan(uid);
-      } else {
-        setStatus("error");
-      }
-    }, 8000);
+      setStatus("error");
+    }, 10000);
 
     return () => {
       clearTimeout(timer);
