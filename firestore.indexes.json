@@ -1,20 +1,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "publicProfiles",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "displayName_lower", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "trades",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "strategies",
       "queryScope": "COLLECTION",
       "fields": [
