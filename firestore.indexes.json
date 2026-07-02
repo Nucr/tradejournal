@@ -9,7 +9,7 @@
     },
     {
       "collectionGroup": "trades",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "__name__", "order": "ASCENDING" }
       ]
