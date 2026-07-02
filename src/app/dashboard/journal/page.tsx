@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePlan } from "@/lib/features";
 import { useAuth } from "@/lib/auth-context";
@@ -32,10 +32,10 @@ export default function JournalPage() {
 
   // Stacked undo toasts
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-  let toastIdCounter = 0;
+  const toastIdCounter = useRef(0);
 
   function showToast(message: string) {
-    const id = `toast-${++toastIdCounter}`;
+    const id = `toast-${++toastIdCounter.current}`;
     setToasts((prev) => [...prev, { id, tradeId: "", message } as ToastItem]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -43,7 +43,7 @@ export default function JournalPage() {
   }
 
   function showDeleteToast(tradeId: string) {
-    const id = `toast-${++toastIdCounter}`;
+    const id = `toast-${++toastIdCounter.current}`;
     setToasts((prev) => [...prev, { id, tradeId, message: "İşlem silindi" }]);
   }
 
@@ -69,7 +69,7 @@ export default function JournalPage() {
 
   async function handleAccountChange(tradeId: string, newAccountId: string) {
     if (!user) return;
-    await updateTrade(user.uid, tradeId, { accountId: newAccountId || undefined });
+    await updateTrade(user.uid, tradeId, { accountId: newAccountId || null });
     showToast("Hesap güncellendi ✓");
   }
 

@@ -1,8 +1,12 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Link from "next/link";
+import { adminDb } from "@/lib/firebaseAdmin";
 import { format } from "date-fns";
+
+interface Props {
+  params: { tradeId: string };
+}
 
 interface TradeData {
   pair: string;
@@ -27,67 +31,83 @@ interface ShareData {
   user: UserData;
 }
 
+async function fetchShareData(tradeId: string): Promise<ShareData | null> {
+  try {
+    const tradesSnap = await adminDb
+      .collectionGroup("trades")
+      .where("tradeId", "==", tradeId)
+      .get();
+
+    if (tradesSnap.empty) return null;
+    const tradeDoc = tradesSnap.docs[0];
+    const uid = tradeDoc.ref.path.split("/")[1];
+    const tradeRaw = tradeDoc.data();
+
+    if (!tradeRaw.isShared) return null;
+    if (tradeRaw.visibility === "private") return null;
+
+    const userSnap = await adminDb.collection("users").doc(uid).get();
+    if (!userSnap.exists) return null;
+
+    const userData = userSnap.data();
+
+    return {
+      trade: {
+        pair: tradeRaw.pair as string,
+        direction: tradeRaw.direction as TradeData["direction"],
+        entryDate: tradeRaw.entryDate as string,
+        exitDate: tradeRaw.exitDate as string,
+        rr: (tradeRaw.rr as number) ?? 0,
+        result: (tradeRaw.result as number) ?? 0,
+        netPnl: (tradeRaw.netPnl as number) ?? 0,
+        strategy: (tradeRaw.strategy as string) ?? "",
+        note: (tradeRaw.note as string) ?? "",
+        screenshotUrl: (tradeRaw.screenshotUrl as string) ?? "",
+      },
+      user: {
+        displayName: userData?.displayName ?? "Trader",
+        avatarColor: userData?.avatarColor ?? "#2ED9A4",
+      },
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const data = await fetchShareData(params.tradeId);
+  if (!data) return { title: "Trade Bulunamadı" };
+
+  const { trade, user } = data;
+  const sign = trade.result >= 0 ? "+" : "";
+  const title = `${trade.pair} ${trade.direction === "long" ? "Long" : trade.direction === "short" ? "Short" : "BE"} ${sign}${trade.result}% | RR: ${trade.rr} | ${user.displayName}`;
+
+  return {
+    title,
+    description: `${trade.pair} işlemi — ${sign}${trade.result}% ${trade.direction === "long" ? "Long" : trade.direction === "short" ? "Short" : "BE"} • RR ${trade.rr}${trade.strategy ? ` • ${trade.strategy}` : ""} • ${user.displayName}`,
+    openGraph: {
+      title,
+      description: `${trade.pair} • ${sign}${trade.result}% • RR ${trade.rr}${trade.strategy ? ` • ${trade.strategy}` : ""}`,
+      type: "article",
+      siteName: "Verifter Trade Journal",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: `${trade.pair} — ${sign}${trade.result}%`,
+    },
+  };
+}
+
 const DIRECTION_LABEL: Record<string, string> = {
   long: "LONG",
   short: "SHORT",
   be: "BE",
 };
 
-export default function SharePage({ params }: { params: { tradeId: string } }) {
-  const [data, setData] = useState<ShareData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch(`/api/share/${params.tradeId}`)
-      .then(async (res) => {
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.error ?? "Bir şeyler ters gitti");
-        }
-        return res.json();
-      })
-      .then((json) => setData(json))
-      .catch((err) => setError(err.message));
-  }, [params.tradeId]);
-
-  useEffect(() => {
-    if (data) {
-      const t = data.trade;
-      const sign = t.result >= 0 ? "+" : "";
-      const title = `${t.pair} ${t.direction === "long" ? "Long" : t.direction === "short" ? "Short" : "BE"} ${sign}${t.result}% | RR: ${t.rr} | ${data.user.displayName}`;
-      document.title = title;
-    }
-  }, [data]);
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-ink-950 text-paper-100 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-20 h-20 rounded-2xl bg-coral-500/10 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-coral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h1 className="font-display text-2xl font-bold mb-2">Trade bulunamadı</h1>
-          <p className="text-sm text-paper-500 mb-8">{error}</p>
-          <Link
-            href="/dashboard/journal"
-            className="inline-flex items-center gap-2 rounded-lg bg-mint-500 text-ink-950 font-semibold px-5 py-2.5 text-sm hover:bg-mint-400 transition"
-          >
-            Verifter&apos;a Git
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="min-h-screen bg-ink-950 text-paper-100 flex items-center justify-center p-4">
-        <div className="w-8 h-8 border-2 border-mint-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+export default async function SharePage({ params }: Props) {
+  const data = await fetchShareData(params.tradeId);
+  if (!data) notFound();
 
   const { trade, user } = data;
 

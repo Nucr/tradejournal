@@ -109,7 +109,7 @@ export default function AccountsPage() {
             </div>
             <div>
               <label className="block text-xs font-mono uppercase tracking-wide text-paper-500 mb-1.5">
-                Güncel Bakiye ($)
+                Başlangıç Bakiyesi ($)
               </label>
               <input
                 type="number"

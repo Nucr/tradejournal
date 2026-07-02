@@ -175,14 +175,14 @@ export default function DashboardPage() {
       {/* Widgets */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in-up stagger-6">
         <WidgetCard title="Bugünkü Özet">
-          <DailySummaryWidget trades={trades} />
+          <DailySummaryWidget trades={accountFiltered} />
         </WidgetCard>
         <WidgetCard title="Aylık İlerleme">
-          <MonthlyProgressWidget trades={trades} />
+          <MonthlyProgressWidget trades={accountFiltered} />
         </WidgetCard>
         <WidgetCard title="Dönem Karşılaştırma">
           <FeatureGate feature="advanced_charts">
-            <PeriodComparisonWidget trades={trades} />
+            <PeriodComparisonWidget trades={accountFiltered} />
           </FeatureGate>
         </WidgetCard>
         <WidgetCard title="Hedefler">
@@ -193,11 +193,11 @@ export default function DashboardPage() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in-up stagger-7">
         <WidgetCard title="Son İşlemler">
-          <RecentTradesWidget trades={trades} />
+          <RecentTradesWidget trades={accountFiltered} />
         </WidgetCard>
         <WidgetCard title="Trade Sıklığı">
           <FeatureGate feature="advanced_charts">
-            <TradeFrequencyWidget trades={trades} />
+            <TradeFrequencyWidget trades={accountFiltered} />
           </FeatureGate>
         </WidgetCard>
       </div>

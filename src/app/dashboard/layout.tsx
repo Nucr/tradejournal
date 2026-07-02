@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import { useState } from "react";
 import { useAuthGuard } from "@/lib/authGuard";
 import { ToastProvider } from "@/lib/toast-context";

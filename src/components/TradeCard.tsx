@@ -43,8 +43,8 @@ export default function TradeCard({ trade, uid, accounts = [], onEdit, onDelete,
         setCopied(false);
         copyTimer.current = undefined;
       }, 2000);
-    } catch {
-      // clipboard unavailable
+    } catch (err) {
+      console.error("Share failed:", err);
     }
   }
   const toneClass =

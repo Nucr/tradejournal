@@ -59,6 +59,9 @@ const config: Config = {
       },
     },
   },
+  safelist: [
+    { pattern: /stagger-\d+/ },
+  ],
   plugins: [],
 };
 
