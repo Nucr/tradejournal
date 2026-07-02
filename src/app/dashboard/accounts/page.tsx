@@ -154,6 +154,7 @@ export default function AccountsPage() {
           {accounts.map((acc) => {
             const tCount = tradeCount(acc.id);
             const pnl = totalPnl(acc.id);
+            const effectiveBalance = acc.balance + pnl;
             return (
               <div
                 key={acc.id}
@@ -182,9 +183,12 @@ export default function AccountsPage() {
                 </div>
 
                 <p className="font-mono text-2xl font-bold text-paper-100">
-                  ${Number(acc.balance).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
+                  ${effectiveBalance.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
                 </p>
                 <p className="text-xs text-paper-500 font-mono mt-0.5">Güncel Bakiye</p>
+                <p className="text-[10px] text-paper-500 font-mono">
+                  Başlangıç: ${Number(acc.balance).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
+                </p>
 
                 <div className="flex items-center gap-4 mt-4 pt-4 border-t border-ink-800">
                   <div>
