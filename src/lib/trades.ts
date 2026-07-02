@@ -81,7 +81,9 @@ export async function addTrade(uid: string, trade: TradeInput) {
       createdAt: serverTimestamp(),
     });
     docRefId = docRef.id;
-    await updateDoc(docRef, { tradeId: docRef.id });
+    await updateDoc(docRef, { tradeId: docRef.id }).catch((err) =>
+      console.error("set tradeId failed:", err)
+    );
     console.log("addDoc succeeded", docRef.id);
   } catch (err) {
     console.error("addDoc failed:", err);
