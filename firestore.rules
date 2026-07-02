@@ -39,6 +39,11 @@ service cloud.firestore {
       allow read, write: if request.auth != null && (request.auth.uid == uid || isAdmin());
     }
 
+    // Accounts subcollection — sahibi veya admin
+    match /users/{uid}/accounts/{accountId} {
+      allow read, write: if request.auth != null && (request.auth.uid == uid || isAdmin());
+    }
+
     // Strategies — public olanlar herkes, private olanlar sadece sahibi veya admin okuyabilir
     match /strategies/{strategyId} {
       allow read: if request.auth != null && (
