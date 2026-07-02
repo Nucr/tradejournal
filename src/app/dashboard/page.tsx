@@ -186,9 +186,7 @@ export default function DashboardPage() {
           </FeatureGate>
         </WidgetCard>
         <WidgetCard title="Hedefler">
-          <FeatureGate feature="unlimited_goals" showUpgrade={false}>
-            <GoalsWidget />
-          </FeatureGate>
+          <GoalsWidget />
         </WidgetCard>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in-up stagger-7">
