@@ -18,7 +18,7 @@ export interface Trade {
   deletedAt?: string | null;
   isShared?: boolean;
   visibility?: TradeVisibility;
-  accountId?: string;
+  accountId?: string | null;
 }
 
 export type TradeInput = Omit<Trade, "id" | "createdAt">;

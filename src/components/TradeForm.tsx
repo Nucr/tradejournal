@@ -140,7 +140,7 @@ export default function TradeForm({ initial, onSubmit, onCancel }: Props) {
         strategy,
         note,
         screenshotUrl,
-        accountId: accountId || undefined,
+        accountId: accountId || null,
       });
     } finally {
       setSubmitting(false);
