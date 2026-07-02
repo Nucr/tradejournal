@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { subscribeToTrades } from "@/lib/trades";
-import { Trade } from "@/lib/types";
+import { subscribeToAccounts } from "@/lib/accounts";
+import { Trade, Account } from "@/lib/types";
 import { format, parseISO, startOfWeek } from "date-fns";
 import {
   ResponsiveContainer,
@@ -26,6 +27,8 @@ export default function AnalyticsPage() {
   const { user } = useAuth();
   const { hasFeature } = usePlan();
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountFilter, setAccountFilter] = useState<string>("all");
   const [barMode, setBarMode] = useState<BarMode>("daily");
 
   useEffect(() => {
@@ -34,25 +37,36 @@ export default function AnalyticsPage() {
     return unsub;
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    const unsub = subscribeToAccounts(user.uid, setAccounts);
+    return unsub;
+  }, [user]);
+
+  const filteredTrades = useMemo(() => {
+    if (accountFilter === "all") return trades;
+    return trades.filter((t) => t.accountId === accountFilter);
+  }, [trades, accountFilter]);
+
   const totalResult = useMemo(
-    () => trades.reduce((sum, t) => sum + t.result, 0),
-    [trades]
+    () => filteredTrades.reduce((sum, t) => sum + t.result, 0),
+    [filteredTrades]
   );
 
   const winCount = useMemo(
-    () => trades.filter((t) => t.result > 0).length,
-    [trades]
+    () => filteredTrades.filter((t) => t.result > 0).length,
+    [filteredTrades]
   );
 
   const lossCount = useMemo(
-    () => trades.filter((t) => t.result < 0).length,
-    [trades]
+    () => filteredTrades.filter((t) => t.result < 0).length,
+    [filteredTrades]
   );
 
-  const winRate = trades.length > 0 ? (winCount / trades.length) * 100 : 0;
+  const winRate = filteredTrades.length > 0 ? (winCount / filteredTrades.length) * 100 : 0;
 
   const cumulativeData = useMemo(() => {
-    const sorted = [...trades].sort(
+    const sorted = [...filteredTrades].sort(
       (a, b) => parseISO(a.entryDate).getTime() - parseISO(b.entryDate).getTime()
     );
     let cum = 0;
@@ -63,12 +77,12 @@ export default function AnalyticsPage() {
         value: Number(cum.toFixed(2)),
       };
     });
-  }, [trades]);
+  }, [filteredTrades]);
 
   const barData = useMemo(() => {
     if (barMode === "daily") {
       const map = new Map<string, number>();
-      for (const t of trades) {
+      for (const t of filteredTrades) {
         const key = format(parseISO(t.entryDate), "yyyy-MM-dd");
         map.set(key, (map.get(key) || 0) + t.result);
       }
@@ -81,7 +95,7 @@ export default function AnalyticsPage() {
     }
 
     const map = new Map<string, { sum: number; label: string }>();
-    for (const t of trades) {
+    for (const t of filteredTrades) {
       const d = parseISO(t.entryDate);
       const weekStart = startOfWeek(d, { weekStartsOn: 1 });
       const key = format(weekStart, "yyyy-MM-dd");
@@ -96,7 +110,7 @@ export default function AnalyticsPage() {
         date: label,
         value: Number(sum.toFixed(2)),
       }));
-  }, [trades, barMode]);
+  }, [filteredTrades, barMode]);
 
   return (
     <FeatureGate feature="advanced_charts">
@@ -106,6 +120,22 @@ export default function AnalyticsPage() {
         <p className="text-sm text-paper-300 mt-1">
           Tüm işlemlerinin detaylı analizi.
         </p>
+      </div>
+
+      <div className="flex items-center gap-3 animate-fade-in-up stagger-1">
+        <div className="flex-1">
+          <label className="text-[10px] font-mono uppercase tracking-wide text-paper-500 mb-1 block">Hesap Filtresi</label>
+          <select
+            value={accountFilter}
+            onChange={(e) => setAccountFilter(e.target.value)}
+            className="rounded-lg border border-ink-800 bg-ink-900 px-3 py-2 text-sm text-paper-100 focus:outline-none focus:border-mint-500/50"
+          >
+            <option value="all">Tüm Hesaplar</option>
+            {accounts.map((acc) => (
+              <option key={acc.id} value={acc.id}>{acc.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 animate-fade-in-up stagger-1">
@@ -122,7 +152,7 @@ export default function AnalyticsPage() {
         />
         <StatCard
           label="Toplam İşlem Sayısı"
-          value={String(trades.length)}
+          value={String(filteredTrades.length)}
         />
       </div>
 

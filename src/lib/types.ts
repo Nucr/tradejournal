@@ -18,6 +18,7 @@ export interface Trade {
   deletedAt?: string | null;
   isShared?: boolean;
   visibility?: TradeVisibility;
+  accountId?: string;
 }
 
 export type TradeInput = Omit<Trade, "id" | "createdAt">;
@@ -209,6 +210,16 @@ export interface AppNotification {
 }
 
 // --- User search result ---
+
+export interface Account {
+  id: string;
+  name: string;
+  balance: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AccountInput = Omit<Account, "id" | "createdAt" | "updatedAt">;
 
 export interface UserSearchResult {
   uid: string;

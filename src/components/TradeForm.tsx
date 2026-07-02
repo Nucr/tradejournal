@@ -3,7 +3,8 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { addStrategy, getStrategies } from "@/lib/strategies";
-import { TradeDirection, TradeInput, Strategy } from "@/lib/types";
+import { subscribeToAccounts } from "@/lib/accounts";
+import { TradeDirection, TradeInput, Strategy, Account } from "@/lib/types";
 import DateTimePicker from "./DateTimePicker";
 
 interface Props {
@@ -27,6 +28,8 @@ export default function TradeForm({ initial, onSubmit, onCancel }: Props) {
   const [strategy, setStrategy] = useState(initial?.strategy ?? "");
   const [note, setNote] = useState(initial?.note ?? "");
   const [screenshotUrl, setScreenshotUrl] = useState(initial?.screenshotUrl ?? "");
+  const [accountId, setAccountId] = useState(initial?.accountId ?? "");
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -43,6 +46,12 @@ export default function TradeForm({ initial, onSubmit, onCancel }: Props) {
   useEffect(() => {
     if (!user) return;
     getStrategies(user.uid).then(setStrategies);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsub = subscribeToAccounts(user.uid, setAccounts);
+    return unsub;
   }, [user]);
 
   useEffect(() => {
@@ -131,6 +140,7 @@ export default function TradeForm({ initial, onSubmit, onCancel }: Props) {
         strategy,
         note,
         screenshotUrl,
+        accountId: accountId || undefined,
       });
     } finally {
       setSubmitting(false);
@@ -359,6 +369,21 @@ export default function TradeForm({ initial, onSubmit, onCancel }: Props) {
               </div>
             )}
           </div>
+        </Field>
+
+        <Field label="Hesap" full>
+          <select
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
+            className="w-full rounded-lg border border-ink-700 bg-ink-950 px-3 py-2.5 text-sm focus:border-mint-500"
+          >
+            <option value="">Hesap seçilmedi</option>
+            {accounts.map((acc) => (
+              <option key={acc.id} value={acc.id}>
+                {acc.name} (${acc.balance})
+              </option>
+            ))}
+          </select>
         </Field>
 
         <Field label="TradingView Görsel Linki (Alt+S)" full>

@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { subscribeToTrades } from "@/lib/trades";
+import { subscribeToAccounts } from "@/lib/accounts";
 import { getProfile } from "@/lib/profile";
-import { Trade, RangeKey, UserProfile } from "@/lib/types";
+import { Trade, RangeKey, UserProfile, Account } from "@/lib/types";
 import RankBadge from "@/components/RankBadge";
 import { filterTradesByRange, computeStats } from "@/lib/date-utils";
 import DateRangeTabs from "@/components/DateRangeTabs";
@@ -25,6 +26,8 @@ import { format, parseISO } from "date-fns";
 export default function DashboardPage() {
   const { user } = useAuth();
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountFilter, setAccountFilter] = useState<string>("all");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [range, setRange] = useState<RangeKey>("month");
   const [customStart, setCustomStart] = useState("");
@@ -38,21 +41,28 @@ export default function DashboardPage() {
       setTrades(data);
       setLoading(false);
     });
+    const unsubAcc = subscribeToAccounts(user.uid, setAccounts);
     getProfile(user.uid).then((p) => {
       setProfile(p);
     });
     return () => {
       unsub();
+      unsubAcc();
     };
   }, [user]);
 
+  const accountFiltered = useMemo(() => {
+    if (accountFilter === "all") return trades;
+    return trades.filter((t) => t.accountId === accountFilter);
+  }, [trades, accountFilter]);
+
   const filtered = useMemo(
-    () => filterTradesByRange(trades, range, new Date(), customStart, customEnd),
-    [trades, range, customStart, customEnd]
+    () => filterTradesByRange(accountFiltered, range, new Date(), customStart, customEnd),
+    [accountFiltered, range, customStart, customEnd]
   );
 
   const stats = useMemo(() => computeStats(filtered), [filtered]);
-  const allStats = useMemo(() => computeStats(trades), [trades]);
+  const allStats = useMemo(() => computeStats(accountFiltered), [accountFiltered]);
 
   const filteredNetPnl = stats.totalNetPnl;
 
@@ -95,7 +105,19 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="animate-fade-in-up stagger-2">
+      <div className="flex flex-wrap items-center gap-3 animate-fade-in-up stagger-2">
+        <div className="flex-1 min-w-[160px]">
+          <select
+            value={accountFilter}
+            onChange={(e) => setAccountFilter(e.target.value)}
+            className="w-full rounded-lg border border-ink-800 bg-ink-900 px-3 py-2.5 text-sm text-paper-100 focus:outline-none focus:border-mint-500/50"
+          >
+            <option value="all">Tüm Hesaplar</option>
+            {accounts.map((acc) => (
+              <option key={acc.id} value={acc.id}>{acc.name}</option>
+            ))}
+          </select>
+        </div>
         <DateRangeTabs
           value={range}
           onChange={setRange}

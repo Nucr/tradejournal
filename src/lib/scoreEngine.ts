@@ -123,6 +123,7 @@ export async function syncUserScore(uid: string): Promise<void> {
           strategy: (data.strategy as string) ?? "",
           note: (data.note as string) ?? "",
           screenshotUrl: (data.screenshotUrl as string) ?? "",
+          accountId: (data.accountId as string) ?? undefined,
           createdAt:
             (data.createdAt as Timestamp)?.toDate?.().toISOString?.() ??
             new Date().toISOString(),

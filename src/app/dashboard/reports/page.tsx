@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { subscribeToTrades } from "@/lib/trades";
-import { RangeKey, Trade } from "@/lib/types";
+import { subscribeToAccounts } from "@/lib/accounts";
+import { RangeKey, Trade, Account } from "@/lib/types";
 import { computeStats, filterTradesByRange } from "@/lib/date-utils";
 import { format, parseISO } from "date-fns";
 import {
@@ -39,6 +40,8 @@ const DIRECTION_LABEL: Record<Trade["direction"], string> = {
 export default function ReportsPage() {
   const { user } = useAuth();
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountFilter, setAccountFilter] = useState<string>("all");
   const [range, setRange] = useState<RangeKey>("month");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
@@ -52,9 +55,20 @@ export default function ReportsPage() {
     return unsub;
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    const unsub = subscribeToAccounts(user.uid, setAccounts);
+    return unsub;
+  }, [user]);
+
+  const accountFiltered = useMemo(() => {
+    if (accountFilter === "all") return trades;
+    return trades.filter((t) => t.accountId === accountFilter);
+  }, [trades, accountFilter]);
+
   const filtered = useMemo(
-    () => filterTradesByRange(trades, range, new Date(), customStart, customEnd),
-    [trades, range, customStart, customEnd]
+    () => filterTradesByRange(accountFiltered, range, new Date(), customStart, customEnd),
+    [accountFiltered, range, customStart, customEnd]
   );
 
   const stats = useMemo(() => computeStats(filtered), [filtered]);
@@ -131,7 +145,17 @@ export default function ReportsPage() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 animate-fade-in-up stagger-1">
+      <div className="flex flex-wrap items-center gap-3 animate-fade-in-up stagger-1">
+        <select
+          value={accountFilter}
+          onChange={(e) => setAccountFilter(e.target.value)}
+          className="rounded-lg border border-ink-800 bg-ink-900 px-3 py-2 text-sm text-paper-100 focus:outline-none focus:border-mint-500/50"
+        >
+          <option value="all">Tüm Hesaplar</option>
+          {accounts.map((acc) => (
+            <option key={acc.id} value={acc.id}>{acc.name}</option>
+          ))}
+        </select>
         {RANGE_PRESETS.map((preset) => (
           <button
             key={preset.key}

@@ -1,7 +1,11 @@
 [
   {
-    "origin": ["*"],
-    "method": ["*"],
+    "origin": [
+      "https://verifter.com",
+      "https://www.verifter.com",
+      "http://localhost:3000"
+    ],
+    "method": ["GET", "HEAD"],
     "maxAgeSeconds": 3600
   }
 ]

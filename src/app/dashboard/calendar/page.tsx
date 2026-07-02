@@ -8,19 +8,10 @@ import { subscribeToTrades } from "@/lib/trades";
 import { Trade } from "@/lib/types";
 import {
   format, parseISO, startOfMonth, endOfMonth, getDay,
-  addMonths, subMonths, subDays, subWeeks, subYears,
-  isWithinInterval, startOfDay, endOfDay,
+  addMonths, subMonths,
+  isWithinInterval,
 } from "date-fns";
 import { tr } from "date-fns/locale";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
 import StatCard from "@/components/StatCard";
 
 const DAY_HEADERS = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
@@ -31,21 +22,6 @@ export default function CalendarPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-
-  // Growth chart date range
-  const [growthStart, setGrowthStart] = useState("");
-  const [growthEnd, setGrowthEnd] = useState("");
-  const [growthPreset, setGrowthPreset] = useState<string>("6months");
-
-  const GROWTH_PRESETS = [
-    { key: "today", label: "Bugün", fn: () => ({ start: format(startOfDay(new Date()), "yyyy-MM-dd"), end: format(endOfDay(new Date()), "yyyy-MM-dd") }) },
-    { key: "1week", label: "1 Hafta", fn: () => ({ start: format(subWeeks(new Date(), 1), "yyyy-MM-dd"), end: format(new Date(), "yyyy-MM-dd") }) },
-    { key: "1month", label: "1 Ay", fn: () => ({ start: format(subMonths(new Date(), 1), "yyyy-MM-dd"), end: format(new Date(), "yyyy-MM-dd") }) },
-    { key: "3months", label: "3 Ay", fn: () => ({ start: format(subMonths(new Date(), 3), "yyyy-MM-dd"), end: format(new Date(), "yyyy-MM-dd") }) },
-    { key: "6months", label: "6 Ay", fn: () => ({ start: format(subMonths(new Date(), 6), "yyyy-MM-dd"), end: format(new Date(), "yyyy-MM-dd") }) },
-    { key: "1year", label: "1 Yıl", fn: () => ({ start: format(subYears(new Date(), 1), "yyyy-MM-dd"), end: format(new Date(), "yyyy-MM-dd") }) },
-    { key: "all", label: "Tümü", fn: () => ({ start: "", end: "" }) },
-  ];
 
   useEffect(() => {
     if (!user) return;
@@ -132,71 +108,6 @@ export default function CalendarPage() {
 
   const selectedDayTrades = selectedDay ? tradesByDay.get(selectedDay) ?? [] : [];
 
-  // ── Growth chart logic ──
-
-  const growthRange = useMemo(() => {
-    const end = growthEnd ? parseISO(growthEnd) : new Date();
-    const start = growthStart
-      ? parseISO(growthStart)
-      : subMonths(new Date(), 6);
-    return { start, end };
-  }, [growthStart, growthEnd]);
-
-  const growthData = useMemo(() => {
-    const filtered = trades
-      .filter((t) => {
-        const d = parseISO(t.entryDate);
-        return d >= growthRange.start && d <= growthRange.end;
-      })
-      .sort((a, b) => parseISO(a.entryDate).getTime() - parseISO(b.entryDate).getTime());
-
-    if (filtered.length === 0) return [];
-
-    let cum = 0;
-    return filtered.map((t) => {
-      cum += t.result;
-      return {
-        date: format(parseISO(t.entryDate), "dd MMM yy"),
-        value: Number(cum.toFixed(2)),
-      };
-    });
-  }, [trades, growthRange]);
-
-  function handleGrowthPresetClick(key: string) {
-    setGrowthPreset(key);
-    const preset = GROWTH_PRESETS.find((p) => p.key === key);
-    if (preset) {
-      const { start, end } = preset.fn();
-      setGrowthStart(start);
-      setGrowthEnd(end);
-    }
-  }
-
-  function handleGrowthStartChange(value: string) {
-    setGrowthStart(value);
-    setGrowthPreset("");
-  }
-
-  function handleGrowthEndChange(value: string) {
-    setGrowthEnd(value);
-    setGrowthPreset("");
-  }
-
-  function handleGrowthReset() {
-    setGrowthStart("");
-    setGrowthEnd("");
-    setGrowthPreset("6months");
-  }
-
-  const growthStats = useMemo(() => {
-    if (growthData.length === 0) return { start: 0, end: 0, change: 0, percentChange: 0 };
-    const startVal = growthData[0].value;
-    const endVal = growthData[growthData.length - 1].value;
-    const change = endVal - startVal;
-    const percentChange = startVal !== 0 ? (change / Math.abs(startVal)) * 100 : 0;
-    return { start: startVal, end: endVal, change, percentChange };
-  }, [growthData]);
-
   return (
     <FeatureGate feature="calendar">
       <div className="space-y-8">
@@ -204,7 +115,7 @@ export default function CalendarPage() {
       <div className="animate-fade-in-up">
         <h1 className="font-display text-2xl font-semibold">İşlem Takvimi</h1>
         <p className="text-sm text-paper-300 mt-1">
-          İşlemlerini takvim üzerinde görüntüle ve büyümeni takip et.
+          İşlemlerini takvim üzerinde görüntüle.
         </p>
       </div>
 
@@ -392,146 +303,22 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* ── Growth Chart Section ── */}
+      {/* ── Analytics link ── */}
       <div className="animate-fade-in-up stagger-3">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-4">
-          <div>
-            <h2 className="font-display text-lg font-semibold">Büyüme Grafiği</h2>
-            <p className="text-xs text-paper-500 font-mono mt-0.5">
-              Belirli bir dönemdeki kümülatif büyümeni görüntüle.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3">
-            <div className="flex gap-1 overflow-x-auto rounded-lg bg-ink-900 border border-ink-800 p-1 w-full sm:w-fit">
-              {GROWTH_PRESETS.map((preset) => (
-                <button
-                  key={preset.key}
-                  onClick={() => handleGrowthPresetClick(preset.key)}
-                  className={`whitespace-nowrap rounded-md px-3.5 py-1.5 text-sm font-medium transition ${
-                    growthPreset === preset.key
-                      ? "bg-mint-500 text-ink-950 shadow-sm"
-                      : "text-paper-300 hover:text-paper-100 hover:bg-ink-800"
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-mono uppercase tracking-wide text-paper-500">Başlangıç</label>
-                <input
-                  type="date"
-                  value={growthStart}
-                  onChange={(e) => handleGrowthStartChange(e.target.value)}
-                  className="rounded-lg border border-ink-800 bg-ink-900 px-3 py-2 text-sm text-paper-100 focus:outline-none focus:border-mint-500/50 focus:ring-1 focus:ring-mint-500/20 transition w-full sm:w-36"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-mono uppercase tracking-wide text-paper-500">Bitiş</label>
-                <input
-                  type="date"
-                  value={growthEnd}
-                  onChange={(e) => handleGrowthEndChange(e.target.value)}
-                  className="rounded-lg border border-ink-800 bg-ink-900 px-3 py-2 text-sm text-paper-100 focus:outline-none focus:border-mint-500/50 focus:ring-1 focus:ring-mint-500/20 transition w-full sm:w-36"
-                />
-              </div>
-              {growthPreset !== "6months" && (
-                <button
-                  onClick={handleGrowthReset}
-                  className="rounded-lg border border-ink-800 bg-ink-900 px-3 py-2 text-xs text-paper-500 hover:text-paper-300 hover:border-ink-700 transition self-end"
-                >
-                  Sıfırla
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Growth summary mini cards */}
-        {growthData.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <div className="rounded-lg border border-ink-800 bg-ink-900/50 p-3">
-              <p className="text-[10px] font-mono uppercase tracking-wide text-paper-500">Başlangıç</p>
-              <p className="font-mono text-sm font-semibold mt-0.5">{growthStats.start.toFixed(2)}%</p>
-            </div>
-            <div className="rounded-lg border border-ink-800 bg-ink-900/50 p-3">
-              <p className="text-[10px] font-mono uppercase tracking-wide text-paper-500">Bitiş</p>
-              <p className="font-mono text-sm font-semibold mt-0.5">{growthStats.end.toFixed(2)}%</p>
-            </div>
-            <div className="rounded-lg border border-ink-800 bg-ink-900/50 p-3">
-              <p className="text-[10px] font-mono uppercase tracking-wide text-paper-500">Değişim</p>
-              <p className={`font-mono text-sm font-semibold mt-0.5 ${growthStats.change >= 0 ? "text-mint-400" : "text-coral-400"}`}>
-                {growthStats.change >= 0 ? "+" : ""}{growthStats.change.toFixed(2)}%
-              </p>
-            </div>
-            <div className="rounded-lg border border-ink-800 bg-ink-900/50 p-3">
-              <p className="text-[10px] font-mono uppercase tracking-wide text-paper-500">Büyüme</p>
-              <p className={`font-mono text-sm font-semibold mt-0.5 ${growthStats.percentChange >= 0 ? "text-mint-400" : "text-coral-400"}`}>
-                {growthStats.percentChange >= 0 ? "+" : ""}{growthStats.percentChange.toFixed(1)}%
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Chart */}
-        {growthData.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-72 rounded-xl border border-ink-800 bg-ink-900 text-sm text-paper-500">
-            <svg className="w-8 h-8 text-paper-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        <div className="rounded-xl border border-ink-800 bg-ink-900 p-6 text-center">
+          <p className="text-sm text-paper-500 mb-3">
+            Detaylı büyüme grafiği ve analitikler için Analitik sayfasını ziyaret et.
+          </p>
+          <a
+            href="/dashboard/analytics"
+            className="inline-flex items-center gap-2 rounded-lg bg-mint-500 px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-mint-400 transition"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
-            <p>Bu dönemde işlem bulunmuyor.</p>
-            <p className="text-xs text-paper-500 mt-1">
-              {!growthStart && !growthEnd ? "Varsayılan olarak son 6 ay gösteriliyor." : "Farklı bir tarih aralığı dene."}
-            </p>
-          </div>
-        ) : (
-          <div className="rounded-xl border border-ink-800 bg-ink-900 p-4 h-72 shadow-lg shadow-black/20">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={growthData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="growthFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2ED9A4" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#2ED9A4" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="#1B212B" vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  stroke="#6B7480"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  stroke="#6B7480"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                  domain={["dataMin - 1", "dataMax + 1"]}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "#11151B",
-                    border: "1px solid #272F3B",
-                    borderRadius: 8,
-                    fontSize: 12,
-                    fontFamily: "var(--font-mono)",
-                  }}
-                  labelStyle={{ color: "#A8B0BC" }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#2ED9A4"
-                  strokeWidth={2}
-                  fill="url(#growthFill)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        )}
+            Analitik'e Git
+          </a>
+        </div>
       </div>
       </div>
     </FeatureGate>

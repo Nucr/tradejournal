@@ -69,11 +69,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Messages — conversation üyesi okuyabilir ve yazabilir
+    // Messages — conversation üyesi okuyabilir ve yazabilir, gönderen silebilir
     match /conversations/{conversationId}/messages/{messageId} {
       allow read: if request.auth != null && isConversationMemberById(conversationId);
       allow create: if request.auth != null && isConversationMemberById(conversationId);
-      allow delete: if isAdmin();
+      allow delete: if request.auth != null && (
+        resource.data.senderId == request.auth.uid ||
+        isAdmin()
+      );
     }
 
     // Read status — sadece kendi okuma durumunu görebilir
