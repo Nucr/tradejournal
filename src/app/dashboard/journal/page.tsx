@@ -5,7 +5,8 @@ import Link from "next/link";
 import { usePlan } from "@/lib/features";
 import { useAuth } from "@/lib/auth-context";
 import { addTrade, deleteTrade, subscribeToTrades, updateTrade, restoreTrade } from "@/lib/trades";
-import { DirectionFilter, RangeKey, ResultFilter, Trade, TradeInput } from "@/lib/types";
+import { subscribeToAccounts } from "@/lib/accounts";
+import { DirectionFilter, RangeKey, ResultFilter, Trade, TradeInput, Account } from "@/lib/types";
 import { filterTrades } from "@/lib/date-utils";
 import TradeFilters from "@/components/TradeFilters";
 import TradeForm from "@/components/TradeForm";
@@ -16,6 +17,7 @@ import type { ToastItem } from "@/components/UndoToast";
 export default function JournalPage() {
   const { user } = useAuth();
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [resultFilter, setResultFilter] = useState<ResultFilter>("all");
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>("all");
   const [timeFilter, setTimeFilter] = useState<RangeKey>("all");
@@ -58,10 +60,18 @@ export default function JournalPage() {
   useEffect(() => {
     if (!user) return;
     const unsub = subscribeToTrades(user.uid, setTrades);
+    const unsubAcc = subscribeToAccounts(user.uid, setAccounts);
     return () => {
       unsub();
+      unsubAcc();
     };
   }, [user?.uid]);
+
+  async function handleAccountChange(tradeId: string, newAccountId: string) {
+    if (!user) return;
+    await updateTrade(user.uid, tradeId, { accountId: newAccountId || undefined });
+    showToast("Hesap güncellendi ✓");
+  }
 
   const filtered = useMemo(
     () => {
@@ -112,12 +122,14 @@ export default function JournalPage() {
       trade={trade}
       uid={user!.uid}
       index={i}
+      accounts={accounts}
       onEdit={() => {
         setEditingTrade(trade);
         setShowForm(true);
         setFormError("");
       }}
       onDelete={() => handleDelete(trade.id)}
+      onAccountChange={(accountId) => handleAccountChange(trade.id, accountId)}
     />
   ));
 

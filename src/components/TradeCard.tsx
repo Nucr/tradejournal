@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Trade, TradeVisibility } from "@/lib/types";
+import { Trade, TradeVisibility, Account } from "@/lib/types";
 import { shareTrade } from "@/lib/trades";
 import { format, parseISO } from "date-fns";
 
 interface Props {
   trade: Trade;
   uid: string;
+  accounts?: Account[];
   onEdit: () => void;
   onDelete: () => void;
+  onAccountChange?: (accountId: string) => void;
   index?: number;
 }
 
@@ -19,11 +21,14 @@ const DIRECTION_LABEL: Record<Trade["direction"], string> = {
   be: "BE",
 };
 
-export default function TradeCard({ trade, uid, onEdit, onDelete, index = 0 }: Props) {
+export default function TradeCard({ trade, uid, accounts = [], onEdit, onDelete, onAccountChange, index = 0 }: Props) {
   const [copied, setCopied] = useState(false);
   const [showVis, setShowVis] = useState(false);
+  const [showAcc, setShowAcc] = useState(false);
   const [visibility, setVisibility] = useState<TradeVisibility>(trade.visibility ?? "public");
   const copyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const accountName = accounts.find((a) => a.id === trade.accountId)?.name;
 
   async function handleShare(vis?: TradeVisibility) {
     const v = vis ?? visibility;
@@ -123,6 +128,49 @@ export default function TradeCard({ trade, uid, onEdit, onDelete, index = 0 }: P
             {trade.strategy}
           </p>
         )}
+
+        <div className="flex items-center gap-3 text-xs font-mono">
+          <span className="text-paper-500 uppercase">hesap</span>
+          <div className="relative">
+            <button
+              onClick={() => { setShowAcc((v) => !v); setShowVis(false); }}
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded border transition ${
+                accountName
+                  ? "border-ink-700 text-paper-300 hover:border-mint-500/40"
+                  : "border-dashed border-ink-700 text-paper-500 hover:text-paper-300"
+              }`}
+            >
+              {accountName || "seçilmedi"}
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showAcc && (
+              <div className="absolute top-full left-0 mt-1 rounded-lg border border-ink-700 bg-ink-900 shadow-xl py-1 min-w-[160px] z-10">
+                <button
+                  onClick={() => { onAccountChange?.(""); setShowAcc(false); }}
+                  className={`w-full text-left px-3 py-1.5 text-xs font-mono transition ${
+                    !trade.accountId ? "text-mint-400 bg-mint-500/10" : "text-paper-300 hover:bg-ink-800"
+                  }`}
+                >
+                  Seçilmedi
+                </button>
+                {accounts.map((acc) => (
+                  <button
+                    key={acc.id}
+                    onClick={() => { onAccountChange?.(acc.id); setShowAcc(false); }}
+                    className={`w-full text-left px-3 py-1.5 text-xs font-mono transition flex items-center justify-between ${
+                      trade.accountId === acc.id ? "text-mint-400 bg-mint-500/10" : "text-paper-300 hover:bg-ink-800"
+                    }`}
+                  >
+                    <span>{acc.name}</span>
+                    <span className="text-paper-500">${acc.balance}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
         {trade.note && (
           <p className="text-sm text-paper-300 group-hover:text-paper-100 transition-colors duration-200 border-l-2 border-ink-700 pl-3">
