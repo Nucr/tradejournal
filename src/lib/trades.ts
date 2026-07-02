@@ -77,9 +77,11 @@ export async function addTrade(uid: string, trade: TradeInput) {
   try {
     const docRef = await addDoc(tradesCollection(uid), {
       ...trade,
+      tradeId: "",
       createdAt: serverTimestamp(),
     });
     docRefId = docRef.id;
+    await updateDoc(docRef, { tradeId: docRef.id });
     console.log("addDoc succeeded", docRef.id);
   } catch (err) {
     console.error("addDoc failed:", err);

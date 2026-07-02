@@ -10,7 +10,7 @@ export async function GET(
 
     const tradesSnap = await adminDb
       .collectionGroup("trades")
-      .where("__name__", "==", tradeId)
+      .where("tradeId", "==", tradeId)
       .get();
 
     if (tradesSnap.empty) {
