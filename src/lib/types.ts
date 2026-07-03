@@ -19,6 +19,22 @@ export interface Trade {
   isShared?: boolean;
   visibility?: TradeVisibility;
   accountId?: string | null;
+  likeCount?: number;
+}
+
+export interface TradeReaction {
+  uid: string;
+  emoji: string;
+  createdAt: Date;
+}
+
+export interface TradeComment {
+  id: string;
+  uid: string;
+  displayName: string;
+  avatarUrl?: string;
+  text: string;
+  createdAt: Date;
 }
 
 export type TradeInput = Omit<Trade, "id" | "createdAt">;
@@ -194,7 +210,7 @@ export interface FriendRequest {
 
 // --- Notifications ---
 
-export type NotificationType = "new_message" | "friend_request" | "friend_accepted";
+export type NotificationType = "new_message" | "friend_request" | "friend_accepted" | "trade_like" | "trade_comment";
 
 export interface AppNotification {
   id: string;

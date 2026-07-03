@@ -3,16 +3,21 @@ import {
   addDoc,
   doc,
   getDocs,
+  getDoc,
+  setDoc,
+  deleteDoc,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   updateDoc,
+  increment,
   writeBatch,
   where,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { Trade, TradeInput } from "./types";
+import { Trade, TradeInput, TradeReaction, TradeComment } from "./types";
 import { syncUserScore } from "./scoreEngine";
 
 function tradesCollection(uid: string) {
@@ -38,6 +43,7 @@ function mapTrade(d: { id: string; data: () => Record<string, unknown> }): Trade
     note: (data.note as string) ?? "",
     screenshotUrl: (data.screenshotUrl as string) ?? "",
     accountId: (data.accountId as string) ?? undefined,
+    likeCount: (data.likeCount as number) ?? 0,
     createdAt: (data.createdAt as { toDate?: () => Date })?.toDate?.().toISOString?.() ?? (data.entryDate as string) ?? new Date().toISOString(),
     deletedAt: data.deletedAt == null ? null : (data.deletedAt as { toDate?: () => Date })?.toDate?.().toISOString?.() ?? null,
   };
@@ -134,4 +140,141 @@ export async function cleanupOldDeletedTrades(uid: string) {
   snap.docs.forEach((d) => batch.delete(d.ref));
   await batch.commit();
   return snap.size;
+}
+
+// ─── Social Interactions (Likes, Comments, Reactions) ───
+
+function likesCollection(ownerUid: string, tradeId: string) {
+  return collection(db, "users", ownerUid, "trades", tradeId, "likes");
+}
+
+function likeDoc(ownerUid: string, tradeId: string, userUid: string) {
+  return doc(db, "users", ownerUid, "trades", tradeId, "likes", userUid);
+}
+
+function commentsCollection(ownerUid: string, tradeId: string) {
+  return collection(db, "users", ownerUid, "trades", tradeId, "comments");
+}
+
+function commentDoc(ownerUid: string, tradeId: string, commentId: string) {
+  return doc(db, "users", ownerUid, "trades", tradeId, "comments", commentId);
+}
+
+function reactionsCollection(ownerUid: string, tradeId: string) {
+  return collection(db, "users", ownerUid, "trades", tradeId, "reactions");
+}
+
+function reactionDoc(ownerUid: string, tradeId: string, userUid: string) {
+  return doc(db, "users", ownerUid, "trades", tradeId, "reactions", userUid);
+}
+
+export async function toggleLike(ownerUid: string, tradeId: string, userUid: string) {
+  const ref = likeDoc(ownerUid, tradeId, userUid);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    await deleteDoc(ref);
+    await updateDoc(tradeDoc(ownerUid, tradeId), { likeCount: increment(-1) });
+    return false; // unliked
+  } else {
+    await setDoc(ref, { uid: userUid, createdAt: serverTimestamp() });
+    await updateDoc(tradeDoc(ownerUid, tradeId), { likeCount: increment(1) });
+    // Ensure likeCount starts at 0
+    return true; // liked
+  }
+}
+
+export function subscribeToLikeCount(ownerUid: string, tradeId: string, callback: (count: number) => void) {
+  return onSnapshot(tradeDoc(ownerUid, tradeId), (snap) => {
+    if (snap.exists()) {
+      callback((snap.data()?.likeCount as number) ?? 0);
+    }
+  });
+}
+
+export async function isLiked(ownerUid: string, tradeId: string, userUid: string): Promise<boolean> {
+  const snap = await getDoc(likeDoc(ownerUid, tradeId, userUid));
+  return snap.exists();
+}
+
+export function subscribeToIsLiked(ownerUid: string, tradeId: string, userUid: string, callback: (liked: boolean) => void) {
+  return onSnapshot(likeDoc(ownerUid, tradeId, userUid), (snap) => {
+    callback(snap.exists());
+  });
+}
+
+export async function addComment(ownerUid: string, tradeId: string, comment: Omit<TradeComment, "id" | "createdAt">) {
+  const docRef = await addDoc(commentsCollection(ownerUid, tradeId), {
+    ...comment,
+    createdAt: serverTimestamp(),
+  });
+  return docRef.id;
+}
+
+export function subscribeToComments(ownerUid: string, tradeId: string, callback: (comments: TradeComment[]) => void) {
+  const q = query(
+    commentsCollection(ownerUid, tradeId),
+    orderBy("createdAt", "asc")
+  );
+  return onSnapshot(q, (snap) => {
+    const list = snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        uid: data.uid as string,
+        displayName: data.displayName as string,
+        avatarUrl: data.avatarUrl as string | undefined,
+        text: data.text as string,
+        createdAt: (data.createdAt as Timestamp)?.toDate?.() ?? new Date(),
+      } as TradeComment;
+    });
+    callback(list);
+  });
+}
+
+export async function setReaction(ownerUid: string, tradeId: string, userUid: string, emoji: string) {
+  const ref = reactionDoc(ownerUid, tradeId, userUid);
+  const snap = await getDoc(ref);
+  if (snap.exists() && snap.data()?.emoji === emoji) {
+    // Same emoji - remove it (toggle off)
+    await deleteDoc(ref);
+    return null;
+  }
+  await setDoc(ref, { uid: userUid, emoji, createdAt: serverTimestamp() });
+  return emoji;
+}
+
+export function subscribeToReactions(ownerUid: string, tradeId: string, callback: (reactions: TradeReaction[]) => void) {
+  return onSnapshot(reactionsCollection(ownerUid, tradeId), (snap) => {
+    const list = snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        uid: data.uid as string,
+        emoji: data.emoji as string,
+        createdAt: (data.createdAt as Timestamp)?.toDate?.() ?? new Date(),
+      } as TradeReaction;
+    });
+    callback(list);
+  });
+}
+
+export async function getReactions(ownerUid: string, tradeId: string): Promise<TradeReaction[]> {
+  const snap = await getDocs(reactionsCollection(ownerUid, tradeId));
+  return snap.docs.map((d) => {
+    const data = d.data();
+    return {
+      uid: data.uid as string,
+      emoji: data.emoji as string,
+      createdAt: (data.createdAt as Timestamp)?.toDate?.() ?? new Date(),
+    } as TradeReaction;
+  });
+}
+
+export function subscribeToReaction(ownerUid: string, tradeId: string, userUid: string, callback: (emoji: string | null) => void) {
+  return onSnapshot(reactionDoc(ownerUid, tradeId, userUid), (snap) => {
+    if (snap.exists()) {
+      callback(snap.data()?.emoji as string ?? null);
+    } else {
+      callback(null);
+    }
+  });
 }
