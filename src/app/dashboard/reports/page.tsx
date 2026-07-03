@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import { useAuth } from "@/lib/auth-context";
 import { subscribeToTrades } from "@/lib/trades";
 import { subscribeToAccounts } from "@/lib/accounts";
@@ -21,6 +23,18 @@ import {
 } from "recharts";
 import StatCard from "@/components/StatCard";
 import { usePlan } from "@/lib/features";
+import ExecutiveSummary from "@/components/reports/ExecutiveSummary";
+import DetailedMetricsTable from "@/components/reports/DetailedMetricsTable";
+import MonthlyPnLChart from "@/components/reports/MonthlyPnLChart";
+import DayOfWeekChart from "@/components/reports/DayOfWeekChart";
+import AccountBreakdown from "@/components/reports/AccountBreakdown";
+import TradeListTable from "@/components/reports/TradeListTable";
+import {
+  computeAdvancedStats,
+  computeMonthlyPnL,
+  computeDayOfWeekStats,
+  computeAccountBreakdown,
+} from "@/components/reports/utils";
 
 const RANGE_PRESETS: { key: RangeKey; label: string }[] = [
   { key: "week", label: "Bu Hafta" },
@@ -31,12 +45,6 @@ const RANGE_PRESETS: { key: RangeKey; label: string }[] = [
 
 const PIE_COLORS = ["#2ED9A4", "#FF5D5D", "#F2B84B", "#52E3B7", "#FF8080", "#F6CC7A", "#3A4351", "#6B7480"];
 
-const DIRECTION_LABEL: Record<Trade["direction"], string> = {
-  long: "Long",
-  short: "Short",
-  be: "BE",
-};
-
 export default function ReportsPage() {
   const { user } = useAuth();
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -46,6 +54,8 @@ export default function ReportsPage() {
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [pdfGenerating, setPdfGenerating] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
   const { hasFeature } = usePlan();
   const canExport = hasFeature("csv_export");
 
@@ -72,6 +82,19 @@ export default function ReportsPage() {
   );
 
   const stats = useMemo(() => computeStats(filtered), [filtered]);
+  const advanced = useMemo(() => computeAdvancedStats(filtered), [filtered]);
+  const monthlyData = useMemo(() => computeMonthlyPnL(filtered), [filtered]);
+  const dayData = useMemo(() => computeDayOfWeekStats(filtered), [filtered]);
+  const accountBreakdown = useMemo(
+    () => computeAccountBreakdown(accounts, filtered, computeStats),
+    [accounts, filtered]
+  );
+
+  const accountNames = useMemo(() => {
+    const map: Record<string, string> = {};
+    accounts.forEach((a) => { map[a.id] = a.name; });
+    return map;
+  }, [accounts]);
 
   const strategyData = useMemo(() => {
     const map = new Map<string, number>();
@@ -95,20 +118,33 @@ export default function ReportsPage() {
     ];
   }, [filtered]);
 
+  const selectedAccountName = useMemo(() => {
+    if (accountFilter === "all") return "Tüm Hesaplar";
+    return accounts.find((a) => a.id === accountFilter)?.name ?? "Tüm Hesaplar";
+  }, [accountFilter, accounts]);
+
   async function handleCopy() {
     const lines = [
-      "─── RAPOR ───",
-      `Dönem: ${rangeLabel()}`,
+      `─── RAPOR: ${rangeLabel()} ───`,
+      `Hesap: ${selectedAccountName}`,
       "",
       `Toplam İşlem: ${stats.total}`,
       `Kazanma Oranı: ${stats.winRate.toFixed(1)}% (${stats.wins}K / ${stats.losses}Z / ${stats.breakeven}BE)`,
-      `Net Kâr/Zarar: ${stats.totalResult >= 0 ? "+" : ""}${stats.totalResult.toFixed(2)}%`,
+      `Profit Factor: ${advanced.profitFactor >= 99 ? "∞" : advanced.profitFactor.toFixed(2)}`,
+      `Net P&L: ${stats.totalNetPnl >= 0 ? "+" : ""}$${Math.abs(stats.totalNetPnl).toFixed(2)}`,
+      `Net %: ${stats.totalResult >= 0 ? "+" : ""}${stats.totalResult.toFixed(2)}%`,
       `Toplam RR: ${stats.totalRR >= 0 ? "+" : ""}${stats.totalRR.toFixed(2)}R`,
       `Ortalama RR: ${stats.avgRR.toFixed(2)}R`,
-      `Net PnL: ${stats.totalNetPnl >= 0 ? "+" : ""}$${Math.abs(stats.totalNetPnl).toFixed(2)}`,
+      `Payoff Ratio: ${advanced.payoffRatio >= 99 ? "∞" : advanced.payoffRatio.toFixed(2)}`,
+      `Ort. Kazanan: $${advanced.avgWin.toFixed(2)}`,
+      `Ort. Kaybeden: $${advanced.avgLoss.toFixed(2)}`,
+      `En Büyük Kazanç: $${advanced.largestWin.toFixed(2)}`,
+      `En Büyük Kayıp: $${Math.abs(advanced.largestLoss).toFixed(2)}`,
       "",
       `En İyi İşlem: ${stats.bestTrade ? `${stats.bestTrade.pair} — ${stats.bestTrade.result >= 0 ? "+" : ""}${stats.bestTrade.result}% (${stats.bestTrade.rr}R)` : "Yok"}`,
       `En Kötü İşlem: ${stats.worstTrade ? `${stats.worstTrade.pair} — ${stats.worstTrade.result >= 0 ? "+" : ""}${stats.worstTrade.result}% (${stats.worstTrade.rr}R)` : "Yok"}`,
+      `Max Galibiyet Serisi: ${stats.maxWinStreak}`,
+      `Max Mağlubiyet Serisi: ${stats.maxLoseStreak}`,
       "",
       "─── Strateji Dağılımı ───",
       ...strategyData.map((s) => `  ${s.name}: ${s.value} işlem`),
@@ -123,6 +159,44 @@ export default function ReportsPage() {
       setTimeout(() => setCopyFeedback(false), 2000);
     } catch {
       // silently fail
+    }
+  }
+
+  async function handlePdfDownload() {
+    if (!reportRef.current) return;
+    setPdfGenerating(true);
+    try {
+      const el = reportRef.current;
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth - 20;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 10;
+
+      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight - 20;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + 10;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight - 20;
+      }
+
+      pdf.save(`rapor-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    } catch (err) {
+      console.error("PDF oluşturulamadı:", err);
+    } finally {
+      setPdfGenerating(false);
     }
   }
 
@@ -141,11 +215,12 @@ export default function ReportsPage() {
       <div className="animate-fade-in-up">
         <h1 className="font-display text-2xl font-semibold">Raporlar</h1>
         <p className="text-sm text-paper-300 mt-1">
-          Seçtiğin döneme ait detaylı rapor.
+          Seçtiğin döneme ait detaylı profesyonel rapor.
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 animate-fade-in-up stagger-1">
+      {/* Controls */}
+      <div className="flex flex-wrap items-center gap-3 animate-fade-in-up stagger-1 no-print">
         <select
           value={accountFilter}
           onChange={(e) => setAccountFilter(e.target.value)}
@@ -198,8 +273,25 @@ export default function ReportsPage() {
           <p className="text-sm text-paper-500">Bu dönemde işlem bulunmuyor.</p>
         </div>
       ) : (
-        <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 animate-fade-in-up stagger-2">
+        <div ref={reportRef} className="space-y-8 print-friendly">
+          {/* Report header — print visible */}
+          <div className="hidden print:block text-center mb-8">
+            <h1 className="text-xl font-bold text-gray-900">Ticaret Raporu</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {selectedAccountName} · {rangeLabel()} · {filtered.length} işlem
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {format(new Date(), "dd MMM yyyy HH:mm")} tarihinde oluşturuldu
+            </p>
+          </div>
+
+          {/* Performance Summary Cards */}
+          <div className="animate-fade-in-up stagger-2">
+            <ExecutiveSummary stats={advanced} tradeCount={stats.total} />
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 animate-fade-in-up stagger-3">
             <StatCard label="Toplam İşlem" value={String(stats.total)} />
             <StatCard
               label="Kazanma Oranı"
@@ -231,7 +323,19 @@ export default function ReportsPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in-up stagger-3">
+          {/* Detailed Metrics Table */}
+          <div className="animate-fade-in-up stagger-4">
+            <DetailedMetricsTable stats={stats} advanced={advanced} tradeCount={stats.total} />
+          </div>
+
+          {/* Charts row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in-up stagger-5">
+            {monthlyData.length > 1 && <MonthlyPnLChart data={monthlyData} />}
+            <DayOfWeekChart data={dayData} />
+          </div>
+
+          {/* Strategy & Direction (existing) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in-up stagger-6">
             <div>
               <h2 className="text-sm font-mono uppercase tracking-wide text-paper-500 mb-3">
                 Strateji Dağılımı
@@ -347,7 +451,53 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div className="flex justify-center gap-3 animate-fade-in-up stagger-4">
+          {/* Account Breakdown */}
+          {accountBreakdown.length > 0 && (
+            <div className="animate-fade-in-up stagger-7">
+              <AccountBreakdown data={accountBreakdown} />
+            </div>
+          )}
+
+          {/* Trade List Table */}
+          <div className="animate-fade-in-up stagger-8">
+            <TradeListTable trades={filtered} accountNames={accountNames} />
+          </div>
+
+          {/* Print-only summary table for PDF */}
+          <div className="hidden print:block mt-8">
+            <h2 className="text-sm font-bold text-gray-900 uppercase mb-2">İşlem Listesi</h2>
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="border-b-2 border-gray-300">
+                  <th className="text-left py-1 px-2">Tarih</th>
+                  <th className="text-left py-1 px-2">Pair</th>
+                  <th className="text-left py-1 px-2">Yön</th>
+                  <th className="text-right py-1 px-2">Sonuç</th>
+                  <th className="text-right py-1 px-2">RR</th>
+                  <th className="text-right py-1 px-2">PnL</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.slice(0, 100).map((t) => (
+                  <tr key={t.id} className="border-b border-gray-200">
+                    <td className="py-1 px-2">{format(parseISO(t.entryDate), "dd MMM yy")}</td>
+                    <td className="py-1 px-2 font-semibold">{t.pair}</td>
+                    <td className="py-1 px-2">{t.direction === "long" ? "U" : t.direction === "short" ? "S" : "BE"}</td>
+                    <td className={`py-1 px-2 text-right ${t.result >= 0 ? "text-green-700" : "text-red-700"}`}>
+                      {t.result >= 0 ? "+" : ""}{t.result.toFixed(2)}%
+                    </td>
+                    <td className="py-1 px-2 text-right">{t.rr.toFixed(1)}R</td>
+                    <td className={`py-1 px-2 text-right ${t.netPnl >= 0 ? "text-green-700" : "text-red-700"}`}>
+                      ${(t.netPnl ?? 0).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Export buttons */}
+          <div className="flex justify-center gap-3 animate-fade-in-up stagger-9 no-print">
             {canExport ? (
               <button
                 onClick={handleCopy}
@@ -386,13 +536,14 @@ export default function ReportsPage() {
             )}
             {canExport ? (
               <button
-                onClick={() => window.print()}
-                className="rounded-lg border border-ink-800 bg-ink-900 px-5 py-2.5 text-sm font-medium text-paper-300 hover:text-paper-100 hover:border-ink-700 transition flex items-center gap-2"
+                onClick={handlePdfDownload}
+                disabled={pdfGenerating}
+                className="rounded-lg border border-ink-800 bg-ink-900 px-5 py-2.5 text-sm font-medium text-paper-300 hover:text-paper-100 hover:border-ink-700 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 11l5 5 5-5M12 4v12" />
                 </svg>
-                PDF Yazdır
+                {pdfGenerating ? "Oluşturuluyor..." : "PDF İndir"}
               </button>
             ) : (
               <a
@@ -406,7 +557,7 @@ export default function ReportsPage() {
               </a>
             )}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

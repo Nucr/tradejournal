@@ -171,6 +171,10 @@ a:focus-visible {
 .stagger-3 { animation-delay: 0.15s; }
 .stagger-4 { animation-delay: 0.20s; }
 .stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.30s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.40s; }
+.stagger-9 { animation-delay: 0.45s; }
 
 /* ===== RANK BADGE ANIMATIONS ===== */
 @keyframes rankGlow {
@@ -619,19 +623,127 @@ html.light [class*="to-ink-900\/80"] {
 /* ── Print styles ── */
 
 @media print {
+  @page {
+    margin: 1.2cm 1.6cm;
+    size: A4 portrait;
+  }
+
   nav, aside, footer, button, .no-print {
     display: none !important;
   }
+
+  .hidden.print\\:block {
+    display: block !important;
+  }
+
   body {
     background: white !important;
-    color: black !important;
+    color: #111 !important;
+    font-size: 10pt;
+    line-height: 1.5;
   }
+
+  .print-friendly {
+    display: block !important;
+    width: 100% !important;
+  }
+
   .rounded-xl, .rounded-lg {
-    border: 1px solid #ccc !important;
+    border: 1px solid #ddd !important;
     background: white !important;
     box-shadow: none !important;
+    border-radius: 4px !important;
   }
-  .font-mono {
-    font-family: monospace !important;
+
+  .font-mono,
+  .font-mono span,
+  [class*="font-mono"] {
+    font-family: "Consolas", "Courier New", monospace !important;
+    font-size: 9pt;
+  }
+
+  h1, h2, h3, h4 {
+    color: #000 !important;
+    page-break-after: avoid;
+  }
+
+  p, span, div {
+    color: #222 !important;
+  }
+
+  .text-paper-100, .text-paper-200, .text-paper-300, .text-paper-500 {
+    color: #222 !important;
+  }
+
+  .text-mint-400, .text-coral-400, .text-amber-400 {
+    color: #000 !important;
+  }
+
+  .recharts-responsive-container svg,
+  .recharts-wrapper svg {
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .recharts-text {
+    fill: #333 !important;
+    font-size: 8pt !important;
+  }
+
+  .recharts-cartesian-grid line {
+    stroke: #e5e5e5 !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 9pt;
+  }
+
+  th {
+    text-align: left;
+    padding: 4px 6px;
+    border-bottom: 2px solid #333 !important;
+    color: #000 !important;
+    font-weight: 600;
+  }
+
+  td {
+    padding: 3px 6px;
+    border-bottom: 1px solid #ddd !important;
+  }
+
+  .space-y-8 > * + * {
+    margin-top: 1.5rem !important;
+  }
+
+  .grid {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .grid > * {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .lg\\:grid-cols-2 > * {
+    display: inline-block !important;
+    width: 48% !important;
+    vertical-align: top !important;
+    margin-right: 2% !important;
+  }
+
+  .hidden.print\\:block table {
+    margin-top: 0.75rem;
+  }
+
+  img, svg {
+    max-width: 100% !important;
+  }
+
+  .print\\:hidden {
+    display: none !important;
   }
 }
