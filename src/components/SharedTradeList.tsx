@@ -147,8 +147,8 @@ export default function SharedTradeList({ uid, currentUid }: SharedTradeListProp
             <div className="flex items-center gap-3">
               {trade.likeCount !== undefined && trade.likeCount > 0 && (
                 <span className="text-xs text-paper-500 font-mono flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  <svg className="w-3 h-3 opacity-60" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M7.493 18.75c-.425 0-.82-.236-.975-.632A7.523 7.523 0 016 15.375c0-1.294.315-2.517.875-3.587.165-.315.412-.566.708-.73.308-.17.649-.248 1-.245h.564l.486-1.873a3.66 3.66 0 01.802-1.581l1.006-1.115c.56-.62.938-1.39 1.086-2.26l.073-.43a.753.753 0 01.745-.628c.432 0 .837.184 1.115.5.281.32.438.76.438 1.217v1.163c0 .432-.09.857-.265 1.25h4.586c.485 0 .91.22 1.184.574.302.393.417.914.306 1.453l-.975 5.055a2.307 2.307 0 01-2.262 1.842H7.493v-4.5H6.75v3.75h.743z" />
                   </svg>
                   {trade.likeCount}
                 </span>
