@@ -8,29 +8,22 @@ export async function GET(
   try {
     const { tradeId } = params;
 
-    const tradesSnap = await adminDb
-      .collectionGroup("trades")
-      .where("tradeId", "==", tradeId)
-      .get();
-
-    if (tradesSnap.empty) {
+    // sharedTrades koleksiyonundan bul (collectionGroup gerekmez)
+    const sharedSnap = await adminDb.collection("sharedTrades").doc(tradeId).get();
+    if (!sharedSnap.exists) {
       return NextResponse.json({ error: "İşlem bulunamadı" }, { status: 404 });
     }
 
-    const tradeDoc = tradesSnap.docs[0];
-    const uid = tradeDoc.ref.path.split("/")[1];
-    const data = tradeDoc.data();
+    const data = sharedSnap.data()!;
+    const uid = data.ownerUid;
 
-    if (!data.isShared) {
-      return NextResponse.json({ error: "Bu işlem paylaşılmamış" }, { status: 403 });
-    }
-
+    // Kullanıcı bilgisini al
     const userSnap = await adminDb.collection("users").doc(uid).get();
     const userData = userSnap.data();
 
     return NextResponse.json({
       trade: {
-        id: tradeDoc.id,
+        id: tradeId,
         ownerUid: uid,
         pair: data.pair ?? "",
         direction: data.direction ?? "",
@@ -45,9 +38,9 @@ export async function GET(
         likeCount: data.likeCount ?? 0,
       },
       user: {
-        displayName: userData?.displayName ?? "Trader",
-        avatarUrl: userData?.avatarUrl ?? null,
-        avatarColor: userData?.avatarColor ?? "#2ED9A4",
+        displayName: data.userDisplayName ?? userData?.displayName ?? "Trader",
+        avatarUrl: data.userAvatarUrl ?? userData?.avatarUrl ?? null,
+        avatarColor: data.userAvatarColor ?? userData?.avatarColor ?? "#2ED9A4",
       },
     });
   } catch (err: unknown) {
