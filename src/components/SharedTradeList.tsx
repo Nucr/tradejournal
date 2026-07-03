@@ -12,8 +12,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Trade } from "@/lib/types";
-import TradeDetailModal from "./TradeDetailModal";
-import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
 
 interface SharedTradeListProps {
   uid: string;
@@ -21,12 +20,11 @@ interface SharedTradeListProps {
 }
 
 export default function SharedTradeList({ uid, currentUid }: SharedTradeListProps) {
+  const router = useRouter();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFriend, setIsFriend] = useState(false);
-  const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
   const isOwner = currentUid === uid;
-  const { user } = useAuth();
 
   useEffect(() => {
     if (!currentUid || currentUid === uid) {
@@ -99,95 +97,79 @@ export default function SharedTradeList({ uid, currentUid }: SharedTradeListProp
     );
   }
 
-  const me = user;
-  const currentDisplayName = me?.displayName ?? me?.email?.split("@")[0] ?? "Trader";
-
   return (
-    <>
-      <div className="space-y-3">
-        {trades.map((trade) => (
-          <button
-            key={trade.id}
-            onClick={() => setSelectedTrade(trade)}
-            className="w-full text-left rounded-lg border border-ink-800 bg-ink-950 p-4 hover:border-ink-700 hover:bg-ink-900 transition-all duration-200"
-          >
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-3">
-                {trade.screenshotUrl && (
-                  <div className="w-12 h-12 rounded-md overflow-hidden shrink-0 bg-ink-800">
-                    <img
-                      src={trade.screenshotUrl}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-semibold text-paper-100">
-                      {trade.pair}
-                    </span>
-                    <span
-                      className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                        trade.direction === "long"
-                          ? "bg-mint-500/15 text-mint-400"
-                          : trade.direction === "short"
-                          ? "bg-coral-500/15 text-coral-400"
-                          : "bg-paper-500/15 text-paper-400"
-                      }`}
-                    >
-                      {trade.direction === "long"
-                        ? "UZUN"
-                        : trade.direction === "short"
-                        ? "KISA"
-                        : "BE"}
-                    </span>
-                  </div>
-                  {trade.strategy && (
-                    <p className="text-xs text-paper-500 font-mono">
-                      {trade.strategy}
-                    </p>
-                  )}
+    <div className="space-y-3">
+      {trades.map((trade) => (
+        <button
+          key={trade.id}
+          onClick={() => router.push(`/dashboard/social/trade/${trade.id}`)}
+          className="w-full text-left rounded-lg border border-ink-800 bg-ink-950 p-4 hover:border-ink-700 hover:bg-ink-900 transition-all duration-200"
+        >
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              {trade.screenshotUrl && (
+                <div className="w-12 h-12 rounded-md overflow-hidden shrink-0 bg-ink-800">
+                  <img
+                    src={trade.screenshotUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                {trade.likeCount !== undefined && trade.likeCount > 0 && (
-                  <span className="text-xs text-paper-500 font-mono flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                    {trade.likeCount}
+              )}
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-semibold text-paper-100">
+                    {trade.pair}
                   </span>
+                  <span
+                    className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                      trade.direction === "long"
+                        ? "bg-mint-500/15 text-mint-400"
+                        : trade.direction === "short"
+                        ? "bg-coral-500/15 text-coral-400"
+                        : "bg-paper-500/15 text-paper-400"
+                    }`}
+                  >
+                    {trade.direction === "long"
+                      ? "UZUN"
+                      : trade.direction === "short"
+                      ? "KISA"
+                      : "BE"}
+                  </span>
+                </div>
+                {trade.strategy && (
+                  <p className="text-xs text-paper-500 font-mono">
+                    {trade.strategy}
+                  </p>
                 )}
-                <span
-                  className={`font-mono text-sm font-semibold ${
-                    trade.result >= 0 ? "text-mint-400" : "text-coral-400"
-                  }`}
-                >
-                  {trade.result >= 0 ? "+" : ""}
-                  {trade.result.toFixed(2)}%
-                </span>
               </div>
             </div>
-            {trade.note && (
-              <p className="text-xs text-paper-400 mt-2 line-clamp-1 text-left">
-                {trade.note}
-              </p>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {selectedTrade && me && (
-        <TradeDetailModal
-          trade={selectedTrade}
-          ownerUid={uid}
-          currentUid={me.uid}
-          currentDisplayName={currentDisplayName}
-          currentAvatarUrl={me.photoURL ?? undefined}
-          onClose={() => setSelectedTrade(null)}
-        />
-      )}
-    </>
+            <div className="flex items-center gap-3">
+              {trade.likeCount !== undefined && trade.likeCount > 0 && (
+                <span className="text-xs text-paper-500 font-mono flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                  {trade.likeCount}
+                </span>
+              )}
+              <span
+                className={`font-mono text-sm font-semibold ${
+                  trade.result >= 0 ? "text-mint-400" : "text-coral-400"
+                }`}
+              >
+                {trade.result >= 0 ? "+" : ""}
+                {trade.result.toFixed(2)}%
+              </span>
+            </div>
+          </div>
+          {trade.note && (
+            <p className="text-xs text-paper-400 mt-2 line-clamp-1 text-left">
+              {trade.note}
+            </p>
+          )}
+        </button>
+      ))}
+    </div>
   );
 }
