@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { jsPDF } from "jspdf";
-import domtoimage from "dom-to-image-more";
+import { autoTable, applyPlugin } from "jspdf-autotable";
 import { useAuth } from "@/lib/auth-context";
 import { subscribeToTrades } from "@/lib/trades";
 import { subscribeToAccounts } from "@/lib/accounts";
@@ -162,44 +162,317 @@ export default function ReportsPage() {
     }
   }
 
+  function drawBarChart(
+    pdf: jsPDF,
+    data: { label: string; value: number; color?: string }[],
+    x: number, y: number, w: number, h: number,
+    opts: { min?: number; labelWidth?: number; showZero?: boolean } = {},
+  ) {
+    const labelW = opts.labelWidth ?? 20;
+    const chartX = x + labelW;
+    const chartW = w - labelW;
+    const barH = Math.min(6, (h - (data.length - 1) * 3) / data.length);
+    const values = data.map((d) => d.value);
+    const absValues = values.map(Math.abs);
+    const maxVal = Math.max(...absValues, 1);
+    const zeroVal = opts.showZero ? Math.min(...values) : 0;
+
+    data.forEach((d, i) => {
+      const by = y + i * (barH + 3);
+      const barWidth = (Math.abs(d.value) / maxVal) * chartW;
+      const barX = d.value >= 0 ? chartX : chartX - barWidth;
+      const color = d.color ?? (d.value >= 0 ? "#2ED9A4" : "#FF5D5D");
+      pdf.setFillColor(color);
+      pdf.rect(barX, by, Math.max(barWidth, 1), barH, "F");
+      pdf.setTextColor("#333");
+      pdf.setFontSize(7);
+      pdf.text(d.label, x, by + barH / 2 + 1.5);
+      pdf.text(
+        d.value >= 0 ? `+${d.value.toFixed(1)}` : d.value.toFixed(1),
+        chartX + chartW + 1,
+        by + barH / 2 + 1.5,
+      );
+    });
+  }
+
   async function handlePdfDownload() {
-    if (!reportRef.current) return;
+    if (filtered.length === 0) return;
     setPdfGenerating(true);
     try {
-      const el = reportRef.current;
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pw = pdf.internal.pageSize.getWidth();
+      const ph = pdf.internal.pageSize.getHeight();
+      const ml = 15;
+      const mr = 15;
+      const contentW = pw - ml - mr;
+      let y = ml;
+      const now = new Date();
 
-      const dataUrl = await domtoimage.toPng(el, {
-        bgcolor: "#ffffff",
-        quality: 1,
-        width: el.scrollWidth,
-        height: el.scrollHeight,
-        style: {
-          transform: "none",
+      function addSectionTitle(title: string) {
+        pdf.setFontSize(12);
+        pdf.setTextColor("#111");
+        pdf.text(title, ml, y);
+        y += 1;
+        pdf.setDrawColor("#ccc");
+        pdf.setLineWidth(0.3);
+        pdf.line(ml, y, ml + contentW, y);
+        y += 5;
+      }
+
+      function addBodyText(text: string, size = 9, color = "#444") {
+        pdf.setFontSize(size);
+        pdf.setTextColor(color);
+        pdf.text(text, ml, y);
+        y += size * 0.5;
+      }
+
+      function checkPage(minSpace = 15) {
+        if (y > ph - minSpace) {
+          pdf.addPage();
+          y = ml;
+        }
+      }
+
+      // ── Header ──
+      pdf.setFontSize(20);
+      pdf.setTextColor("#111");
+      pdf.text("Ticaret Raporu", ml, y);
+      y += 6;
+      pdf.setFontSize(9);
+      pdf.setTextColor("#666");
+      pdf.text(
+        `${selectedAccountName}  ·  ${rangeLabel()}  ·  ${filtered.length} işlem`,
+        ml, y,
+      );
+      y += 4;
+      pdf.text(
+        `${format(now, "dd MMM yyyy HH:mm")} tarihinde oluşturuldu`,
+        ml, y,
+      );
+      y += 10;
+
+      // ── Executive Summary Cards ──
+      const cards = [
+        { label: "Profit Factor", value: advanced.profitFactor >= 99 ? "∞" : advanced.profitFactor.toFixed(2) },
+        { label: "Ort. Kazanan", value: `+$${advanced.avgWin.toFixed(2)}` },
+        { label: "Ort. Kaybeden", value: `-$${Math.abs(advanced.avgLoss).toFixed(2)}` },
+        { label: "Payoff Ratio", value: advanced.payoffRatio >= 99 ? "∞" : advanced.payoffRatio.toFixed(2) },
+        { label: "En Büyük Kazanç", value: `+$${advanced.largestWin.toFixed(2)}` },
+        { label: "En Büyük Kayıp", value: `-$${Math.abs(advanced.largestLoss).toFixed(2)}` },
+      ];
+
+      const cardW = (contentW - 10) / 3;
+      const cardH = 14;
+
+      cards.forEach((card, i) => {
+        const col = i % 3;
+        const row = Math.floor(i / 3);
+        const cx = ml + col * (cardW + 5);
+        const cy = y + row * (cardH + 4);
+        pdf.setDrawColor("#ddd");
+        pdf.setFillColor("#f9fafb");
+        pdf.roundedRect(cx, cy, cardW, cardH, 2, 2, "FD");
+        pdf.setFontSize(7);
+        pdf.setTextColor("#888");
+        pdf.text(card.label, cx + 3, cy + 4);
+        pdf.setFontSize(11);
+        pdf.setTextColor("#111");
+        pdf.text(card.value, cx + 3, cy + cardH - 4);
+      });
+
+      y += Math.ceil(cards.length / 3) * (cardH + 4) + 2;
+
+      // ── Quick Stats Row ──
+      checkPage();
+      addSectionTitle("Özet Metrikler");
+
+      const quickStats = [
+        { label: "Toplam İşlem", value: String(stats.total) },
+        { label: "Kazanma Oranı", value: `${stats.winRate.toFixed(1)}%` },
+        { label: "Net Kâr/Zarar", value: `${stats.totalResult >= 0 ? "+" : ""}${stats.totalResult.toFixed(2)}%` },
+        { label: "Ortalama RR", value: `${stats.avgRR.toFixed(2)}R` },
+        { label: "En İyi Trade", value: stats.bestTrade ? `+${stats.bestTrade.result}%` : "Yok" },
+        { label: "En Kötü Trade", value: stats.worstTrade ? `${stats.worstTrade.result}%` : "Yok" },
+      ];
+
+      const qCardW = (contentW - 15) / 6;
+      quickStats.forEach((s, i) => {
+        const qx = ml + i * (qCardW + 3);
+        if (qx + qCardW > pw - mr) return;
+        pdf.setDrawColor("#ddd");
+        pdf.setFillColor("#f9fafb");
+        pdf.roundedRect(qx, y, qCardW, 12, 1.5, 1.5, "FD");
+        pdf.setFontSize(6);
+        pdf.setTextColor("#888");
+        pdf.text(s.label, qx + 2, y + 3.5);
+        pdf.setFontSize(9);
+        pdf.setTextColor("#111");
+        pdf.text(s.value, qx + 2, y + 10);
+      });
+      y += 16;
+
+      // ── Detailed Metrics Table ──
+      checkPage(30);
+      addSectionTitle("Detaylı Metrikler");
+
+      const metricRows = [
+        ["Toplam İşlem", String(stats.total), "Brüt Kâr", `+$${advanced.grossProfit.toFixed(2)}`],
+        ["Kazanan", String(stats.wins), "Brüt Zarar", `-$${advanced.grossLoss.toFixed(2)}`],
+        ["Kaybeden", String(stats.losses), "Net P&L ($)", `${stats.totalNetPnl >= 0 ? "+" : ""}$${stats.totalNetPnl.toFixed(2)}`],
+        ["BE", String(stats.breakeven), "Net (%)", `${stats.totalResult >= 0 ? "+" : ""}${stats.totalResult.toFixed(2)}%`],
+        ["Kazanma Oranı", `${stats.winRate.toFixed(1)}%`, "Ort. RR", `${stats.avgRR.toFixed(2)}R`],
+        ["Profit Factor", advanced.profitFactor >= 99 ? "∞" : advanced.profitFactor.toFixed(2), "Payoff Ratio", advanced.payoffRatio >= 99 ? "∞" : advanced.payoffRatio.toFixed(2)],
+        ["Ort. Kazanan", `+$${advanced.avgWin.toFixed(2)}`, "Ort. Kaybeden", `-$${Math.abs(advanced.avgLoss).toFixed(2)}`],
+        ["En Büyük Kazanç", `+$${advanced.largestWin.toFixed(2)}`, "En Büyük Kayıp", `-$${Math.abs(advanced.largestLoss).toFixed(2)}`],
+        ["Max Galibiyet Serisi", String(stats.maxWinStreak), "Max Mağlubiyet Serisi", String(stats.maxLoseStreak)],
+      ];
+
+      autoTable(pdf, {
+        startY: y,
+        head: [["Metrik", "Değer", "Metrik", "Değer"]],
+        body: metricRows,
+        theme: "plain",
+        margin: { left: ml, right: mr },
+        styles: { fontSize: 8, cellPadding: 1.5 },
+        headStyles: { fontSize: 7, textColor: "#888", fontStyle: "bold" },
+        columnStyles: {
+          0: { cellWidth: 35 },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 35 },
+          3: { cellWidth: 35 },
+        },
+        tableWidth: contentW,
+        tableLineColor: "#eee",
+        tableLineWidth: 0.1,
+      });
+      y = (pdf as any).lastAutoTable.finalY + 8;
+
+      // ── Monthly P&L Chart ──
+      if (monthlyData.length > 1) {
+        checkPage(50);
+        addSectionTitle("Aylık Kâr/Zarar");
+        const chartH = 50;
+        drawBarChart(
+          pdf,
+          monthlyData.map((m) => ({ label: m.monthLabel.slice(0, 7), value: m.pnl })),
+          ml, y, contentW, chartH,
+          { labelWidth: 22 },
+        );
+        y += chartH + 6;
+      }
+
+      // ── Day of Week Chart ──
+      checkPage(50);
+      addSectionTitle("Gün Bazında Performans");
+      const dayChartH = 50;
+      drawBarChart(
+        pdf,
+        dayData.map((d) => ({ label: d.shortName, value: d.pnl })),
+        ml, y, contentW, dayChartH,
+        { labelWidth: 14 },
+      );
+      y += dayChartH + 6;
+
+      // ── Strategy & Direction Summary ──
+      checkPage(40);
+      addSectionTitle("Strateji & Yön Dağılımı");
+
+      const maxStratItems = strategyData.slice(0, 8);
+      const stratRows = maxStratItems.map((s) => [s.name, String(s.value)]);
+      const dirRows = directionData
+        .filter((d) => d.value > 0)
+        .map((d) => [d.name, String(d.value)]);
+
+      autoTable(pdf, {
+        startY: y,
+        head: [["Strateji", "Adet"]],
+        body: stratRows,
+        theme: "plain",
+        margin: { left: ml, right: mr },
+        styles: { fontSize: 8, cellPadding: 1.5 },
+        headStyles: { fontSize: 7, textColor: "#888", fontStyle: "bold" },
+        columnStyles: { 0: { cellWidth: 60 } },
+        tableWidth: contentW / 2 - 5,
+      });
+      const stratEndY = (pdf as any).lastAutoTable.finalY;
+
+      const dirStartX = ml + contentW / 2 + 5;
+      autoTable(pdf, {
+        startY: y,
+        head: [["Yön", "Adet"]],
+        body: dirRows,
+        theme: "plain",
+        margin: { left: dirStartX, right: mr },
+        styles: { fontSize: 8, cellPadding: 1.5 },
+        headStyles: { fontSize: 7, textColor: "#888", fontStyle: "bold" },
+        columnStyles: { 0: { cellWidth: 30 } },
+        tableWidth: contentW / 2 - 5,
+      });
+
+      y = Math.max(stratEndY, (pdf as any).lastAutoTable.finalY) + 8;
+
+      // ── Account Breakdown ──
+      if (accountBreakdown.length > 1) {
+        checkPage(30);
+        addSectionTitle("Hesap Bazında Performans");
+
+        const accRows = accountBreakdown.map((a) => [
+          a.name,
+          String(a.stats.total),
+          `${a.stats.winRate.toFixed(1)}%`,
+          `${a.pnl >= 0 ? "+" : ""}$${a.pnl.toFixed(2)}`,
+          `${a.stats.totalResult >= 0 ? "+" : ""}${a.stats.totalResult.toFixed(2)}%`,
+        ]);
+
+        autoTable(pdf, {
+          startY: y,
+          head: [["Hesap", "İşlem", "Win Rate", "PnL ($)", "PnL (%)"]],
+          body: accRows,
+          theme: "plain",
+          margin: { left: ml, right: mr },
+          styles: { fontSize: 8, cellPadding: 1.5 },
+          headStyles: { fontSize: 7, textColor: "#888", fontStyle: "bold" },
+          tableWidth: contentW,
+          tableLineColor: "#eee",
+          tableLineWidth: 0.1,
+        });
+        y = (pdf as any).lastAutoTable.finalY + 8;
+      }
+
+      // ── Trade List ──
+      checkPage(30);
+      addSectionTitle("İşlem Listesi");
+
+      const tradeRows = filtered.map((t) => [
+        format(parseISO(t.entryDate), "dd MMM yy"),
+        t.pair,
+        t.direction === "long" ? "U" : t.direction === "short" ? "S" : "BE",
+        `${t.result >= 0 ? "+" : ""}${t.result.toFixed(2)}%`,
+        `${t.rr.toFixed(1)}R`,
+        `${(t.netPnl ?? 0) >= 0 ? "+" : ""}$${(t.netPnl ?? 0).toFixed(2)}`,
+        t.strategy || "-",
+      ]);
+
+      autoTable(pdf, {
+        startY: y,
+        head: [["Tarih", "Pair", "Yön", "Sonuç", "RR", "PnL", "Strateji"]],
+        body: tradeRows,
+        theme: "plain",
+        margin: { left: ml, right: mr },
+        styles: { fontSize: 7, cellPadding: 1.2 },
+        headStyles: { fontSize: 7, textColor: "#888", fontStyle: "bold" },
+        tableWidth: contentW,
+        tableLineColor: "#eee",
+        tableLineWidth: 0.1,
+        columnStyles: {
+          0: { cellWidth: 20 },
+          3: { cellWidth: 18 },
+          4: { cellWidth: 12 },
+          5: { cellWidth: 22 },
         },
       });
 
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth - 20;
-      const img = new Image();
-      img.src = dataUrl;
-      await new Promise((r) => { img.onload = r; });
-      const imgHeight = (img.height * imgWidth) / img.width;
-      let heightLeft = imgHeight;
-      let position = 10;
-
-      pdf.addImage(dataUrl, "PNG", 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight - 20;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight - pageHeight + 20;
-        pdf.addPage();
-        pdf.addImage(dataUrl, "PNG", 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight - 20;
-      }
-
-      pdf.save(`rapor-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+      pdf.save(`rapor-${format(now, "yyyy-MM-dd")}.pdf`);
     } catch (err) {
       console.error("PDF oluşturulamadı:", err);
     } finally {
