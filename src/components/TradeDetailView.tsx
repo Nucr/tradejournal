@@ -7,6 +7,9 @@ import {
   toggleLike,
   subscribeToLikeCount,
   subscribeToIsLiked,
+  toggleDislike,
+  subscribeToDislikeCount,
+  subscribeToIsDisliked,
   addComment,
   subscribeToComments,
   setReaction,
@@ -18,7 +21,7 @@ import Link from "next/link";
 const EMOJIS = ["🔥", "💎", "🚀", "💯", "❤️", "😍", "👏", "✅"];
 
 interface TradeDetailViewProps {
-  trade: Pick<Trade, "id" | "pair" | "direction" | "entryDate" | "exitDate" | "result" | "rr" | "netPnl" | "strategy" | "note" | "screenshotUrl" | "likeCount">;
+  trade: Pick<Trade, "id" | "pair" | "direction" | "entryDate" | "exitDate" | "result" | "rr" | "netPnl" | "strategy" | "note" | "screenshotUrl" | "likeCount" | "dislikeCount">;
   ownerUid: string;
   ownerUser: {
     displayName: string;
@@ -39,7 +42,9 @@ export default function TradeDetailView({
   currentAvatarUrl,
 }: TradeDetailViewProps) {
   const [likeCount, setLikeCount] = useState(trade.likeCount ?? 0);
+  const [dislikeCount, setDislikeCount] = useState(trade.dislikeCount ?? 0);
   const [liked, setLiked] = useState(false);
+  const [disliked, setDisliked] = useState(false);
   const [comments, setComments] = useState<TradeComment[]>([]);
   const [reactions, setReactions] = useState<TradeReaction[]>([]);
   const [myReaction, setMyReaction] = useState<string | null>(null);
@@ -48,13 +53,17 @@ export default function TradeDetailView({
 
   useEffect(() => {
     const unsubLikeCount = subscribeToLikeCount(ownerUid, trade.id, setLikeCount);
+    const unsubDislikeCount = subscribeToDislikeCount(ownerUid, trade.id, setDislikeCount);
     const unsubLiked = subscribeToIsLiked(ownerUid, trade.id, currentUid, setLiked);
+    const unsubDisliked = subscribeToIsDisliked(ownerUid, trade.id, currentUid, setDisliked);
     const unsubComments = subscribeToComments(ownerUid, trade.id, setComments);
     const unsubReactions = subscribeToReactions(ownerUid, trade.id, setReactions);
     const unsubMyReaction = subscribeToReaction(ownerUid, trade.id, currentUid, setMyReaction);
     return () => {
       unsubLikeCount();
+      unsubDislikeCount();
       unsubLiked();
+      unsubDisliked();
       unsubComments();
       unsubReactions();
       unsubMyReaction();
@@ -63,6 +72,10 @@ export default function TradeDetailView({
 
   async function handleLike() {
     await toggleLike(ownerUid, trade.id, currentUid);
+  }
+
+  async function handleDislike() {
+    await toggleDislike(ownerUid, trade.id, currentUid);
   }
 
   async function handleReaction(emoji: string) {
@@ -178,19 +191,34 @@ export default function TradeDetailView({
 
       {/* Reactions & Like */}
       <div className="p-4 border-b border-ink-800 space-y-3">
-        <button
-          onClick={handleLike}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition text-sm ${
-            liked
-              ? "border-coral-500/40 text-coral-400 bg-coral-500/10"
-              : "border-ink-700 text-paper-400 hover:border-coral-500/40 hover:text-coral-400"
-          }`}
-        >
-          <svg className="w-4 h-4" fill={liked ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
-          {likeCount > 0 && <span className="font-mono text-xs">{likeCount}</span>}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleLike}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition text-sm ${
+              liked
+                ? "border-coral-500/40 text-coral-400 bg-coral-500/10"
+                : "border-ink-700 text-paper-400 hover:border-coral-500/40 hover:text-coral-400"
+            }`}
+          >
+            <svg className="w-4 h-4" fill={liked ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            {likeCount > 0 && <span className="font-mono text-xs">{likeCount}</span>}
+          </button>
+          <button
+            onClick={handleDislike}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition text-sm ${
+              disliked
+                ? "border-coral-500/40 text-coral-400 bg-coral-500/10"
+                : "border-ink-700 text-paper-400 hover:border-coral-500/40 hover:text-coral-400"
+            }`}
+          >
+            <svg className="w-4 h-4 rotate-180" fill={disliked ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            {dislikeCount > 0 && <span className="font-mono text-xs">{dislikeCount}</span>}
+          </button>
+        </div>
 
         <div>
           <p className="text-xs font-mono text-paper-500 mb-2 uppercase">Tepkiler</p>

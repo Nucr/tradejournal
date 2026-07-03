@@ -20,6 +20,7 @@ export interface Trade {
   visibility?: TradeVisibility;
   accountId?: string | null;
   likeCount?: number;
+  dislikeCount?: number;
 }
 
 export interface TradeReaction {

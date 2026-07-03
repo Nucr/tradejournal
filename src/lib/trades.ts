@@ -150,6 +150,7 @@ export async function shareTrade(uid: string, id: string, visibility?: "public" 
     note: data.note ?? "",
     screenshotUrl: data.screenshotUrl ?? "",
     likeCount: data.likeCount ?? 0,
+    dislikeCount: data.dislikeCount ?? 0,
     userDisplayName: userData?.displayName ?? "Trader",
     userAvatarUrl: userData?.avatarUrl ?? null,
     userAvatarColor: userData?.avatarColor ?? "#2ED9A4",
@@ -236,6 +237,42 @@ export async function isLiked(ownerUid: string, tradeId: string, userUid: string
 
 export function subscribeToIsLiked(ownerUid: string, tradeId: string, userUid: string, callback: (liked: boolean) => void) {
   return onSnapshot(likeDoc(ownerUid, tradeId, userUid), (snap) => {
+    callback(snap.exists());
+  });
+}
+
+function dislikesCollection(ownerUid: string, tradeId: string) {
+  return collection(db, "users", ownerUid, "trades", tradeId, "dislikes");
+}
+
+function dislikeDoc(ownerUid: string, tradeId: string, userUid: string) {
+  return doc(db, "users", ownerUid, "trades", tradeId, "dislikes", userUid);
+}
+
+export async function toggleDislike(ownerUid: string, tradeId: string, userUid: string) {
+  const ref = dislikeDoc(ownerUid, tradeId, userUid);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    await deleteDoc(ref);
+    await updateDoc(tradeDoc(ownerUid, tradeId), { dislikeCount: increment(-1) });
+    return false;
+  } else {
+    await setDoc(ref, { uid: userUid, createdAt: serverTimestamp() });
+    await updateDoc(tradeDoc(ownerUid, tradeId), { dislikeCount: increment(1) });
+    return true;
+  }
+}
+
+export function subscribeToDislikeCount(ownerUid: string, tradeId: string, callback: (count: number) => void) {
+  return onSnapshot(tradeDoc(ownerUid, tradeId), (snap) => {
+    if (snap.exists()) {
+      callback((snap.data()?.dislikeCount as number) ?? 0);
+    }
+  });
+}
+
+export function subscribeToIsDisliked(ownerUid: string, tradeId: string, userUid: string, callback: (disliked: boolean) => void) {
+  return onSnapshot(dislikeDoc(ownerUid, tradeId, userUid), (snap) => {
     callback(snap.exists());
   });
 }

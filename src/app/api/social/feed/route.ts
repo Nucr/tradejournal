@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
       note: string;
       screenshotUrl: string;
       likeCount: number;
+      dislikeCount: number;
       user: {
         displayName: string;
         avatarUrl: string | null;
@@ -55,6 +56,7 @@ export async function GET(request: NextRequest) {
         note: data.note ?? "",
         screenshotUrl: data.screenshotUrl ?? "",
         likeCount: data.likeCount ?? 0,
+        dislikeCount: data.dislikeCount ?? 0,
         user: {
           displayName: data.userDisplayName ?? "Trader",
           avatarUrl: data.userAvatarUrl ?? null,

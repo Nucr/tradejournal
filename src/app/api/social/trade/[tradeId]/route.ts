@@ -36,6 +36,7 @@ export async function GET(
         note: data.note ?? "",
         screenshotUrl: data.screenshotUrl ?? "",
         likeCount: data.likeCount ?? 0,
+        dislikeCount: data.dislikeCount ?? 0,
       },
       user: {
         displayName: data.userDisplayName ?? userData?.displayName ?? "Trader",
