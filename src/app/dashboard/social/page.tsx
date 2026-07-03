@@ -32,13 +32,17 @@ export default function SocialFeedPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   const fetchFeed = useCallback(async (cursor?: string | null) => {
     const params = new URLSearchParams({ limit: "20" });
     if (cursor) params.set("lastEntryDate", cursor);
 
     const res = await fetch(`/api/social/feed?${params}`);
-    if (!res.ok) return;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: "API hatası" }));
+      throw new Error(err.error || "İşlemler yüklenemedi");
+    }
 
     const data = await res.json();
     return data as {
@@ -49,14 +53,19 @@ export default function SocialFeedPage() {
   }, []);
 
   useEffect(() => {
-    fetchFeed().then((data) => {
-      if (data) {
-        setItems(data.items);
-        setHasMore(data.hasMore);
-        setNextCursor(data.nextCursor);
-      }
-      setLoading(false);
-    });
+    fetchFeed()
+      .then((data) => {
+        if (data) {
+          setItems(data.items);
+          setHasMore(data.hasMore);
+          setNextCursor(data.nextCursor);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
   }, [fetchFeed]);
 
   async function loadMore() {
@@ -79,6 +88,22 @@ export default function SocialFeedPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="space-y-6 animate-fade-in-up">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Keşfet</h1>
+          <p className="text-sm text-paper-300 mt-1">
+            Diğer traderların paylaştığı işlemleri keşfet.
+          </p>
+        </div>
+        <div className="rounded-xl border border-coral-500/30 bg-coral-500/5 p-12 text-center">
+          <p className="text-coral-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div>
@@ -88,7 +113,7 @@ export default function SocialFeedPage() {
         </p>
       </div>
 
-      {items.length === 0 && (
+      {items.length === 0 && !error && (
         <div className="rounded-xl border border-ink-800 bg-ink-900 p-12 text-center">
           <p className="text-paper-400">Henüz paylaşılmış işlem bulunmuyor.</p>
         </div>
