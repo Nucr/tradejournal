@@ -66,6 +66,20 @@ export default function DashboardPage() {
 
   const filteredNetPnl = stats.totalNetPnl;
 
+  const accountBalances = useMemo(() => {
+    return accounts.map((acc) => {
+      const pnl = trades
+        .filter((t) => t.accountId === acc.id)
+        .reduce((s, t) => s + t.netPnl, 0);
+      return { ...acc, effectiveBalance: acc.balance + pnl };
+    });
+  }, [accounts, trades]);
+
+  const totalEffectiveBalance = useMemo(
+    () => accountBalances.reduce((s, a) => s + a.effectiveBalance, 0),
+    [accountBalances]
+  );
+
   if (loading) {
     return <DashboardSkeleton />;
   }
@@ -101,6 +115,21 @@ export default function DashboardPage() {
             <p className={`font-mono text-lg font-semibold mt-0.5 ${allStats.totalNetPnl >= 0 ? "text-mint-400" : "text-coral-400"}`}>
               {allStats.totalNetPnl >= 0 ? "+" : ""}${allStats.totalNetPnl.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
             </p>
+          </div>
+          <div>
+            <p className="text-xs font-mono uppercase tracking-wide text-paper-500">Güncel Bakiye</p>
+            <p className={`font-mono text-lg font-semibold mt-0.5 ${totalEffectiveBalance >= 0 ? "text-mint-400" : "text-coral-400"}`}>
+              ${totalEffectiveBalance.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
+            </p>
+            {accountBalances.length > 0 && (
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                {accountBalances.map((a) => (
+                  <span key={a.id} className="text-[10px] font-mono text-paper-500">
+                    {a.name}: ${a.effectiveBalance.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
