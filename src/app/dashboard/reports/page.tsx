@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
+import domtoimage from "dom-to-image-more";
 import { useAuth } from "@/lib/auth-context";
 import { subscribeToTrades } from "@/lib/trades";
 import { subscribeToAccounts } from "@/lib/accounts";
@@ -166,43 +166,42 @@ export default function ReportsPage() {
     if (!reportRef.current) return;
     setPdfGenerating(true);
     try {
-      const original = reportRef.current;
+      const el = reportRef.current;
 
-      document.documentElement.classList.add("light");
-      await new Promise((r) => setTimeout(r, 50));
-
-      const canvas = await html2canvas(original, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
+      const dataUrl = await domtoimage.toPng(el, {
+        bgcolor: "#ffffff",
+        quality: 1,
+        width: el.scrollWidth,
+        height: el.scrollHeight,
+        style: {
+          transform: "none",
+        },
       });
 
-      document.documentElement.classList.remove("light");
-
-      const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const imgWidth = pageWidth - 20;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise((r) => { img.onload = r; });
+      const imgHeight = (img.height * imgWidth) / img.width;
       let heightLeft = imgHeight;
       let position = 10;
 
-      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      pdf.addImage(dataUrl, "PNG", 10, position, imgWidth, imgHeight);
       heightLeft -= pageHeight - 20;
 
       while (heightLeft > 0) {
         position = heightLeft - imgHeight - pageHeight + 20;
         pdf.addPage();
-        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        pdf.addImage(dataUrl, "PNG", 10, position, imgWidth, imgHeight);
         heightLeft -= pageHeight - 20;
       }
 
       pdf.save(`rapor-${format(new Date(), "yyyy-MM-dd")}.pdf`);
     } catch (err) {
       console.error("PDF oluşturulamadı:", err);
-      document.documentElement.classList.remove("light");
     } finally {
       setPdfGenerating(false);
     }
