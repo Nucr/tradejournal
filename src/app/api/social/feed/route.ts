@@ -7,10 +7,8 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(Number(searchParams.get("limit") ?? "20"), 50);
     const lastEntryDate = searchParams.get("lastEntryDate");
 
-    // COLLECTION_GROUP index: isShared ASC, entryDate DESC gerekli
     let query = adminDb
-      .collectionGroup("trades")
-      .where("isShared", "==", true)
+      .collection("sharedTrades")
       .orderBy("entryDate", "desc")
       .limit(limit + 1);
 
@@ -43,16 +41,9 @@ export async function GET(request: NextRequest) {
 
     for (const doc of tradesSnap.docs.slice(0, limit)) {
       const data = doc.data();
-      // Sadece public işlemleri göster, friends/private olanları atla
-      if (data.visibility !== "public") continue;
-
-      const uid = doc.ref.path.split("/")[1];
-      const userSnap = await adminDb.collection("users").doc(uid).get();
-      const userData = userSnap.data();
-
       items.push({
         tradeId: doc.id,
-        ownerUid: uid,
+        ownerUid: data.ownerUid ?? "",
         pair: data.pair ?? "",
         direction: data.direction ?? "",
         entryDate: data.entryDate ?? "",
@@ -65,9 +56,9 @@ export async function GET(request: NextRequest) {
         screenshotUrl: data.screenshotUrl ?? "",
         likeCount: data.likeCount ?? 0,
         user: {
-          displayName: userData?.displayName ?? "Trader",
-          avatarUrl: userData?.avatarUrl ?? null,
-          avatarColor: userData?.avatarColor ?? "#2ED9A4",
+          displayName: data.userDisplayName ?? "Trader",
+          avatarUrl: data.userAvatarUrl ?? null,
+          avatarColor: data.userAvatarColor ?? "#2ED9A4",
         },
       });
     }

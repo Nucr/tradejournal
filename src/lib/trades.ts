@@ -122,7 +122,45 @@ export async function restoreTrade(uid: string, id: string) {
 }
 
 export async function shareTrade(uid: string, id: string, visibility?: "public" | "friends" | "private") {
-  await updateDoc(tradeDoc(uid, id), { isShared: true, visibility: visibility ?? "public" });
+  const v = visibility ?? "public";
+  const tradeRef = tradeDoc(uid, id);
+  await updateDoc(tradeRef, { isShared: true, visibility: v });
+
+  if (v !== "public") {
+    await deleteDoc(doc(db, "sharedTrades", id)).catch(() => {});
+    return;
+  }
+
+  // Root-level sharedTrades koleksiyonuna yaz (collectionGroup index gerekmez)
+  const tradeSnap = await getDoc(tradeRef);
+  if (!tradeSnap.exists()) return;
+  const data = tradeSnap.data();
+  const userSnap = await getDoc(doc(db, "users", uid));
+  const userData = userSnap.exists() ? userSnap.data() : null;
+  await setDoc(doc(db, "sharedTrades", id), {
+    ownerUid: uid,
+    pair: data.pair,
+    direction: data.direction,
+    entryDate: data.entryDate,
+    exitDate: data.exitDate,
+    result: data.result ?? 0,
+    rr: data.rr ?? 0,
+    netPnl: data.netPnl ?? 0,
+    strategy: data.strategy ?? "",
+    note: data.note ?? "",
+    screenshotUrl: data.screenshotUrl ?? "",
+    likeCount: data.likeCount ?? 0,
+    userDisplayName: userData?.displayName ?? "Trader",
+    userAvatarUrl: userData?.avatarUrl ?? null,
+    userAvatarColor: userData?.avatarColor ?? "#2ED9A4",
+    entryDateServer: data.entryDate,
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function unshareTrade(uid: string, id: string) {
+  await updateDoc(tradeDoc(uid, id), { isShared: false, visibility: "private" });
+  await deleteDoc(doc(db, "sharedTrades", id)).catch(() => {});
 }
 
 export async function cleanupOldDeletedTrades(uid: string) {
