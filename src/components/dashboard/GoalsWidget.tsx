@@ -14,6 +14,7 @@ const METRIC_LABELS: Record<Goal["metric"], string> = {
   totalResult: "Toplam %",
   totalRR: "Toplam RR",
   consecutiveWins: "Seri Galibiyet",
+  totalNetPnl: "Net Kâr ($)",
 };
 
 const PERIOD_LABELS: Record<Goal["period"], string> = {

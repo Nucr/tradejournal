@@ -100,7 +100,7 @@ export interface Goal {
   title: string;
   targetValue: number;
   currentValue: number;
-  metric: "totalTrades" | "winRate" | "totalResult" | "totalRR" | "consecutiveWins";
+  metric: "totalTrades" | "winRate" | "totalResult" | "totalRR" | "consecutiveWins" | "totalNetPnl";
   period: "weekly" | "monthly" | "yearly";
   createdAt: string;
 }
