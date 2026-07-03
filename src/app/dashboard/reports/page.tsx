@@ -166,13 +166,20 @@ export default function ReportsPage() {
     if (!reportRef.current) return;
     setPdfGenerating(true);
     try {
-      const el = reportRef.current;
-      const canvas = await html2canvas(el, {
+      const original = reportRef.current;
+
+      document.documentElement.classList.add("light");
+      await new Promise((r) => setTimeout(r, 50));
+
+      const canvas = await html2canvas(original, {
         scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
       });
+
+      document.documentElement.classList.remove("light");
+
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -186,7 +193,7 @@ export default function ReportsPage() {
       heightLeft -= pageHeight - 20;
 
       while (heightLeft > 0) {
-        position = heightLeft - imgHeight + 10;
+        position = heightLeft - imgHeight - pageHeight + 20;
         pdf.addPage();
         pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
         heightLeft -= pageHeight - 20;
@@ -195,6 +202,7 @@ export default function ReportsPage() {
       pdf.save(`rapor-${format(new Date(), "yyyy-MM-dd")}.pdf`);
     } catch (err) {
       console.error("PDF oluşturulamadı:", err);
+      document.documentElement.classList.remove("light");
     } finally {
       setPdfGenerating(false);
     }
