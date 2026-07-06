@@ -107,7 +107,7 @@ export function computeStats(trades: Trade[]): TradeStats {
   const decided = wins.length + losses.length;
   const winRate = decided > 0 ? (wins.length / decided) * 100 : 0;
 
-  const totalRR = trades.reduce((sum, t) => sum + (t.result > 0 ? t.rr : t.result < 0 ? -t.rr : 0), 0);
+  const totalRR = trades.reduce((sum, t) => sum + (t.result > 0 ? t.rr : t.result < 0 ? -1 : 0), 0);
   const unsignedRR = trades.reduce((sum, t) => sum + t.rr, 0);
   const totalResult = trades.reduce((sum, t) => sum + t.result, 0);
   const totalNetPnl = trades.reduce((sum, t) => sum + (t.netPnl ?? 0), 0);
