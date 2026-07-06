@@ -21,6 +21,7 @@ import GoalsWidget from "@/components/dashboard/GoalsWidget";
 import PeriodComparisonWidget from "@/components/dashboard/PeriodComparisonWidget";
 import { usePlan } from "@/lib/features";
 import FeatureGate from "@/components/FeatureGate";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { format, parseISO } from "date-fns";
 
 export default function DashboardPage() {
@@ -193,7 +194,9 @@ export default function DashboardPage() {
         <h2 className="text-sm font-mono uppercase tracking-wide text-paper-500 mb-3">
           Kümülatif Sonuç
         </h2>
-        <EquityCurveChart trades={filtered} />
+        <ErrorBoundary>
+          <EquityCurveChart trades={filtered} />
+        </ErrorBoundary>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4 animate-fade-in-up stagger-5">
@@ -204,28 +207,40 @@ export default function DashboardPage() {
       {/* Widgets */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in-up stagger-6">
         <WidgetCard title="Bugünkü Özet">
-          <DailySummaryWidget trades={accountFiltered} />
+          <ErrorBoundary>
+            <DailySummaryWidget trades={accountFiltered} />
+          </ErrorBoundary>
         </WidgetCard>
         <WidgetCard title="Aylık İlerleme">
-          <MonthlyProgressWidget trades={accountFiltered} />
+          <ErrorBoundary>
+            <MonthlyProgressWidget trades={accountFiltered} />
+          </ErrorBoundary>
         </WidgetCard>
         <WidgetCard title="Dönem Karşılaştırma">
-          <FeatureGate feature="advanced_charts">
-            <PeriodComparisonWidget trades={accountFiltered} />
-          </FeatureGate>
+          <ErrorBoundary>
+            <FeatureGate feature="advanced_charts">
+              <PeriodComparisonWidget trades={accountFiltered} />
+            </FeatureGate>
+          </ErrorBoundary>
         </WidgetCard>
         <WidgetCard title="Hedefler">
-          <GoalsWidget />
+          <ErrorBoundary>
+            <GoalsWidget />
+          </ErrorBoundary>
         </WidgetCard>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in-up stagger-7">
         <WidgetCard title="Son İşlemler">
-          <RecentTradesWidget trades={accountFiltered} />
+          <ErrorBoundary>
+            <RecentTradesWidget trades={accountFiltered} />
+          </ErrorBoundary>
         </WidgetCard>
         <WidgetCard title="Trade Sıklığı">
-          <FeatureGate feature="advanced_charts">
-            <TradeFrequencyWidget trades={accountFiltered} />
-          </FeatureGate>
+          <ErrorBoundary>
+            <FeatureGate feature="advanced_charts">
+              <TradeFrequencyWidget trades={accountFiltered} />
+            </FeatureGate>
+          </ErrorBoundary>
         </WidgetCard>
       </div>
     </div>

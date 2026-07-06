@@ -145,6 +145,8 @@ export default function ReportsPage() {
       `En Kötü İşlem: ${stats.worstTrade ? `${stats.worstTrade.pair} — ${stats.worstTrade.result >= 0 ? "+" : ""}${stats.worstTrade.result}% (${stats.worstTrade.rr}R)` : "Yok"}`,
       `Max Galibiyet Serisi: ${stats.maxWinStreak}`,
       `Max Mağlubiyet Serisi: ${stats.maxLoseStreak}`,
+      `Max Drawdown: %${advanced.maxDrawdown.toFixed(2)}`,
+      `Max Ardışık Kayıp: ${advanced.consecutiveLosses}`,
       "",
       "─── Strateji Dağılımı ───",
       ...strategyData.map((s) => `  ${s.name}: ${s.value} işlem`),
@@ -259,6 +261,8 @@ export default function ReportsPage() {
         { label: "Payoff Ratio", value: advanced.payoffRatio >= 99 ? "∞" : advanced.payoffRatio.toFixed(2) },
         { label: "En Büyük Kazanç", value: `+$${advanced.largestWin.toFixed(2)}` },
         { label: "En Büyük Kayıp", value: `-$${Math.abs(advanced.largestLoss).toFixed(2)}` },
+        { label: "Max Drawdown", value: `%${advanced.maxDrawdown.toFixed(2)}` },
+        { label: "Max Ardışık Kayıp", value: String(advanced.consecutiveLosses) },
       ];
 
       const cardW = (contentW - 10) / 3;
@@ -325,6 +329,7 @@ export default function ReportsPage() {
         ["Ort. Kazanan", `+$${advanced.avgWin.toFixed(2)}`, "Ort. Kaybeden", `-$${Math.abs(advanced.avgLoss).toFixed(2)}`],
         ["En Büyük Kazanç", `+$${advanced.largestWin.toFixed(2)}`, "En Büyük Kayıp", `-$${Math.abs(advanced.largestLoss).toFixed(2)}`],
         ["Max Galibiyet Serisi", String(stats.maxWinStreak), "Max Mağlubiyet Serisi", String(stats.maxLoseStreak)],
+        ["Max Drawdown", `%${advanced.maxDrawdown.toFixed(2)}`, "Max Ardışık Kayıp", String(advanced.consecutiveLosses)],
       ];
 
       autoTable(pdf, {

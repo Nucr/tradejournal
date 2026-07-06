@@ -67,6 +67,11 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 className="w-full rounded-lg border border-ink-700 bg-ink-900 px-3 py-2.5 text-sm placeholder:text-paper-500 focus:border-mint-500"
               />
+              <div className="flex justify-end mt-1">
+                <Link href="/forgot-password" className="text-xs text-mint-400 hover:underline">
+                  Şifremi Unuttum
+                </Link>
+              </div>
             </Field>
 
             {error && (

@@ -11,6 +11,10 @@ export interface AdvancedStats {
   payoffRatio: number;
   grossProfit: number;
   grossLoss: number;
+  maxDrawdown: number;
+  maxDrawdownAmount: number;
+  avgRiskPerTrade: number;
+  consecutiveLosses: number;
 }
 
 export interface MonthlyPnL {
@@ -41,6 +45,40 @@ export function computeAdvancedStats(trades: Trade[]): AdvancedStats {
   const avgWin = wins.length > 0 ? grossProfit / wins.length : 0;
   const avgLoss = losses.length > 0 ? grossLoss / losses.length : 0;
 
+  const sorted = [...trades].sort(
+    (a, b) => parseISO(a.entryDate).getTime() - parseISO(b.entryDate).getTime()
+  );
+
+  let peak = 0;
+  let maxDrawdown = 0;
+  let maxDrawdownAmount = 0;
+  let cumulative = 0;
+  for (const t of sorted) {
+    cumulative += t.netPnl ?? 0;
+    if (cumulative > peak) {
+      peak = cumulative;
+    } else {
+      const dd = peak - cumulative;
+      if (dd > maxDrawdownAmount) {
+        maxDrawdownAmount = dd;
+        maxDrawdown = peak > 0 ? (dd / peak) * 100 : 0;
+      }
+    }
+  }
+
+  let consecutiveLosses = 0;
+  let maxConsecutive = 0;
+  for (const t of sorted) {
+    if (t.netPnl < 0) {
+      consecutiveLosses++;
+      if (consecutiveLosses > maxConsecutive) maxConsecutive = consecutiveLosses;
+    } else {
+      consecutiveLosses = 0;
+    }
+  }
+
+  const totalRisk = losses.reduce((s, t) => s + Math.abs(t.netPnl), 0);
+
   return {
     profitFactor: grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? 99 : 0,
     avgWin,
@@ -50,6 +88,10 @@ export function computeAdvancedStats(trades: Trade[]): AdvancedStats {
     payoffRatio: avgLoss > 0 ? avgWin / avgLoss : avgWin > 0 ? 99 : 0,
     grossProfit,
     grossLoss,
+    maxDrawdown,
+    maxDrawdownAmount,
+    avgRiskPerTrade: trades.length > 0 ? totalRisk / trades.length : 0,
+    consecutiveLosses: maxConsecutive,
   };
 }
 

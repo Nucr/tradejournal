@@ -38,6 +38,7 @@ export default function StrategiesPage() {
   const [detailStrategy, setDetailStrategy] = useState<Strategy | null>(null);
   const [detailNote, setDetailNote] = useState("");
   const [detailImages, setDetailImages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [savingDetail, setSavingDetail] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -51,8 +52,10 @@ export default function StrategiesPage() {
 
   const loadStrategies = useCallback(async () => {
     if (!user) return;
+    setLoading(true);
     const list = await getStrategies(user.uid);
     setStrategies(list);
+    setLoading(false);
 
     const uids = new Set(list.map((s) => s.createdBy));
     const names: Record<string, string> = {};
@@ -392,8 +395,20 @@ export default function StrategiesPage() {
         </div>
       )}
 
+      {/* Loading */}
+      {loading && (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-ink-800 bg-ink-900 p-5 animate-pulse">
+              <div className="h-5 w-24 bg-ink-800 rounded mb-3" />
+              <div className="h-3 w-32 bg-ink-800 rounded" />
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* My strategies */}
-      {myStrategies.length > 0 && (
+      {!loading && myStrategies.length > 0 && (
         <section className="animate-fade-in-up stagger-1">
           <h2 className="text-sm font-mono uppercase tracking-wide text-paper-500 mb-3">
             Stratejilerim
@@ -445,7 +460,7 @@ export default function StrategiesPage() {
       )}
 
       {/* Community strategies */}
-      {communityStrategies.length > 0 && (
+      {!loading && communityStrategies.length > 0 && (
         <section className="animate-fade-in-up stagger-2">
           <h2 className="text-sm font-mono uppercase tracking-wide text-paper-500 mb-3">
             Topluluk Stratejileri
@@ -476,7 +491,7 @@ export default function StrategiesPage() {
       )}
 
       {/* Trade-based strategy performance */}
-      {trades.length > 0 && (
+      {!loading && trades.length > 0 && (
         <section className="animate-fade-in-up stagger-3">
           <h2 className="text-sm font-mono uppercase tracking-wide text-paper-500 mb-3">
             Performans Analizi
@@ -499,7 +514,7 @@ export default function StrategiesPage() {
         </section>
       )}
 
-      {trades.length === 0 && (
+      {!loading && trades.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 rounded-xl border border-ink-800 bg-ink-900">
           <div className="w-14 h-14 rounded-2xl bg-ink-800 flex items-center justify-center mx-auto mb-4">
             <svg className="w-7 h-7 text-paper-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

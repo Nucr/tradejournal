@@ -393,6 +393,28 @@ export default function TradeForm({ initial, onSubmit, onCancel }: Props) {
             placeholder="https://www.tradingview.com/x/xxxxxxxx/"
             className="w-full rounded-lg border border-ink-700 bg-ink-950 px-3 py-2.5 text-sm placeholder:text-paper-500 focus:border-mint-500"
           />
+          {screenshotUrl && (
+            <div className="mt-2 relative group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={screenshotUrl}
+                alt="İşlem görseli"
+                className="w-full max-h-40 object-cover rounded-lg border border-ink-700"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setScreenshotUrl("")}
+                className="absolute top-1 right-1 bg-ink-950/80 text-paper-300 hover:text-paper-100 rounded-lg p-1 opacity-0 group-hover:opacity-100 transition"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
         </Field>
 
         <Field label="Not (opsiyonel)" full>

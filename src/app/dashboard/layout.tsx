@@ -9,6 +9,7 @@ import ToastContainer from "@/components/ToastContainer";
 import NotificationToast from "@/components/NotificationToast";
 import AchievementToast from "@/components/AchievementToast";
 import OnboardingTour from "@/components/dashboard/OnboardingTour";
+import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 
 export default function DashboardLayout({
   children,
@@ -24,6 +25,8 @@ export default function DashboardLayout({
       <div className="min-h-screen flex flex-col lg:flex-row bg-ink-950">
         <Sidebar />
         <main className="flex-1 px-4 sm:px-8 py-8 max-w-6xl mx-auto w-full">
+          <EmailVerificationBanner />
+          <div className="mt-4" />
           {children}
         </main>
       </div>

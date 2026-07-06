@@ -17,6 +17,8 @@ import {
   updateProfile,
   signInWithPopup,
   GoogleAuthProvider,
+  sendPasswordResetEmail,
+  sendEmailVerification,
 } from "firebase/auth";
 import { auth } from "./firebase";
 import { getProfile, syncPublicProfile } from "./profile";
@@ -30,11 +32,13 @@ interface AuthContextValue {
   logout: () => Promise<void>;
   needsOnboarding: boolean | null;
   refreshOnboarding: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  sendVerificationEmail: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const SKIP_ROUTES = ["/login", "/register", "/onboarding", "/payment/success", "/payment/cancel"];
+const SKIP_ROUTES = ["/login", "/register", "/forgot-password", "/onboarding", "/payment/success", "/payment/cancel"];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -96,13 +100,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signInWithPopup(auth, provider);
   }
 
+  async function resetPassword(email: string) {
+    await sendPasswordResetEmail(auth, email);
+  }
+
+  async function sendVerificationEmail() {
+    if (auth.currentUser) {
+      await sendEmailVerification(auth.currentUser);
+    }
+  }
+
   async function logout() {
     await signOut(auth);
   }
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, signInWithGoogle: signInWithGoogleHandler, logout, needsOnboarding, refreshOnboarding }}
+      value={{ user, loading, login, register, signInWithGoogle: signInWithGoogleHandler, logout, needsOnboarding, refreshOnboarding, resetPassword, sendVerificationEmail }}
     >
       {children}
     </AuthContext.Provider>

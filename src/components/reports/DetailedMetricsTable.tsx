@@ -31,6 +31,10 @@ export default function DetailedMetricsTable({ stats, advanced, tradeCount }: Pr
     { label: "Max Galibiyet Serisi", value: String(stats.maxWinStreak) },
     { label: "Max Mağlubiyet Serisi", value: String(stats.maxLoseStreak) },
     { label: "Güncel Seri", value: stats.currentWinStreak > 0 ? `${stats.currentWinStreak}W` : stats.currentLoseStreak > 0 ? `${stats.currentLoseStreak}L` : "—" },
+    { label: "Max Drawdown", value: `${advanced.maxDrawdown.toFixed(2)}%`, tone: "coral" },
+    { label: "Max Drawdown ($)", value: `($${advanced.maxDrawdownAmount.toFixed(2)})`, tone: "coral" },
+    { label: "Ort. Risk/İşlem", value: `$${advanced.avgRiskPerTrade.toFixed(2)}` },
+    { label: "Max Ardışık Kayıp", value: String(advanced.consecutiveLosses), tone: "coral" },
   ];
 
   return (
