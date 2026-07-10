@@ -11,22 +11,26 @@ function getEnv(name: string): string {
   return val;
 }
 
-const WEBHOOK_SECRET = getEnv("CREEM_WEBHOOK_SECRET");
-const SKIP_VERIFICATION = process.env.NEXT_PUBLIC_CREEM_TEST_MODE !== "false";
-
-const PRO_MONTHLY = getEnv("CREEM_PRODUCT_PRO_MONTHLY");
-const PRO_YEARLY = getEnv("CREEM_PRODUCT_PRO_YEARLY");
-const PREMIUM_MONTHLY = getEnv("CREEM_PRODUCT_PREMIUM_MONTHLY");
-const PREMIUM_YEARLY = getEnv("CREEM_PRODUCT_PREMIUM_YEARLY");
-
-function planFromProductId(pid: string) {
-  if (pid === PRO_YEARLY || pid === PRO_MONTHLY) return "pro";
-  if (pid === PREMIUM_YEARLY || pid === PREMIUM_MONTHLY) return "premium";
+function planFromProductId(
+  pid: string,
+  env: { proMonthly: string; proYearly: string; premiumMonthly: string; premiumYearly: string }
+) {
+  if (pid === env.proYearly || pid === env.proMonthly) return "pro";
+  if (pid === env.premiumYearly || pid === env.premiumMonthly) return "premium";
   return "free";
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const WEBHOOK_SECRET = getEnv("CREEM_WEBHOOK_SECRET");
+    const SKIP_VERIFICATION = process.env.NEXT_PUBLIC_CREEM_TEST_MODE !== "false";
+    const env = {
+      proMonthly: getEnv("CREEM_PRODUCT_PRO_MONTHLY"),
+      proYearly: getEnv("CREEM_PRODUCT_PRO_YEARLY"),
+      premiumMonthly: getEnv("CREEM_PRODUCT_PREMIUM_MONTHLY"),
+      premiumYearly: getEnv("CREEM_PRODUCT_PREMIUM_YEARLY"),
+    };
+
     const rawBody = await request.text();
 
     if (!SKIP_VERIFICATION) {
@@ -55,7 +59,7 @@ export async function POST(request: NextRequest) {
 
         if (!uid) break;
 
-        const plan = planFromProductId(productId);
+        const plan = planFromProductId(productId, env);
         const currentPeriodEnd = data.subscription?.current_period_end
           ? new Date(data.subscription.current_period_end * 1000)
           : null;
@@ -80,7 +84,7 @@ export async function POST(request: NextRequest) {
         const custId = data.customer_id ?? data.customer?.id ?? "";
         const prodId = data.product_id ?? data.product?.id ?? "";
 
-        const plan = planFromProductId(prodId);
+        const plan = planFromProductId(prodId, env);
         const currentPeriodEnd = data.current_period_end
           ? new Date(data.current_period_end * 1000)
           : null;
