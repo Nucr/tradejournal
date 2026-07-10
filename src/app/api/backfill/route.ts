@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { adminDb } from "@/lib/firebase-admin";
+import { handleApiError } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -24,7 +25,6 @@ export async function GET() {
 
     return NextResponse.json({ updated: count, total: snap.size });
   } catch (err) {
-    console.error("Backfill error:", err);
-    return NextResponse.json({ error: "Backfill failed" }, { status: 500 });
+    return handleApiError(err, "backfill");
   }
 }

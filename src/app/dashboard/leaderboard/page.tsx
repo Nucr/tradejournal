@@ -71,6 +71,7 @@ function AvatarLetter({
   if (avatarUrl && !imgError) {
     return (
       <div className={`rounded-full overflow-hidden shrink-0 ${className}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={avatarUrl} key={avatarUrl} alt={name} className="w-full h-full object-cover" onError={() => setImgError(true)} />
       </div>
     );

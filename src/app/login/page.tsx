@@ -9,17 +9,17 @@ import AuthBrandPanel from "@/components/AuthBrandPanel";
 export default function LoginPage() {
   const { user, loading, login, signInWithGoogle } = useAuth();
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
   if (loading) return null;
   if (user) {
     router.replace("/dashboard");
     return null;
   }
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -28,8 +28,8 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.replace("/dashboard");
-    } catch (err: any) {
-      setError(mapAuthError(err?.code));
+    } catch (err: unknown) {
+      setError(mapAuthError(err instanceof Error && "code" in err ? (err as { code?: string }).code : undefined));
     } finally {
       setSubmitting(false);
     }
@@ -104,8 +104,8 @@ export default function LoginPage() {
               try {
                 await signInWithGoogle();
                 router.replace("/dashboard");
-              } catch (err: any) {
-                setError(err?.code || "Google ile giriş yapılamadı.");
+              } catch (err: unknown) {
+                setError((err instanceof Error && "code" in err ? (err as { code?: string }).code : undefined) || "Google ile giriş yapılamadı.");
               } finally {
                 setGoogleSubmitting(false);
               }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuthGuard } from "@/lib/authGuard";
+import { useAuthGuard } from "@/lib/auth-guard";
 import { ToastProvider } from "@/lib/toast-context";
 import { PlanProvider } from "@/lib/features";
 import Sidebar from "@/components/Sidebar";

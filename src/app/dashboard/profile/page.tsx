@@ -35,39 +35,50 @@ export default function ProfilePage() {
   const [showStats, setShowStats] = useState(true);
   const [saving, setSaving] = useState(false);
   const [leaderboardRanks, setLeaderboardRanks] = useState<{ period: LeaderboardPeriod; rank: number }[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    const unsubProfile = subscribeToProfile(user.uid, (p) => {
-      if (p) {
-        setProfile(p);
-        setDisplayName(p.displayName || user.displayName || "");
-        setAvatarUrl(p.avatarUrl || "");
-        setIsPublic(p.isPublic);
-        setShowStrategy(p.showStrategy);
-        setShowLeaderboard(p.showLeaderboard ?? true);
-        setShowTrades(p.showTrades ?? true);
-        setShowAchievements(p.showAchievements ?? true);
-        setShowStats(p.showStats ?? true);
-      } else {
-        setDisplayName(user.displayName || "");
-      }
-    });
-    const unsubTrades = subscribeToTrades(user.uid, setTrades);
-    return () => { unsubProfile(); unsubTrades(); };
+    try {
+      const unsubProfile = subscribeToProfile(user.uid, (p) => {
+        if (p) {
+          setProfile(p);
+          setDisplayName(p.displayName || user.displayName || "");
+          setAvatarUrl(p.avatarUrl || "");
+          setIsPublic(p.isPublic);
+          setShowStrategy(p.showStrategy);
+          setShowLeaderboard(p.showLeaderboard ?? true);
+          setShowTrades(p.showTrades ?? true);
+          setShowAchievements(p.showAchievements ?? true);
+          setShowStats(p.showStats ?? true);
+        } else {
+          setDisplayName(user.displayName || "");
+        }
+      });
+      const unsubTrades = subscribeToTrades(user.uid, setTrades);
+      return () => { unsubProfile(); unsubTrades(); };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Profil yüklenemedi";
+      setError(message);
+    }
   }, [user]);
 
   useEffect(() => {
     if (!user || !profile?.showLeaderboard) return;
     const uid = user.uid;
     async function fetchRanks() {
-      const periods: LeaderboardPeriod[] = ["weekly", "monthly", "alltime"];
-      const results: { period: LeaderboardPeriod; rank: number }[] = [];
-      for (const p of periods) {
-        const { rank } = await getLeaderboardRank(p, uid);
-        if (rank > 0) results.push({ period: p, rank });
+      try {
+        const periods: LeaderboardPeriod[] = ["weekly", "monthly", "alltime"];
+        const results: { period: LeaderboardPeriod; rank: number }[] = [];
+        for (const p of periods) {
+          const { rank } = await getLeaderboardRank(p, uid);
+          if (rank > 0) results.push({ period: p, rank });
+        }
+        setLeaderboardRanks(results);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Sıralama yüklenemedi";
+        setError(message);
       }
-      setLeaderboardRanks(results);
     }
     fetchRanks();
   }, [user, profile?.showLeaderboard]);
@@ -108,6 +119,11 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
+      {error && (
+        <div className="flex items-center justify-center min-h-[60vh] text-coral-400">{error}</div>
+      )}
+      {!error && (
+      <>
       <div>
         <h1 className="font-display text-2xl font-semibold">Profil</h1>
         <p className="text-sm text-paper-300 mt-1">Hesap bilgilerin ve istatistiklerin.</p>
@@ -328,6 +344,8 @@ export default function ProfilePage() {
           <h2 className="font-display text-lg font-semibold mb-3">Rozetler</h2>
           <AchievementsGrid earned={profile?.achievements ?? []} />
         </div>
+      )}
+      </>
       )}
     </div>
   );

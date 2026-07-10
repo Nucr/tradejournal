@@ -1,16 +1,23 @@
 import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { adminDb } from "@/lib/firebase-admin";
 import crypto from "crypto";
+import { handleApiError } from "@/lib/api-error";
 
-const WEBHOOK_SECRET = process.env.CREEM_WEBHOOK_SECRET ?? "whsec_4mA0NRNUurCmXjkCexBbmE";
+function getEnv(name: string): string {
+  const val = process.env[name];
+  if (!val) throw new Error(`Missing environment variable: ${name}`);
+  return val;
+}
+
+const WEBHOOK_SECRET = getEnv("CREEM_WEBHOOK_SECRET");
 const SKIP_VERIFICATION = process.env.NEXT_PUBLIC_CREEM_TEST_MODE !== "false";
 
-const PRO_MONTHLY = process.env.CREEM_PRODUCT_PRO_MONTHLY ?? "prod_5iBKvm5SgnGv8nWAWZvs8f";
-const PRO_YEARLY = process.env.CREEM_PRODUCT_PRO_YEARLY ?? "prod_6meCVYl8rbl2vpmjYaY3yH";
-const PREMIUM_MONTHLY = process.env.CREEM_PRODUCT_PREMIUM_MONTHLY ?? "prod_2JPWBSIV1nydapmQPDZ9O";
-const PREMIUM_YEARLY = process.env.CREEM_PRODUCT_PREMIUM_YEARLY ?? "prod_18KSUDy1S3sP1exT283nuQ";
+const PRO_MONTHLY = getEnv("CREEM_PRODUCT_PRO_MONTHLY");
+const PRO_YEARLY = getEnv("CREEM_PRODUCT_PRO_YEARLY");
+const PREMIUM_MONTHLY = getEnv("CREEM_PRODUCT_PREMIUM_MONTHLY");
+const PREMIUM_YEARLY = getEnv("CREEM_PRODUCT_PREMIUM_YEARLY");
 
 function planFromProductId(pid: string) {
   if (pid === PRO_YEARLY || pid === PRO_MONTHLY) return "pro";
@@ -153,9 +160,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Bilinmeyen hata";
-    console.error("Creem webhook error:", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch (err) {
+    return handleApiError(err, "creem/webhook");
   }
 }

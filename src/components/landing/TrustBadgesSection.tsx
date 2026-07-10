@@ -1,7 +1,7 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n/context";
-import { useInView } from "@/lib/useInView";
+import { useInView } from "@/lib/use-in-view";
 
 const BADGES = [
   { icon: "🔒", key: "trust.1" },

@@ -34,7 +34,7 @@ import {
   computeMonthlyPnL,
   computeDayOfWeekStats,
   computeAccountBreakdown,
-} from "@/components/reports/utils";
+} from "@/components/reports/report-utils";
 
 const RANGE_PRESETS: { key: RangeKey; label: string }[] = [
   { key: "week", label: "Bu Hafta" },

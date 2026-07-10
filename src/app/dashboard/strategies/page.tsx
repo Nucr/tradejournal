@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { usePlan } from "@/lib/features";
 import { addStrategy, deleteStrategy, getStrategies, setStrategyImages, updateStrategy } from "@/lib/strategies";
-import { uploadStrategyImage, deleteStrategyImage } from "@/lib/storage";
+import { uploadStrategyImage } from "@/lib/storage";
 import { subscribeToTrades } from "@/lib/trades";
 import { getUser } from "@/lib/users";
 import FeatureGate, { LimitBadge } from "@/components/FeatureGate";
@@ -39,6 +39,7 @@ export default function StrategiesPage() {
   const [detailNote, setDetailNote] = useState("");
   const [detailImages, setDetailImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [savingDetail, setSavingDetail] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,30 +47,41 @@ export default function StrategiesPage() {
 
   useEffect(() => {
     if (!user) return;
-    const unsub = subscribeToTrades(user.uid, setTrades);
-    return unsub;
+    try {
+      const unsub = subscribeToTrades(user.uid, setTrades);
+      return unsub;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "İşlemler yüklenemedi";
+      setError(message);
+    }
   }, [user]);
 
   const loadStrategies = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const list = await getStrategies(user.uid);
-    setStrategies(list);
-    setLoading(false);
+    try {
+      const list = await getStrategies(user.uid);
+      setStrategies(list);
+      setLoading(false);
 
-    const uids = new Set(list.map((s) => s.createdBy));
-    const names: Record<string, string> = {};
-    await Promise.all(
-      Array.from(uids).map(async (uid) => {
-        try {
-          const profile = await getUser(uid);
-          names[uid] = profile?.displayName ?? uid.slice(0, 6);
-        } catch {
-          names[uid] = uid.slice(0, 6);
-        }
-      })
-    );
-    setCreatorNames(names);
+      const uids = new Set(list.map((s) => s.createdBy));
+      const names: Record<string, string> = {};
+      await Promise.all(
+        Array.from(uids).map(async (uid) => {
+          try {
+            const profile = await getUser(uid);
+            names[uid] = profile?.displayName ?? uid.slice(0, 6);
+          } catch {
+            names[uid] = uid.slice(0, 6);
+          }
+        })
+      );
+      setCreatorNames(names);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Stratejiler yüklenemedi";
+      setError(message);
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -227,7 +239,6 @@ export default function StrategiesPage() {
     if (!user || !detailStrategy) return;
     if (!confirm("Bu görseli silmek istediğine emin misin?")) return;
     try {
-      await deleteStrategyImage();
       const updated = detailImages.filter((u) => u !== imageUrl);
       await updateStrategy(detailStrategy.id, user.uid, { images: updated });
       setDetailImages(updated);
@@ -254,6 +265,11 @@ export default function StrategiesPage() {
 
   return (
     <div className="space-y-8 animate-fade-in-up">
+      {error && (
+        <div className="flex items-center justify-center min-h-[60vh] text-coral-400">{error}</div>
+      )}
+      {!error && (
+      <>
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display text-2xl font-semibold">Stratejiler</h1>
@@ -352,6 +368,7 @@ export default function StrategiesPage() {
                   <div className="grid grid-cols-3 gap-2">
                     {newImagePreviews.map((preview, i) => (
                       <div key={i} className="relative group aspect-video rounded-lg overflow-hidden border border-ink-700 bg-ink-950">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={preview}
                           alt={`Önizleme ${i + 1}`}
@@ -597,6 +614,7 @@ export default function StrategiesPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {detailImages.map((url, i) => (
                       <div key={i} className="relative group aspect-video rounded-lg overflow-hidden border border-ink-700 bg-ink-950">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={url}
                           alt={`Görsel ${i + 1}`}
@@ -660,6 +678,8 @@ export default function StrategiesPage() {
             </div>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

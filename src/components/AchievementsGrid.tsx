@@ -1,7 +1,7 @@
 "use client";
 
 import { ACHIEVEMENT_DEFS } from "@/lib/achievements";
-import type { AchievementDef } from "@/lib/achievements";
+import { useI18n } from "@/lib/i18n/context";
 
 interface Props {
   earned: string[];
@@ -26,6 +26,7 @@ const RARITY_BG: Record<string, string> = {
 };
 
 export default function AchievementsGrid({ earned }: Props) {
+  const { t } = useI18n();
   const earnedSet = new Set(earned);
 
   return (
@@ -33,10 +34,12 @@ export default function AchievementsGrid({ earned }: Props) {
       {ACHIEVEMENT_DEFS.map((a) => {
         const isEarned = earnedSet.has(a.id);
         const rarity = a.rarity ?? "common";
+        const label = t(a.label);
+        const desc = t(a.desc);
         return (
           <div
             key={a.id}
-            title={`${a.label} — ${a.desc}`}
+            title={`${label} — ${desc}`}
             className={`relative flex flex-col items-center justify-center text-center rounded-lg border p-1.5 transition-all duration-300 ${
               isEarned
                 ? `${RARITY_BG[rarity]} ${RARITY_COLORS[rarity]} ${RARITY_GLOW[rarity]} cursor-default`
@@ -52,7 +55,7 @@ export default function AchievementsGrid({ earned }: Props) {
               <span className="text-xs">{a.icon ?? "🏆"}</span>
             </span>
             <p className="text-[7px] font-medium leading-tight mt-0.5 text-paper-300">
-              {a.label}
+              {label}
             </p>
           </div>
         );

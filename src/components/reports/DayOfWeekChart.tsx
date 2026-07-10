@@ -10,7 +10,7 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
-import { DayOfWeekStat } from "./utils";
+import { DayOfWeekStat } from "./report-utils";
 
 interface Props {
   data: DayOfWeekStat[];

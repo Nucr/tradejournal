@@ -34,22 +34,34 @@ export default function DashboardPage() {
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { hasFeature } = usePlan();
 
   useEffect(() => {
     if (!user) return;
-    const unsub = subscribeToTrades(user.uid, (data) => {
-      setTrades(data);
+    try {
+      const unsub = subscribeToTrades(user.uid, (data) => {
+        setTrades(data);
+        setLoading(false);
+      });
+      const unsubAcc = subscribeToAccounts(user.uid, setAccounts);
+      getProfile(user.uid)
+        .then((p) => {
+          setProfile(p);
+        })
+        .catch((err) => {
+          const message = err instanceof Error ? err.message : "Profil yüklenemedi";
+          setError(message);
+        });
+      return () => {
+        unsub();
+        unsubAcc();
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Bir hata oluştu";
+      setError(message);
       setLoading(false);
-    });
-    const unsubAcc = subscribeToAccounts(user.uid, setAccounts);
-    getProfile(user.uid).then((p) => {
-      setProfile(p);
-    });
-    return () => {
-      unsub();
-      unsubAcc();
-    };
+    }
   }, [user]);
 
   const accountFiltered = useMemo(() => {
@@ -80,6 +92,10 @@ export default function DashboardPage() {
     () => accountBalances.reduce((s, a) => s + a.effectiveBalance, 0),
     [accountBalances]
   );
+
+  if (error) {
+    return <div className="flex items-center justify-center min-h-[60vh] text-coral-400">{error}</div>;
+  }
 
   if (loading) {
     return <DashboardSkeleton />;

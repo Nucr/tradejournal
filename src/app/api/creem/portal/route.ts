@@ -1,6 +1,7 @@
 import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-error";
 import { createCustomerPortal, getCheckout } from "@/lib/creem";
 
 const TEST_MODE = process.env.NEXT_PUBLIC_CREEM_TEST_MODE !== "false";
@@ -11,7 +12,7 @@ function testOrdersUrl(uid: string, checkoutId?: string) {
 }
 
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
+  const authHeader = request.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return NextResponse.json({ error: "Yetkilendirme gerekli" }, { status: 401 });
   }
@@ -23,7 +24,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    let { creemCustomerId, checkoutId } = body as { creemCustomerId?: string; checkoutId?: string };
+    let { creemCustomerId } = body as { creemCustomerId?: string; checkoutId?: string };
+    const { checkoutId } = body as { creemCustomerId?: string; checkoutId?: string };
 
     if (!creemCustomerId && checkoutId) {
       const checkout = await getCheckout(checkoutId);
@@ -41,12 +43,10 @@ export async function POST(request: NextRequest) {
 
     const data = await createCustomerPortal(creemCustomerId);
     return NextResponse.json({ portalUrl: data.customer_portal_link });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Bilinmeyen hata";
-    console.error("Portal error:", message, err instanceof Error ? err.stack : "");
+  } catch (err) {
     if (TEST_MODE) {
       return NextResponse.json({ portalUrl: testOrdersUrl(uid) });
     }
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "creem/portal");
   }
 }

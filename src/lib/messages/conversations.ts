@@ -15,25 +15,22 @@ import {
   arrayRemove,
   Unsubscribe,
   Timestamp,
-  deleteDoc,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { db } from "../firebase";
 import {
   Conversation,
-  ConversationInvitation,
   ConversationType,
   GroupType,
-  Message,
-} from "./types";
-import { createNotification } from "./notifications";
+} from "../types";
+import { createNotification } from "../notifications";
 
-// ─── Conversations ───
+// ─── Helpers ───
 
 function conversationsRef() {
   return collection(db, "conversations");
 }
 
-function conversationDoc(id: string) {
+export function conversationDoc(id: string) {
   return doc(db, "conversations", id);
 }
 
@@ -45,7 +42,7 @@ function readStatusDoc(conversationId: string, uid: string) {
   return doc(db, "conversations", conversationId, "readStatus", uid);
 }
 
-function mapConversation(id: string, data: Record<string, unknown>): Conversation {
+export function mapConversation(id: string, data: Record<string, unknown>): Conversation {
   const rawTimestamps = data.lastReadTimestamps as Record<string, unknown> | undefined;
   const lastReadTimestamps: Record<string, Date> | undefined = rawTimestamps
     ? Object.fromEntries(
@@ -81,7 +78,7 @@ function mapConversation(id: string, data: Record<string, unknown>): Conversatio
   };
 }
 
-function mapMessage(id: string, data: Record<string, unknown>): Message {
+function mapMessage(id: string, data: Record<string, unknown>): import("../types").Message {
   return {
     id,
     senderId: data.senderId as string,
@@ -90,6 +87,8 @@ function mapMessage(id: string, data: Record<string, unknown>): Message {
     createdAt: (data.createdAt as Timestamp)?.toDate?.() ?? new Date(),
   };
 }
+
+// ─── Subscriptions ───
 
 export function subscribeToConversations(
   uid: string,
@@ -118,7 +117,7 @@ export function subscribeToConversations(
 
 export function subscribeToMessages(
   conversationId: string,
-  callback: (messages: Message[]) => void
+  callback: (messages: import("../types").Message[]) => void
 ): Unsubscribe {
   const q = query(
     messagesRef(conversationId),
@@ -166,7 +165,6 @@ export async function sendMessage(
     [`lastReadTimestamps.${senderId}`]: serverTimestamp(),
   });
 
-  // Fire notification to other participants
   try {
     const convSnap = await getDoc(conversationDoc(conversationId));
     if (convSnap.exists()) {
@@ -218,7 +216,6 @@ export async function createDirectConversation(
   uid1: string,
   uid2: string
 ): Promise<string | null> {
-  // Check recipient's messaging privacy
   const recipientSnap = await getDoc(doc(db, "users", uid2));
   if (recipientSnap.exists()) {
     const privacy = recipientSnap.data()?.messagingPrivacy as string | undefined;
@@ -362,8 +359,6 @@ export function subscribeToReadStatus(
   });
 }
 
-// ─── Group Update ───
-
 export async function updateConversation(
   conversationId: string,
   updates: { name?: string; description?: string; photoUrl?: string }
@@ -373,144 +368,4 @@ export async function updateConversation(
   if (updates.description !== undefined) payload.description = updates.description;
   if (updates.photoUrl !== undefined) payload.photoUrl = updates.photoUrl;
   await updateDoc(conversationDoc(conversationId), payload);
-}
-
-// ─── Invitations ───
-
-function invitationsRef() {
-  return collection(db, "invitations");
-}
-
-function mapInvitation(id: string, data: Record<string, unknown>): ConversationInvitation {
-  return {
-    id,
-    conversationId: data.conversationId as string,
-    conversationName: data.conversationName as string,
-    inviterId: data.inviterId as string,
-    inviterName: data.inviterName as string,
-    inviteeId: data.inviteeId as string,
-    status: (data.status as ConversationInvitation["status"]) ?? "pending",
-    createdAt: (data.createdAt as Timestamp)?.toDate?.() ?? new Date(),
-  };
-}
-
-export async function createInvitation(
-  conversationId: string,
-  conversationName: string,
-  inviterId: string,
-  inviterName: string,
-  inviteeId: string
-): Promise<string> {
-  // Check for existing pending invitation
-  const existing = query(
-    invitationsRef(),
-    where("conversationId", "==", conversationId),
-    where("inviteeId", "==", inviteeId),
-    where("status", "==", "pending")
-  );
-  const snap = await getDocs(existing);
-  if (!snap.empty) {
-    throw new Error("Bu kullanıcıya zaten bekleyen bir davet var");
-  }
-
-  const docRef = await addDoc(invitationsRef(), {
-    conversationId,
-    conversationName,
-    inviterId,
-    inviterName,
-    inviteeId,
-    status: "pending",
-    createdAt: serverTimestamp(),
-  });
-  return docRef.id;
-}
-
-export function subscribeToInvitations(
-  uid: string,
-  callback: (invitations: ConversationInvitation[]) => void
-): Unsubscribe {
-  const q = query(
-    invitationsRef(),
-    where("inviteeId", "==", uid),
-    where("status", "==", "pending"),
-    orderBy("createdAt", "desc")
-  );
-  return onSnapshot(q, (snapshot) => {
-    const list = snapshot.docs.map((d) =>
-      mapInvitation(d.id, d.data() as Record<string, unknown>)
-    );
-    callback(list);
-  });
-}
-
-export async function acceptInvitation(invitationId: string, conversationId: string, uid: string) {
-  await updateDoc(doc(invitationsRef(), invitationId), { status: "accepted" });
-  await updateDoc(conversationDoc(conversationId), {
-    participants: arrayUnion(uid),
-    updatedAt: serverTimestamp(),
-  });
-}
-
-export async function rejectInvitation(invitationId: string) {
-  await updateDoc(doc(invitationsRef(), invitationId), { status: "rejected" });
-}
-
-export async function deleteInvitation(invitationId: string) {
-  await deleteDoc(doc(invitationsRef(), invitationId));
-}
-
-// ─── Group Photo Upload ───
-
-export async function uploadGroupPhoto(
-  conversationId: string,
-  file: File,
-  onProgress?: (pct: number) => void
-): Promise<string> {
-  if (!file.type.startsWith("image/")) {
-    throw new Error("Sadece resim dosyaları kabul edilir");
-  }
-  if (file.size > 500 * 1024) {
-    throw new Error("Dosya boyutu 500KB'dan büyük olamaz");
-  }
-
-  const signRes = await fetch("/api/cloudinary/sign", { method: "POST" });
-  if (!signRes.ok) throw new Error("Cloudinary imza alınamadı");
-  const { signature, timestamp, api_key, cloud_name, folder } = await signRes.json();
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("folder", folder + "/groups");
-  formData.append("timestamp", String(timestamp));
-  formData.append("api_key", api_key);
-  formData.append("signature", signature);
-
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable && onProgress) {
-        onProgress(Math.round((e.loaded / e.total) * 100));
-      }
-    };
-    xhr.onload = async () => {
-      if (xhr.status === 200) {
-        const data = JSON.parse(xhr.responseText);
-        const url = data.secure_url;
-        await updateDoc(conversationDoc(conversationId), {
-          photoUrl: url,
-          updatedAt: serverTimestamp(),
-        });
-        resolve(url);
-      } else {
-        try {
-          const err = JSON.parse(xhr.responseText);
-          reject(new Error(err.error?.message || "Cloudinary yükleme hatası"));
-        } catch {
-          reject(new Error("Cloudinary yükleme hatası"));
-        }
-      }
-    };
-    xhr.onerror = () => reject(new Error("Cloudinary bağlantı hatası"));
-    xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`);
-    xhr.send(formData);
-  });
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ACHIEVEMENT_DEFS } from "@/lib/achievements";
 import type { Achievement } from "@/lib/achievements";
 import { onNewAchievements } from "@/lib/achievement-store";
+import { useI18n } from "@/lib/i18n/context";
 
 const CONFETTI_COLORS = ["#2ED9A4", "#F59E0B", "#3B82F6", "#EC4899", "#8B5CF6", "#EF4444"];
 
@@ -36,6 +37,7 @@ function Confetti() {
 }
 
 export default function AchievementToast() {
+  const { t } = useI18n();
   const [achievement, setAchievement] = useState<Achievement | null>(null);
 
   useEffect(() => {
@@ -65,11 +67,11 @@ export default function AchievementToast() {
             {def?.icon ?? "🏆"}
           </div>
           <div>
-            <p className="text-[10px] text-paper-500 font-medium uppercase tracking-wider">Yeni Rozet!</p>
+            <p className="text-[10px] text-paper-500 font-medium uppercase tracking-wider">{t("toast.new_achievement")}</p>
             <p className="text-sm font-semibold text-paper-100">
-              {achievement.label}
+              {t(achievement.label)}
             </p>
-            <p className="text-[11px] text-paper-500 mt-0.5">{achievement.desc}</p>
+            <p className="text-[11px] text-paper-500 mt-0.5">{t(achievement.desc)}</p>
           </div>
         </div>
         {rarity === "epic" && (

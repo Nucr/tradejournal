@@ -1,6 +1,7 @@
 import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
+import { handleApiError } from "@/lib/api-error";
 import { createCheckout } from "@/lib/creem";
 import type { Plan } from "@/lib/features";
 
@@ -20,7 +21,7 @@ const PRODUCT_IDS: Record<Plan, Record<BillingPeriod, string>> = {
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get("authorization");
+    const authHeader = request.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return NextResponse.json({ error: "Yetkilendirme gerekli" }, { status: 401 });
     }
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
     const productId = PRODUCT_IDS[plan][period];
 
     if (!productId) {
-      return NextResponse.json({ error: "Ürün yapılandırılmamış" }, { status: 500 });
+      return NextResponse.json({ error: "Ürün yapılandırılmamış" }, { status: 400 });
     }
 
     const checkout = await createCheckout(
@@ -52,8 +53,7 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json({ checkoutUrl: checkout.checkout_url, checkoutId: checkout.id });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Bilinmeyen hata";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch (err) {
+    return handleApiError(err, "creem/checkout");
   }
 }

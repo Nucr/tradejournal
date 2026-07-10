@@ -130,6 +130,7 @@ export default function SocialFeedPage() {
             {/* Image */}
             {item.screenshotUrl ? (
               <div className="aspect-video bg-ink-950 overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={item.screenshotUrl}
                   alt={`${item.pair} grafik`}

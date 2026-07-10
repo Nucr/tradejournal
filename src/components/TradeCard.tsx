@@ -67,6 +67,7 @@ export default function TradeCard({ trade, uid, accounts = [], onEdit, onDelete,
           rel="noopener noreferrer"
           className="sm:w-48 shrink-0 bg-ink-950 flex items-center justify-center border-b sm:border-b-0 sm:border-r border-ink-800"
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={trade.screenshotUrl}
             alt={`${trade.pair} grafik görseli`}

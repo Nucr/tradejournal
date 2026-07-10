@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { addDoc, collection, doc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { syncUserScore } from "@/lib/scoreEngine";
+import { syncUserScore } from "@/lib/sync-score";
 import { isValid, parse } from "date-fns";
 import type { TradeDirection, TradeInput } from "@/lib/types";
 

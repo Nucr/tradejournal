@@ -89,8 +89,8 @@ export default function PublicProfileView({ userData }: PublicProfileViewProps) 
       if (convId) {
         router.push(`/dashboard/messages/${convId}`);
       }
-    } catch (err: any) {
-      alert(err.message || "Mesaj gönderilemedi");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Mesaj gönderilemedi");
     } finally {
       setMessaging(false);
     }
@@ -109,8 +109,8 @@ export default function PublicProfileView({ userData }: PublicProfileViewProps) 
         undefined
       );
       setFriendStatus("requested");
-    } catch (err: any) {
-      alert(err.message || "İstek gönderilemedi");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "İstek gönderilemedi");
     } finally {
       setFriendLoading(false);
     }

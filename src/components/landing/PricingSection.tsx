@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/context";
-import { useInView } from "@/lib/useInView";
+import { useInView } from "@/lib/use-in-view";
 import { useAuth } from "@/lib/auth-context";
 
 const PLANS = ["free", "pro", "premium"] as const;

@@ -10,7 +10,7 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
-import { MonthlyPnL } from "./utils";
+import { MonthlyPnL } from "./report-utils";
 
 interface Props {
   data: MonthlyPnL[];

@@ -1,6 +1,6 @@
 "use client";
 
-import { AdvancedStats } from "./utils";
+import { AdvancedStats } from "./report-utils";
 
 interface Props {
   stats: AdvancedStats;

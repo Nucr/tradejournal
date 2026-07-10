@@ -5,7 +5,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
@@ -64,51 +63,6 @@ export async function getStrategies(uid: string): Promise<Strategy[]> {
   pushUnique(publicSnap);
 
   return result;
-}
-
-export function subscribeToStrategies(
-  uid: string,
-  callback: (strategies: Strategy[]) => void
-) {
-  const publicQuery = query(
-    strategiesRef(),
-    where("isPublic", "==", true),
-    orderBy("createdAt", "desc")
-  );
-  const ownQuery = query(
-    strategiesRef(),
-    where("createdBy", "==", uid),
-    orderBy("createdAt", "desc")
-  );
-
-  const publicUnsub = onSnapshot(publicQuery, () => {
-    void refresh();
-  });
-  const ownUnsub = onSnapshot(ownQuery, () => {
-    void refresh();
-  });
-
-  let cached: Strategy[] = [];
-  let pending = false;
-
-  async function refresh() {
-    if (pending) return;
-    pending = true;
-    try {
-      const both = await getStrategies(uid);
-      cached = both;
-      callback(cached);
-    } finally {
-      pending = false;
-    }
-  }
-
-  void refresh();
-
-  return () => {
-    publicUnsub();
-    ownUnsub();
-  };
 }
 
 export async function addStrategy(

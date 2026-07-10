@@ -16,17 +16,23 @@ import type { Strategy } from "@/lib/types";
 
 export default function AdminStrategiesPage() {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const q = query(collection(db, "strategies"), orderBy("createdAt", "desc"));
-    getDocs(q).then((snap) => {
-      const list = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-        createdAt: d.data().createdAt?.toDate?.() ?? new Date(),
-      })) as Strategy[];
-      setStrategies(list);
-    });
+    getDocs(q)
+      .then((snap) => {
+        const list = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+          createdAt: d.data().createdAt?.toDate?.() ?? new Date(),
+        })) as Strategy[];
+        setStrategies(list);
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Stratejiler yüklenemedi";
+        setError(message);
+      });
   }, []);
 
   async function toggleVisibility(id: string, current: boolean) {
@@ -41,6 +47,11 @@ export default function AdminStrategiesPage() {
 
   return (
     <AdminRoute>
+      {error && (
+        <div className="flex items-center justify-center min-h-[60vh] text-coral-400">{error}</div>
+      )}
+      {!error && (
+      <>
       <h1 className="font-display text-2xl font-semibold mb-1">Stratejiler</h1>
       <p className="text-sm text-paper-500 mb-6">Tüm stratejileri yönet.</p>
 
@@ -86,6 +97,8 @@ export default function AdminStrategiesPage() {
           </tbody>
         </table>
       </div>
+    </>
+      )}
     </AdminRoute>
   );
 }

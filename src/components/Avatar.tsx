@@ -27,6 +27,7 @@ export default function Avatar({
   if (avatarUrl && !imgError) {
     return (
       <div className={`${CLASS_MAP[size]} rounded-full overflow-hidden shrink-0`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={avatarUrl}
           key={avatarUrl}

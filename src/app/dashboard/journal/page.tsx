@@ -65,6 +65,7 @@ export default function JournalPage() {
       unsub();
       unsubAcc();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
   async function handleAccountChange(tradeId: string, newAccountId: string) {

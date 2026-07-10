@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { handleApiError } from "@/lib/api-error";
+import { adminDb } from "@/lib/firebase-admin";
 
 export async function POST(request: NextRequest) {
   try {
@@ -72,8 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ written, skipped });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Bilinmeyen hata";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch (err) {
+    return handleApiError(err, "backfill-sharedtrades");
   }
 }

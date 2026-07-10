@@ -26,7 +26,7 @@ function compressImage(
       const ctx = canvas.getContext("2d")!;
       ctx.drawImage(img, 0, 0, w, h);
 
-      let currentQuality = quality;
+      const currentQuality = quality;
       function tryCompress(q: number) {
         canvas.toBlob(
           (blob) => {
@@ -145,5 +145,5 @@ export async function uploadStrategyImage(
   });
 }
 
-export async function deleteStrategyImage(): Promise<void> {
-}
+
+

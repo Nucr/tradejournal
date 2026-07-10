@@ -109,7 +109,7 @@ export default function TradeDetailModal({
               {trade.direction === "long" ? "UZUN" : trade.direction === "short" ? "KISA" : "BE"}
             </span>
           </div>
-          <button onClick={onClose} className="text-paper-400 hover:text-paper-200 transition p-1">
+          <button onClick={onClose} aria-label="Kapat" className="text-paper-400 hover:text-paper-200 transition p-1">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -119,6 +119,7 @@ export default function TradeDetailModal({
         {/* Image */}
         {trade.screenshotUrl ? (
           <div className="bg-ink-950 flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={trade.screenshotUrl}
               alt={`${trade.pair} grafik görseli`}

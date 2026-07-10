@@ -12,6 +12,7 @@ export default function AdminPage() {
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalTrades, setTotalTrades] = useState(0);
   const [totalStrategies, setTotalStrategies] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -19,11 +20,16 @@ export default function AdminPage() {
       getDocs(collection(db, "users")).then((s) => s.size),
       getDocs(collection(db, "strategies")).then((s) => s.size),
       getDocs(collectionGroup(db, "trades")).then((s) => s.size),
-    ]).then(([u, s, t]) => {
-      setTotalUsers(u);
-      setTotalStrategies(s);
-      setTotalTrades(t);
-    });
+    ])
+      .then(([u, s, t]) => {
+        setTotalUsers(u);
+        setTotalStrategies(s);
+        setTotalTrades(t);
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Veriler yüklenemedi";
+        setError(message);
+      });
   }, [user]);
 
   const cards = [
@@ -35,6 +41,11 @@ export default function AdminPage() {
 
   return (
     <AdminRoute>
+      {error && (
+        <div className="flex items-center justify-center min-h-[60vh] text-coral-400">{error}</div>
+      )}
+      {!error && (
+      <>
       <h1 className="font-display text-2xl font-semibold mb-1">Admin Paneli</h1>
       <p className="text-sm text-paper-500 mb-8">Sistem genel istatistikler ve yönetim.</p>
 
@@ -46,6 +57,8 @@ export default function AdminPage() {
           </Link>
         ))}
       </div>
+      </>
+      )}
     </AdminRoute>
   );
 }

@@ -18,17 +18,23 @@ const PERIODS: LeaderboardPeriod[] = ["weekly", "monthly", "alltime"];
 export default function AdminLeaderboardPage() {
   const [period, setPeriod] = useState<LeaderboardPeriod>("alltime");
   const [entries, setEntries] = useState<(LeaderboardEntry & { uid: string })[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const q = query(collection(db, "leaderboard", period, "entries"), orderBy("score", "desc"));
-    getDocs(q).then((snap) => {
-      const list = snap.docs.map((d) => ({
-        uid: d.id,
-        ...d.data(),
-        updatedAt: d.data().updatedAt?.toDate?.() ?? new Date(),
-      })) as (LeaderboardEntry & { uid: string })[];
-      setEntries(list);
-    });
+    getDocs(q)
+      .then((snap) => {
+        const list = snap.docs.map((d) => ({
+          uid: d.id,
+          ...d.data(),
+          updatedAt: d.data().updatedAt?.toDate?.() ?? new Date(),
+        })) as (LeaderboardEntry & { uid: string })[];
+        setEntries(list);
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Liderlik verileri yüklenemedi";
+        setError(message);
+      });
   }, [period]);
 
   async function handleRemove(uid: string) {
@@ -38,6 +44,11 @@ export default function AdminLeaderboardPage() {
 
   return (
     <AdminRoute>
+      {error && (
+        <div className="flex items-center justify-center min-h-[60vh] text-coral-400">{error}</div>
+      )}
+      {!error && (
+      <>
       <h1 className="font-display text-2xl font-semibold mb-1">Liderlik Tablosu</h1>
       <p className="text-sm text-paper-500 mb-6">Liderlik tablosu girişlerini yönet.</p>
 
@@ -90,6 +101,8 @@ export default function AdminLeaderboardPage() {
           </tbody>
         </table>
       </div>
+      </>
+      )}
     </AdminRoute>
   );
 }

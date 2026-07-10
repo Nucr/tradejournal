@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n/context";
-import { useInView } from "@/lib/useInView";
+import { useInView } from "@/lib/use-in-view";
 
 const STATS = [
   { target: 10000, suffix: "+", labelKey: "stats.trades" },

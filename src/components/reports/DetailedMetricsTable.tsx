@@ -1,7 +1,7 @@
 "use client";
 
 import { TradeStats } from "@/lib/date-utils";
-import { AdvancedStats } from "./utils";
+import { AdvancedStats } from "./report-utils";
 
 interface Props {
   stats: TradeStats;

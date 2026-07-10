@@ -22,11 +22,17 @@ export default function CalendarPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    const unsub = subscribeToTrades(user.uid, setTrades);
-    return unsub;
+    try {
+      const unsub = subscribeToTrades(user.uid, setTrades);
+      return unsub;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "İşlemler yüklenemedi";
+      setError(message);
+    }
   }, [user]);
 
   // ── Month calendar logic ──
@@ -111,6 +117,11 @@ export default function CalendarPage() {
   return (
     <FeatureGate feature="calendar">
       <div className="space-y-8">
+      {error && (
+        <div className="flex items-center justify-center min-h-[60vh] text-coral-400">{error}</div>
+      )}
+      {!error && (
+      <>
       {/* ── Header ── */}
       <div className="animate-fade-in-up">
         <h1 className="font-display text-2xl font-semibold">İşlem Takvimi</h1>
@@ -320,7 +331,9 @@ export default function CalendarPage() {
           </a>
         </div>
       </div>
-      </div>
+      </>
+      )}
+    </div>
     </FeatureGate>
   );
 }

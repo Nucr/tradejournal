@@ -17,32 +17,38 @@ import type { Trade } from "@/lib/types";
 
 export default function AdminTradesPage() {
   const [trades, setTrades] = useState<(Trade & { userId: string })[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchTrades = useCallback(async () => {
-    const q = query(collectionGroup(db, "trades"), orderBy("entryDate", "desc"), limit(100));
-    const snap = await getDocs(q);
-    const list = snap.docs.map((d) => {
-      const data = d.data();
-      const path = d.ref.path;
-      const userId = path.split("/")[1];
-      return {
-        id: d.id,
-        userId,
-        pair: data.pair,
-        direction: data.direction,
-        entryDate: data.entryDate,
-        exitDate: data.exitDate,
-        rr: data.rr,
-        result: data.result,
-        netPnl: data.netPnl ?? 0,
-        strategy: data.strategy,
-        note: data.note,
-        screenshotUrl: data.screenshotUrl,
-        createdAt: data.createdAt?.toDate?.().toISOString?.() ?? "",
-        deletedAt: data.deletedAt?.toDate?.().toISOString?.() ?? null,
-      } as Trade & { userId: string };
-    });
-    setTrades(list);
+    try {
+      const q = query(collectionGroup(db, "trades"), orderBy("entryDate", "desc"), limit(100));
+      const snap = await getDocs(q);
+      const list = snap.docs.map((d) => {
+        const data = d.data();
+        const path = d.ref.path;
+        const userId = path.split("/")[1];
+        return {
+          id: d.id,
+          userId,
+          pair: data.pair,
+          direction: data.direction,
+          entryDate: data.entryDate,
+          exitDate: data.exitDate,
+          rr: data.rr,
+          result: data.result,
+          netPnl: data.netPnl ?? 0,
+          strategy: data.strategy,
+          note: data.note,
+          screenshotUrl: data.screenshotUrl,
+          createdAt: data.createdAt?.toDate?.().toISOString?.() ?? "",
+          deletedAt: data.deletedAt?.toDate?.().toISOString?.() ?? null,
+        } as Trade & { userId: string };
+      });
+      setTrades(list);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "İşlemler yüklenemedi";
+      setError(message);
+    }
   }, []);
 
   useEffect(() => { fetchTrades(); }, [fetchTrades]);
@@ -56,6 +62,11 @@ export default function AdminTradesPage() {
 
   return (
     <AdminRoute>
+      {error && (
+        <div className="flex items-center justify-center min-h-[60vh] text-coral-400">{error}</div>
+      )}
+      {!error && (
+      <>
       <h1 className="font-display text-2xl font-semibold mb-1">Tüm İşlemler</h1>
       <p className="text-sm text-paper-500 mb-6">Son 100 işlem (tüm kullanıcılar).</p>
 
@@ -104,6 +115,8 @@ export default function AdminTradesPage() {
           </tbody>
         </table>
       </div>
+    </>
+      )}
     </AdminRoute>
   );
 }

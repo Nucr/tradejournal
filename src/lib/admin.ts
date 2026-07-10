@@ -13,6 +13,5 @@ export async function isAdmin(uid: string): Promise<boolean> {
   }
 }
 
-export async function setAdminRole(uid: string, role: "user" | "admin") {
-  await updateDoc(doc(db, "users", uid), { role, updatedAt: serverTimestamp() });
-}
+
+

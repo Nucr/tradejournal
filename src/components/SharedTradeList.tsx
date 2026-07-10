@@ -79,7 +79,7 @@ export default function SharedTradeList({ uid, currentUid }: SharedTradeListProp
       setLoading(false);
     });
     return unsub;
-  }, [uid]);
+  }, [uid, isOwner, isFriend]);
 
   if (loading) {
     return (
@@ -109,6 +109,7 @@ export default function SharedTradeList({ uid, currentUid }: SharedTradeListProp
             <div className="flex items-center gap-3">
               {trade.screenshotUrl && (
                 <div className="w-12 h-12 rounded-md overflow-hidden shrink-0 bg-ink-800">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={trade.screenshotUrl}
                     alt=""

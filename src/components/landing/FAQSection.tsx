@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n/context";
-import { useInView } from "@/lib/useInView";
+import { useInView } from "@/lib/use-in-view";
 
 const FAQ_IDS = [1, 2, 3, 4, 5, 6];
 

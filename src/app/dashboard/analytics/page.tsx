@@ -30,17 +30,28 @@ export default function AnalyticsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountFilter, setAccountFilter] = useState<string>("all");
   const [barMode, setBarMode] = useState<BarMode>("daily");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    const unsub = subscribeToTrades(user.uid, setTrades);
-    return unsub;
+    try {
+      const unsub = subscribeToTrades(user.uid, setTrades);
+      return unsub;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "İşlemler yüklenemedi";
+      setError(message);
+    }
   }, [user]);
 
   useEffect(() => {
     if (!user) return;
-    const unsub = subscribeToAccounts(user.uid, setAccounts);
-    return unsub;
+    try {
+      const unsub = subscribeToAccounts(user.uid, setAccounts);
+      return unsub;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Hesaplar yüklenemedi";
+      setError(message);
+    }
   }, [user]);
 
   const filteredTrades = useMemo(() => {
@@ -115,6 +126,11 @@ export default function AnalyticsPage() {
   return (
     <FeatureGate feature="advanced_charts">
     <div className="space-y-8">
+      {error && (
+        <div className="flex items-center justify-center min-h-[60vh] text-coral-400">{error}</div>
+      )}
+      {!error && (
+      <>
       <div className="animate-fade-in-up">
         <h1 className="font-display text-2xl font-semibold">Analitik</h1>
         <p className="text-sm text-paper-300 mt-1">
@@ -293,6 +309,8 @@ export default function AnalyticsPage() {
           </div>
         )}
       </div>
+    </>
+      )}
     </div>
     </FeatureGate>
   );

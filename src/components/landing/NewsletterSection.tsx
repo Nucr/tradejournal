@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useI18n } from "@/lib/i18n/context";
-import { useInView } from "@/lib/useInView";
+import { useInView } from "@/lib/use-in-view";
 
 export default function NewsletterSection() {
   const { t } = useI18n();

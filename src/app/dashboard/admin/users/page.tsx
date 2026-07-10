@@ -16,12 +16,18 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<UserProfile>>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getDocs(collection(db, "users")).then((snap) => {
-      const list = snap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserProfile & { uid: string }));
-      setUsers(list);
-    });
+    getDocs(collection(db, "users"))
+      .then((snap) => {
+        const list = snap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserProfile & { uid: string }));
+        setUsers(list);
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Kullanıcılar yüklenemedi";
+        setError(message);
+      });
   }, []);
 
   function startEdit(u: UserProfile & { uid: string }) {
@@ -53,6 +59,11 @@ export default function AdminUsersPage() {
 
   return (
     <AdminRoute>
+      {error && (
+        <div className="flex items-center justify-center min-h-[60vh] text-coral-400">{error}</div>
+      )}
+      {!error && (
+      <>
       <h1 className="font-display text-2xl font-semibold mb-1">Kullanıcılar</h1>
       <p className="text-sm text-paper-500 mb-6">Sistemdeki tüm kullanıcıları görüntüle ve yönet.</p>
 
@@ -180,6 +191,8 @@ export default function AdminUsersPage() {
           </tbody>
         </table>
       </div>
+    </>
+      )}
     </AdminRoute>
   );
 }

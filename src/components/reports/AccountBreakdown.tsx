@@ -1,6 +1,6 @@
 "use client";
 
-import { AccountStat } from "./utils";
+import { AccountStat } from "./report-utils";
 
 interface Props {
   data: AccountStat[];

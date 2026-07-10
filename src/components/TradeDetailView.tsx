@@ -138,6 +138,7 @@ export default function TradeDetailView({
       {/* Image */}
       {trade.screenshotUrl ? (
         <div className="bg-ink-950 flex items-center justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={trade.screenshotUrl}
             alt={`${trade.pair} grafik görseli`}

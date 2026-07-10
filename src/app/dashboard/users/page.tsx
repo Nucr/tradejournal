@@ -19,6 +19,7 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [rankFilter, setRankFilter] = useState<Rank | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const q = query(
@@ -26,12 +27,18 @@ export default function UsersPage() {
       orderBy("displayName_lower"),
       limit(100),
     );
-    getDocs(q).then((snap) => {
-      const list = snap.docs
-        .map((d) => ({ uid: d.id, ...d.data() } as UserProfile & { uid: string }));
-      setUsers(list);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    getDocs(q)
+      .then((snap) => {
+        const list = snap.docs
+          .map((d) => ({ uid: d.id, ...d.data() } as UserProfile & { uid: string }));
+        setUsers(list);
+        setLoading(false);
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Kullanıcılar yüklenemedi";
+        setError(message);
+        setLoading(false);
+      });
   }, []);
 
   const filtered = useMemo(() => {
@@ -95,8 +102,13 @@ export default function UsersPage() {
         </div>
       </div>
 
+      {/* Error */}
+      {error && (
+        <div className="flex items-center justify-center min-h-[60vh] text-coral-400">{error}</div>
+      )}
+
       {/* Loading */}
-      {loading && (
+      {!error && loading && (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 rounded-full border-2 border-mint-500 border-t-transparent animate-spin" />
         </div>
