@@ -214,6 +214,7 @@ export const translations: Record<Locale, Record<string, string>> = {
 
     /* Sidebar */
     "sidebar.overview": "Genel Bakış",
+    "sidebar.profile": "Profil",
     "sidebar.journal": "Trade Defteri",
     "sidebar.messages": "Mesajlar",
     "sidebar.friends": "Arkadaşlar",
@@ -489,6 +490,7 @@ export const translations: Record<Locale, Record<string, string>> = {
 
     /* Sidebar */
     "sidebar.overview": "Overview",
+    "sidebar.profile": "Profile",
     "sidebar.journal": "Trade Journal",
     "sidebar.messages": "Messages",
     "sidebar.friends": "Friends",
