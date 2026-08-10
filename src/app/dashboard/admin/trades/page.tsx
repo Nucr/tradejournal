@@ -1,18 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import {
-  collectionGroup,
-  getDocs,
-  query,
-  orderBy,
-  limit,
-  doc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import AdminRoute from "@/components/AdminRoute";
+import { adminGet } from "@/lib/admin-client";
 import type { Trade } from "@/lib/types";
 
 export default function AdminTradesPage() {
@@ -21,30 +13,10 @@ export default function AdminTradesPage() {
 
   const fetchTrades = useCallback(async () => {
     try {
-      const q = query(collectionGroup(db, "trades"), orderBy("entryDate", "desc"), limit(100));
-      const snap = await getDocs(q);
-      const list = snap.docs.map((d) => {
-        const data = d.data();
-        const path = d.ref.path;
-        const userId = path.split("/")[1];
-        return {
-          id: d.id,
-          userId,
-          pair: data.pair,
-          direction: data.direction,
-          entryDate: data.entryDate,
-          exitDate: data.exitDate,
-          rr: data.rr,
-          result: data.result,
-          netPnl: data.netPnl ?? 0,
-          strategy: data.strategy,
-          note: data.note,
-          screenshotUrl: data.screenshotUrl,
-          createdAt: data.createdAt?.toDate?.().toISOString?.() ?? "",
-          deletedAt: data.deletedAt?.toDate?.().toISOString?.() ?? null,
-        } as Trade & { userId: string };
-      });
-      setTrades(list);
+      const data = await adminGet<{ trades: (Trade & { userId: string })[] }>(
+        "/api/admin/trades"
+      );
+      setTrades(data.trades);
     } catch (err) {
       const message = err instanceof Error ? err.message : "İşlemler yüklenemedi";
       setError(message);

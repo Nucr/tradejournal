@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import AdminRoute from "@/components/AdminRoute";
+import { adminGet } from "@/lib/admin-client";
 import type { UserProfile, Rank } from "@/lib/types";
 
 const RANKS: Rank[] = [
@@ -19,11 +20,8 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getDocs(collection(db, "users"))
-      .then((snap) => {
-        const list = snap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserProfile & { uid: string }));
-        setUsers(list);
-      })
+    adminGet<{ users: (UserProfile & { uid: string })[] }>("/api/admin/users")
+      .then((data) => setUsers(data.users))
       .catch((err) => {
         const message = err instanceof Error ? err.message : "Kullanıcılar yüklenemedi";
         setError(message);

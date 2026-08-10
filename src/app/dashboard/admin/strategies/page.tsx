@@ -1,17 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  collection,
-  getDocs,
-  query,
-  orderBy,
-  doc,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
+import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import AdminRoute from "@/components/AdminRoute";
+import { adminGet } from "@/lib/admin-client";
 import type { Strategy } from "@/lib/types";
 
 export default function AdminStrategiesPage() {
@@ -19,14 +12,12 @@ export default function AdminStrategiesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, "strategies"), orderBy("createdAt", "desc"));
-    getDocs(q)
-      .then((snap) => {
-        const list = snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-          createdAt: d.data().createdAt?.toDate?.() ?? new Date(),
-        })) as Strategy[];
+    adminGet<{ strategies: Strategy[] }>("/api/admin/strategies")
+      .then((data) => {
+        const list = data.strategies.map((s) => ({
+          ...s,
+          createdAt: s.createdAt ? new Date(s.createdAt) : new Date(),
+        }));
         setStrategies(list);
       })
       .catch((err) => {

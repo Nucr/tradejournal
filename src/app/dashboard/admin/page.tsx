@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, collectionGroup, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import AdminRoute from "@/components/AdminRoute";
 import Link from "next/link";
+import { adminGet } from "@/lib/admin-client";
+
+interface AdminStats {
+  totalUsers: number;
+  totalTrades: number;
+  totalStrategies: number;
+}
 
 export default function AdminPage() {
   const { user } = useAuth();
@@ -16,15 +21,11 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([
-      getDocs(collection(db, "users")).then((s) => s.size),
-      getDocs(collection(db, "strategies")).then((s) => s.size),
-      getDocs(collectionGroup(db, "trades")).then((s) => s.size),
-    ])
-      .then(([u, s, t]) => {
-        setTotalUsers(u);
-        setTotalStrategies(s);
-        setTotalTrades(t);
+    adminGet<AdminStats>("/api/admin/stats")
+      .then((data) => {
+        setTotalUsers(data.totalUsers);
+        setTotalStrategies(data.totalStrategies);
+        setTotalTrades(data.totalTrades);
       })
       .catch((err) => {
         const message = err instanceof Error ? err.message : "Veriler yüklenemedi";
